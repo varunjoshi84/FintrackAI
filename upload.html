@@ -4,8 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FinTrackAI - Upload</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="upload.css">
+  <!-- ✅ Latest Font Awesome without integrity -->
+<link 
+  rel="stylesheet" 
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" 
+  crossorigin="anonymous">
+
+
   <style>
     .upload-layout {
       display: flex;
@@ -45,14 +53,30 @@
     }
   </style>
 </head>
-  <header>
-    <h1>FinTrackAI</h1>
-    <nav>
-      <a href="dashboard.html">Dashboard</a>
-      <a href="upload.html">Upload</a>
-      <a href="contact.html">Contact Us</a>
+<body>
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-50 w-full">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
+
+    <!-- Logo + Name -->
+    <div class="flex items-center space-x-3">
+      <img src="landingpage/assests/logo/logo.jpg" alt="Logo" class="w-9 h-9 rounded-md object-cover">
+      <h1 class="text-xl font-bold text-slate-900">FinTrackAI</h1>
+    </div>
+
+    <!-- Nav Links -->
+    <nav class="flex items-center space-x-6">
+      <a href="dasboard.html" target="_blank" class="text-slate-600 hover:text-blue-600 transition">Dashboard</a>
+      <a href="upload.html" class="text-slate-600 hover:text-blue-600 transition">Upload</a>
+      <a href="contact.html" target="_blank" class="text-slate-600 hover:text-blue-600 transition">Contact Us</a>
     </nav>
-  </header>
+
+  </div>
+</header>
+
+
+
+
+
 
   <section class="hero">
     <h2>Upload Your Financial Documents</h2>
@@ -86,8 +110,9 @@
       </div>
     </div>
   </main>
-
+  <div id="footer"></div>
   <script src="upload.js" defer></script>
+  <script src="landingpage/footer.js"></script>
   <script src="upload-animation.js"></script>
 </body>
 </html>
