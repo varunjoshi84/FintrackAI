@@ -27,6 +27,10 @@ header h1 {
   font-weight: 700;
 }
 
+header {
+  all : unset;
+}
+
 nav a {
   margin-left: 2rem;
   text-decoration: none;
@@ -36,20 +40,21 @@ nav a {
 
 /* Hero Section */
 .hero {
+  background: linear-gradient(to right, #ebf8ff, #fefcbf);
   text-align: center;
-  background-color: #1a202c;
-  color: white;
-  padding: 4rem 2rem;
+  padding: 3rem 1rem 2rem;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .hero h2 {
-  font-size: 2.5rem;
-  margin-bottom: 0.75rem;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
 }
 
 .hero p {
-  font-size: 1.1rem;
-  opacity: 0.8;
+  font-size: 1.125rem;
+  color: #4a5568;
 }
 
 /* Contact Intro */
