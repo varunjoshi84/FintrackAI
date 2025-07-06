@@ -6,27 +6,88 @@
   <title>FinTrackAI - Upload</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="upload.css">
+  <style>
+    .upload-layout {
+      display: flex;
+      gap: 2rem;
+      align-items: flex-start;
+      justify-content: center;
+      margin-top: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .upload-illustration {
+      flex: 1;
+      max-width: 35%;
+      min-width: 250px;
+    }
+
+    .upload-illustration img {
+      width: 100%;
+      height: auto;
+    }
+
+    .upload-form-block {
+      flex: 2;
+      min-width: 320px;
+    }
+
+    @media (max-width: 768px) {
+      .upload-layout {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .upload-illustration,
+      .upload-form-block {
+        max-width: 100%;
+      }
+    }
+  </style>
 </head>
-<body>
   <header>
     <h1>FinTrackAI</h1>
     <nav>
-      <a href="dasboard.html" target="_blank">Dashboard</a>
+      <a href="dashboard.html">Dashboard</a>
       <a href="upload.html">Upload</a>
-      <a href="contact.html" target="_blank">Contact Us</a>
+      <a href="contact.html">Contact Us</a>
     </nav>
   </header>
 
-  <main class="container">
-    <h2>Upload Data</h2>
-    <form class="upload-form" id="uploadForm">
-      <input type="file" id="fileInput" required>
-      <button type="submit" id="uploadBtn">Upload</button>
-    </form>
-    <div id="uploadSuccess" class="success-message" style="display: none;">
-        File uploaded successfully! ✅
+  <section class="hero">
+    <h2>Upload Your Financial Documents</h2>
+    <p>Drag, drop or select your expense files to begin your smart analysis journey.</p>
+  </section>
+
+  <main class="container upload-layout">
+    <div class="upload-illustration">
+      <img src="images/upload-illustration.jpg" alt="Upload Illustration">
+    </div>
+    <div class="upload-form-block">
+      <form class="upload-form" id="uploadForm">
+        <label for="fileInput" class="drop-zone">
+          <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.csv" required />
+          <span id="fileName">Drag and drop or click to upload a file</span>
+        </label>
+        <button type="submit" id="uploadBtn">Upload</button>
+      </form>
+
+      <div id="previewSection" class="preview-section" style="display: none;">
+        <p>✅ File is ready for processing.</p>
+        <button id="generateBtn">Generate Report</button>
+      </div>
+
+      <div id="downloadSection" class="download-section" style="display: none;">
+        <p>🎉 Report generated!</p>
+        <div class="download-buttons">
+          <button class="download-btn">Download as PDF</button>
+          <button class="download-btn">Download as CSV</button>
+        </div>
+      </div>
     </div>
   </main>
+
   <script src="upload.js" defer></script>
+  <script src="upload-animation.js"></script>
 </body>
 </html>
