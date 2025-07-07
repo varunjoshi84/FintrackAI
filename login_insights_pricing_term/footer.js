@@ -40,7 +40,7 @@ document.getElementById('footer').innerHTML = `
           <li><a href="#" class="hover:text-white transition-colors">Help Center</a></li>
           <li><a href="#" class="hover:text-white transition-colors">Privacy Policy</a></li>
           <li><a href="#" class="hover:text-white transition-colors">Terms of Service</a></li>
-          <li><a href="contact.html" class="hover:text-white transition-colors">Contact Us</a></li>
+          <li><a href="#" class="hover:text-white transition-colors">Contact Us</a></li>
         </ul>
       </div>
 
