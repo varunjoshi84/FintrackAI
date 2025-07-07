@@ -1,0 +1,28 @@
+footer {
+  background-color: #1e293b; /* slate-900 */
+  color: white;
+  padding: 4rem 1rem;
+}
+
+footer a, footer p, footer h4, footer span {
+  color: #cbd5e1; /* slate-400 */
+}
+
+footer a:hover {
+  color: white;
+}
+
+footer input {
+  background-color: #1e293b;
+  border: 1px solid #334155;
+  color: white;
+}
+
+footer button {
+  background-color: #2563eb;
+  color: white;
+}
+
+footer button:hover {
+  background-color: #1d4ed8;
+}
