@@ -14,21 +14,7 @@ body {
 
 /* Header */
 header {
-  background: #ffffff;
-  padding: 1rem 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-header h1 {
-  font-size: 1.5rem;
-  font-weight: 700;
-}
-
-header {
-  all : unset;
+  all: unset;
 }
 
 nav a {
@@ -95,6 +81,7 @@ nav a {
   border-radius: 6px;
   text-decoration: none;
   font-weight: 600;
+  transition: background-color 0.3s;
 }
 
 .join-btn:hover {
@@ -124,6 +111,7 @@ nav a {
   flex-wrap: wrap;
   gap: 1rem;
   margin-bottom: 1rem;
+  align-items: center;
 }
 
 .contact-form input,
@@ -133,29 +121,74 @@ nav a {
   padding: 0.75rem;
   font-size: 1rem;
   border: 1px solid #e2e8f0;
-  border-radius: 6px;
+  border-radius: 8px;
   width: 100%;
+  transition: border 0.3s, box-shadow 0.3s;
+}
+
+.contact-form input:focus,
+.contact-form select:focus,
+.contact-form textarea:focus {
+  outline: none;
+  border-color: #3182ce;
+  box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.3);
 }
 
 .contact-form textarea {
   resize: vertical;
-  min-height: 120px;
+  min-height: 150px;
+  font-family: 'Inter', sans-serif;
+  line-height: 1.5;
+}
+
+/* Checkbox Row Fix */
+.contact-form .row.checkbox-row {
+  justify-content: flex-start;
+  margin-bottom: 0.8rem;
+}
+
+.checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.95rem;
+  color: #4a5568;
+  font-weight: 500;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  margin: 0;
+  accent-color: #3182ce;
+}
+
+/* Submit Button */
+.contact-form .row.button-row {
+  justify-content: flex-end;
+  margin-top: 0.2rem;
 }
 
 .contact-form button {
-  background-color: #3182ce;
-  color: white;
+  background: linear-gradient(to right, #4caf50, #388e3c);
+  color: #ffffff;
+  padding: 0.75rem 2rem;
+  font-weight: 600;
   border: none;
-  padding: 0.75rem 1.25rem;
-  font-weight: bold;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.3s;
+  border-radius: 9999px; /* 👈 This makes it pill-shaped */
+  font-size: 1rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+  margin-left: auto;
 }
 
 .contact-form button:hover {
-  background-color: #2b6cb0;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
+
+
 
 .contact-info {
   max-width: 800px;
@@ -194,7 +227,7 @@ footer {
 }
 
 .footer-brand {
-  max-width: 250px;
+  max-width: 300px;
 }
 
 .footer-brand h2 {
@@ -226,17 +259,6 @@ footer {
 
 .social-icons a:hover {
   color: #63b3ed;
-}
-
-.footer-brand,
-.footer-links,
-.footer-newsletter {
-  flex: 1 1 250px;
-  min-width: 250px;
-}
-
-.footer-brand {
-  max-width: 300px;
 }
 
 .footer-links h4,
@@ -279,8 +301,6 @@ footer {
   background-color: #2b6cb0;
 }
 
-
-
 /* Responsive */
 @media (max-width: 768px) {
   .intro-image img {
@@ -295,6 +315,12 @@ footer {
     flex-direction: column;
   }
 
+  .contact-form .row.checkbox-row,
+  .contact-form .row.button-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
   footer {
     flex-direction: column;
     align-items: stretch;
@@ -307,4 +333,3 @@ footer {
     margin-bottom: 2rem;
   }
 }
-

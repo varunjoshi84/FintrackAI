@@ -77,12 +77,25 @@ document.addEventListener("DOMContentLoaded", () => {
     uploadBtn.textContent = "Uploading...";
 
     setTimeout(() => {
-      uploadBtn.disabled = false;
-      uploadBtn.textContent = "Upload";
-      previewSection.style.display = "block";
-      fileInput.value = "";
-      fileNameSpan.textContent = "Drag and drop or click to upload a file";
-    }, 1200);
+  uploadBtn.disabled = false;
+  uploadBtn.textContent = "Upload";
+  fileInput.value = "";
+  fileNameSpan.textContent = "Drag and drop or click to upload a file";
+
+  // Make visible BEFORE animation
+  previewSection.classList.remove("hidden");
+  previewSection.style.display = "block";
+
+  // Animate AFTER making it visible
+  requestAnimationFrame(() => {
+    gsap.fromTo(
+      "#previewSection",
+      { opacity: 0, y: 20 },
+      { opacity: 1, y: 0, duration: 0.6 }
+    );
+  });
+}, 1200);
+
   });
 
   // === Generate Report Button ===
@@ -91,10 +104,21 @@ document.addEventListener("DOMContentLoaded", () => {
     generateBtn.textContent = "Generating...";
 
     setTimeout(() => {
-      generateBtn.disabled = false;
-      generateBtn.textContent = "Generate Report";
-      downloadSection.style.display = "block";
-    }, 1200);
+  generateBtn.disabled = false;
+  generateBtn.textContent = "Generate Report";
+
+  downloadSection.classList.remove("hidden");
+  downloadSection.style.display = "block";
+
+  requestAnimationFrame(() => {
+    gsap.fromTo(
+      "#downloadSection",
+      { opacity: 0, y: 20 },
+      { opacity: 1, y: 0, duration: 0.6 }
+    );
+  });
+}, 1200);
+
   });
 
   // === Dummy Download Buttons ===

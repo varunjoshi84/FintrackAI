@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard - FinTrackAI</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="admin-board.css">
+  <link 
+  rel="stylesheet" 
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" 
+  crossorigin="anonymous">
+</head>
+<body class="font-inter bg-gray-50">
+
+  <!-- Header -->
+  <header class="bg-white shadow-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto flex justify-between items-center h-16 px-4">
+      <div class="flex items-center space-x-3">
+        <img src="landingpage/assests/logo/logo.jpg" alt="Logo" class="w-9 h-9 rounded-md object-cover">
+        <h1 class="text-xl font-bold text-slate-900">FinTrackAI Admin</h1>
+      </div>
+      <nav class="flex space-x-6">
+        <a href="dasboard.html" target="_blank" class="text-slate-600 hover:text-blue-600">User Dashboard</a>
+        <a href="upload.html" target="_blank" class="text-slate-600 hover:text-blue-600">Upload</a>
+        <a href="contact.html" target="_blank" class="text-slate-600 hover:text-blue-600">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto p-6">
+    <h2 class="text-2xl font-bold mb-6">Admin Control Panel</h2>
+
+    <!-- Section 1: User Management -->
+    <section class="mb-10">
+      <h3 class="text-xl font-semibold mb-4">User List</h3>
+      <table class="w-full bg-white shadow-md rounded-lg overflow-hidden">
+        <thead class="bg-slate-100">
+          <tr>
+            <th class="px-4 py-3 text-left">User</th>
+            <th class="px-4 py-3">Email</th>
+            <th class="px-4 py-3">Role</th>
+            <th class="px-4 py-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="userTableBody">
+          <!-- Data will be populated by JS -->
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Section 2: Logs or Requests -->
+    <section>
+      <h3 class="text-xl font-semibold mb-4">Recent Upload Logs</h3>
+      <div class="bg-white p-4 rounded-lg shadow">
+        <ul id="logsList" class="space-y-2 text-sm text-slate-700">
+          <!-- JS will insert logs -->
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <div id="footer"></div>
+  <script src="admin-board.js" defer></script>
+  <script src="landingpage/footer.js"></script>
+</body>
+</html>
