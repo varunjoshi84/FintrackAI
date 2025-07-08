@@ -14,76 +14,76 @@
   <div id="header"></div>
 
   <!-- Main Dashboard Content -->
-  <main class="container p-6">
-    <h2 class="text-4xl font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 drop-shadow-lg tracking-wide animate-fade-in-up">
-      <i class="fas fa-chart-line mr-2 text-blue-500 animate-pulse"></i>
-      Financial Dashboard
-    </h2>
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="text-center mb-8">
+      <h2 class="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 drop-shadow-lg tracking-wide animate-fade-in-up">
+        <i class="fas fa-chart-line mr-2 text-blue-500 animate-pulse"></i>
+        Financial Dashboard
+      </h2>
+      <p class="text-gray-600 mt-2">Your complete financial overview for July</p>
+    </div>
 
-    <p class="text-center text-gray-600 mb-8">Your complete financial overview for July</p>
-
-    <section class="cards animate-fade-in-up">
-      <div class="card transform transition-transform duration-300 hover:scale-105">
-        <h3>Total Spending</h3>
-        <p id="totalSpending">₹671.1</p>
+    <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 animate-fade-in-up">
+      <div class="bg-white rounded-lg p-6 shadow-sm transform transition-transform duration-300 hover:scale-105">
+        <h3 class="text-sm font-medium text-gray-500 mb-2">Total Spending</h3>
+        <p id="totalSpending" class="text-2xl font-bold text-gray-900">₹671.1</p>
       </div>
-      <div class="card transform transition-transform duration-300 hover:scale-105">
-        <h3>Total Savings</h3>
-        <p id="totalSavings">₹12,340</p>
+      <div class="bg-white rounded-lg p-6 shadow-sm transform transition-transform duration-300 hover:scale-105">
+        <h3 class="text-sm font-medium text-gray-500 mb-2">Total Savings</h3>
+        <p id="totalSavings" class="text-2xl font-bold text-gray-900">₹12,340</p>
       </div>
-      <div class="card transform transition-transform duration-300 hover:scale-105">
-        <h3>Top Category</h3>
-        <p id="topCategory">Food & Dining</p>
+      <div class="bg-white rounded-lg p-6 shadow-sm transform transition-transform duration-300 hover:scale-105">
+        <h3 class="text-sm font-medium text-gray-500 mb-2">Top Category</h3>
+        <p id="topCategory" class="text-2xl font-bold text-gray-900">Food & Dining</p>
       </div>
-      <div class="card transform transition-transform duration-300 hover:scale-105">
-        <h3>This Month</h3>
-        <p id="transactionCount">10 Transactions</p>
+      <div class="bg-white rounded-lg p-6 shadow-sm transform transition-transform duration-300 hover:scale-105">
+        <h3 class="text-sm font-medium text-gray-500 mb-2">This Month</h3>
+        <p id="transactionCount" class="text-2xl font-bold text-gray-900">10 Transactions</p>
       </div>
     </section>
 
-    <section class="chart-section animate-fade-in-up delay-75">
-      <div class="chart">
-        <h3>Spending Trend</h3>
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 animate-fade-in-up delay-75">
+      <div class="bg-white rounded-lg p-6 shadow-sm">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Spending Trend</h3>
         <canvas id="spendingChart" width="400" height="200"></canvas>
       </div>
 
-      <div class="category">
-        <h3>Category Breakdown</h3>
+      <div class="bg-white rounded-lg p-6 shadow-sm">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Category Breakdown</h3>
         <canvas id="categoryChart" width="400" height="200"></canvas>
       </div>
-
     </section>
 
-    <section class="transactions animate-fade-in-up delay-150">
-      <h3>Recent Transactions</h3>
-      <ul id="transactionList">
-        <li>
-          <span>01/12/2024</span>
-          <span>₹-45.67</span>
+    <section class="bg-white rounded-lg p-6 shadow-sm animate-fade-in-up delay-150">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Transactions</h3>
+      <ul id="transactionList" class="space-y-3">
+        <li class="flex justify-between items-center py-2 border-b border-gray-100">
+          <span class="text-sm text-gray-600">01/12/2024</span>
+          <span class="text-sm font-medium text-red-600">₹-45.67</span>
           <span class="text-xs text-gray-500">(Food)</span>
         </li>
-        <li>
-          <span>02/12/2024</span>
-          <span>₹-89.99</span>
+        <li class="flex justify-between items-center py-2 border-b border-gray-100">
+          <span class="text-sm text-gray-600">02/12/2024</span>
+          <span class="text-sm font-medium text-red-600">₹-89.99</span>
           <span class="text-xs text-gray-500">(Travel)</span>
         </li>
-        <li>
-          <span>03/12/2024</span>
-          <span>₹2,500</span>
+        <li class="flex justify-between items-center py-2 border-b border-gray-100">
+          <span class="text-sm text-gray-600">03/12/2024</span>
+          <span class="text-sm font-medium text-green-600">₹2,500</span>
           <span class="text-xs text-gray-500">(Salary)</span>
         </li>
-        <li>
-          <span>04/12/2024</span>
-          <span>₹-125.5</span>
+        <li class="flex justify-between items-center py-2 border-b border-gray-100">
+          <span class="text-sm text-gray-600">04/12/2024</span>
+          <span class="text-sm font-medium text-red-600">₹-125.5</span>
           <span class="text-xs text-gray-500">(Bills)</span>
         </li>
-        <li>
-          <span>05/12/2024</span>
-          <span>₹-39.99</span>
+        <li class="flex justify-between items-center py-2 border-b border-gray-100">
+          <span class="text-sm text-gray-600">05/12/2024</span>
+          <span class="text-sm font-medium text-red-600">₹-39.99</span>
           <span class="text-xs text-gray-500">(Entertainment)</span>
         </li>
       </ul>
-      <button id="addTransactionBtn" class="mt-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-2 rounded-full shadow-md hover:opacity-90 transition duration-300">
+      <button id="addTransactionBtn" class="mt-6 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-2 rounded-full shadow-md hover:opacity-90 transition duration-300">
         ➕ Add Transaction
       </button>
     </section>

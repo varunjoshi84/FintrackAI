@@ -1,20 +1,22 @@
 document.getElementById("header").innerHTML = `
-<header class="w-full bg-white border-b border-gray-200 shadow-sm border border-bg-black">
-    <div class="flex items-center justify-between px-4 py-3 md:py-4 mt-2">
+<header class="w-full bg-white border-b border-gray-200 shadow-sm">
+    <div class="flex items-center justify-between px-4 py-3 md:py-4">
         <!-- Logo -->
-        <a href="../landingpage/index.html" class="flex items-center space-x-3">
-            <div class="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <i class="fas fa-chart-line text-white text-sm"></i>
-            </div>
-            <span class="text-xl font-bold text-black">FinTrackAI</span>
+       <a href="../landingpage/index.html">
+        <div class="flex items-center space-x-3">
+          <div class="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+            <i class="fas fa-chart-line text-white text-sm"></i>
+          </div>
+          <span class="text-xl font-bold text-slate-900">FinTrackAI</span>
+        </div>
         </a>
         <!-- Desktop Nav -->
         <nav class="hidden md:flex space-x-4 ml-8">
             <a href="../dasboard.html" class="hover:text-blue-400 px-3 py-2 rounded-lg text-gray-700">Dashboard</a>
-            <a href="#" class="hover:text-blue-400 px-3 py-2 rounded-lg text-gray-700">Transactions</a>
+            <a href="../Dashboard/transaction.html" class="hover:text-blue-400 px-3 py-2 rounded-lg text-gray-700">Transactions</a>
             <a href="../upload.html" class="hover:text-blue-400 px-3 py-2 rounded-lg text-gray-700">Upload</a>
             <a href="../login_insights_pricing_term/insights.html" class="hover:text-blue-400 px-3 py-2 rounded-lg text-gray-700">AI Insights</a>
-            <a href="#" class="hover:text-blue-400 px-3 py-2 rounded-lg text-gray-700">Reports</a>
+            <a href="../Dashboard/reports.html" class="hover:text-blue-400 px-3 py-2 rounded-lg text-gray-700">Reports</a>
             
         </nav>
         <!-- Hamburger (mobile) -->
@@ -41,11 +43,11 @@ document.getElementById("header").innerHTML = `
     <!-- Mobile Nav & User -->
     <div id="mobileNav" class="md:hidden hidden flex-col items-center w-full px-2 pb-4 animate-fade-in-down">
         <nav class="flex flex-col space-y-2 w-full mt-2">
+            <a href="../dasboard.html" class="hover:text-blue-400 block px-4 py-2 rounded-lg text-gray-700">Dashboard</a>
+            <a href="../Dashboard/transaction.html" class="hover:text-blue-400 block px-4 py-2 rounded-lg text-gray-700">Transactions</a>
             <a href="../upload.html" class="hover:text-blue-400 block px-4 py-2 rounded-lg text-gray-700">Upload</a>
             <a href="../login_insights_pricing_term/insights.html" class="hover:text-blue-400 block px-4 py-2 rounded-lg text-gray-700">AI Insights</a>
-            <a href="../help,feature,privacy/feature.html" class="hover:text-blue-400 block px-4 py-2 rounded-lg text-gray-700">Features</a>
-            <a href="../login_insights_pricing_term/pricing.html" class="hover:text-blue-400 block px-4 py-2 rounded-lg text-gray-700">Pricing</a>
-            <a href="../contact.html" class="hover:text-blue-400 block px-4 py-2 rounded-lg text-gray-700">Contact</a>
+            <a href="../Dashboard/reports.html" class="hover:text-blue-400 block px-4 py-2 rounded-lg text-gray-700">Reports</a>
         </nav>
         <div class="flex justify-center mt-4">
             <button id="dropdownButtonMobile" class="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full focus:outline-none shadow-lg transition-transform duration-200 hover:scale-105">
@@ -81,6 +83,30 @@ document.addEventListener("DOMContentLoaded", function () {
     const dropdownMenu = document.getElementById("dropdownMenu");
     const dropdownButtonMobile = document.getElementById("dropdownButtonMobile");
     const dropdownMenuMobile = document.getElementById("dropdownMenuMobile");
+
+    // Add active state to navigation
+    const currentPath = window.location.pathname;
+    const navLinks = document.querySelectorAll('nav a');
+    
+    navLinks.forEach(link => {
+        const linkPath = link.getAttribute('href');
+        if (currentPath.includes('transaction.html') && linkPath.includes('transaction.html')) {
+            link.classList.add('text-blue-600', 'font-semibold');
+            link.classList.remove('text-gray-700');
+        } else if (currentPath.includes('dasboard.html') && linkPath.includes('dasboard.html')) {
+            link.classList.add('text-blue-600', 'font-semibold');
+            link.classList.remove('text-gray-700');
+        } else if (currentPath.includes('upload.html') && linkPath.includes('upload.html')) {
+            link.classList.add('text-blue-600', 'font-semibold');
+            link.classList.remove('text-gray-700');
+        } else if (currentPath.includes('insights.html') && linkPath.includes('insights.html')) {
+            link.classList.add('text-blue-600', 'font-semibold');
+            link.classList.remove('text-gray-700');
+        } else if (currentPath.includes('reports.html') && linkPath.includes('reports.html')) {
+            link.classList.add('text-blue-600', 'font-semibold');
+            link.classList.remove('text-gray-700');
+        }
+    });
 
     // Hamburger toggle
     hamburger.addEventListener("click", function (e) {
