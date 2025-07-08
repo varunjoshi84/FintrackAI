@@ -35,7 +35,7 @@ document.getElementById("header").innerHTML = `
             <div id="dropdownMenu" class="absolute right-4 top-16 w-56 bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl opacity-0 scale-95 pointer-events-none transition-all duration-300 z-50 flex flex-col items-center py-4">
                 <a href="#" class="block px-4 py-2 text-gray-300 hover:bg-gray-700 rounded-full w-48 text-center">John Doe</a>
                 <a href="#" class="block px-4 py-2 text-gray-300 hover:bg-gray-700 rounded-full w-48 text-center">name@fintrackai.com</a>
-                <a href="#" class="block px-4 py-2 text-gray-300 hover:bg-gray-700 rounded-full w-48 text-center">My profile</a>
+                <a href="../userdashboard/index.html" class="block px-4 py-2 text-gray-300 hover:bg-gray-700 rounded-full w-48 text-center">My profile</a>
                 <a href="../landingpage/index.html" class="block px-4 py-2 text-red-400 hover:bg-gray-700 rounded-full w-48 text-center">Sign out</a>
             </div>
         </div>
@@ -61,7 +61,7 @@ document.getElementById("header").innerHTML = `
         <div id="dropdownMenuMobile" class="w-full bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl opacity-0 scale-95 pointer-events-none transition-all duration-300 z-50 flex flex-col items-center py-4 mt-2">
             <a href="#" class="block px-4 py-2 text-gray-300 hover:bg-gray-700 rounded-full w-48 text-center">John Doe</a>
             <a href="#" class="block px-4 py-2 text-gray-300 hover:bg-gray-700 rounded-full w-48 text-center">name@fintrackai.com</a>
-            <a href="#" class="block px-4 py-2 text-gray-300 hover:bg-gray-700 rounded-full w-48 text-center">My profile</a>
+            <a href="../userdashboard/index.html" class="block px-4 py-2 text-gray-300 hover:bg-gray-700 rounded-full w-48 text-center">My profile</a>
             <a href="../landingpage/index.html" class="block px-4 py-2 text-red-400 hover:bg-gray-700 rounded-full w-48 text-center">Sign out</a>
         </div>
     </div>
@@ -105,6 +105,13 @@ document.addEventListener("DOMContentLoaded", function () {
         } else if (currentPath.includes('reports.html') && linkPath.includes('reports.html')) {
             link.classList.add('text-blue-600', 'font-semibold');
             link.classList.remove('text-gray-700');
+        } else if (currentPath.includes('userdashboard') && linkPath.includes('userdashboard')) {
+            // For user profile page (My profile link)
+            const profileLinks = document.querySelectorAll('a[href*="userdashboard"]');
+            profileLinks.forEach(profileLink => {
+                profileLink.classList.add('text-blue-400', 'font-semibold');
+                profileLink.classList.remove('text-gray-300');
+            });
         }
     });
 
