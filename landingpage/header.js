@@ -15,10 +15,10 @@ document.getElementById('header').innerHTML = `
 
         <!-- Desktop Nav -->
         <div class="hidden md:flex items-center space-x-8">
-          <a href="#features" class="text-slate-600 hover:text-blue-600 transition-colors">Features</a>
-          <a href="#pricing" class="text-slate-600 hover:text-blue-600 transition-colors">Pricing</a>
+          <a href="../help,feature,privacy/feature.html" class="text-slate-600 hover:text-blue-600 transition-colors">Features</a>
+          <a href="../login_insights_pricing_term/pricing.html" class="text-slate-600 hover:text-blue-600 transition-colors">Pricing</a>
           <a href="#about" class="text-slate-600 hover:text-blue-600 transition-colors">About</a>
-          <button class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm font-medium">Get Started</button>
+          <button id="desktop-get-started" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm font-medium">Get Started</button>
         </div>
 
         <!-- Mobile Hamburger -->
@@ -30,14 +30,35 @@ document.getElementById('header').innerHTML = `
 
     <!-- Mobile Menu -->
     <div id="mobile-menu" class="hidden md:hidden px-4 pb-4">
-      <a href="#features" class="block py-2 text-slate-600 hover:text-blue-600">Features</a>
-      <a href="#pricing" class="block py-2 text-slate-600 hover:text-blue-600">Pricing</a>
+      <a href="../help,feature,privacy/feature.html" class="block py-2 text-slate-600 hover:text-blue-600">Features</a>
+      <a href="../login_insights_pricing_term/pricing.html" class="block py-2 text-slate-600 hover:text-blue-600">Pricing</a>
       <a href="#about" class="block py-2 text-slate-600 hover:text-blue-600">About</a>
-      <button class="w-full mt-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm font-medium">Get Started</button>
+      <button id="mobile-get-started" class="w-full mt-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm font-medium">Get Started</button>
     </div>
   </nav>
 </div>
 `;
+
+// Add onclick event to open a new tab for both buttons
+document.addEventListener("DOMContentLoaded", () => {
+  const hamburger = document.getElementById("hamburger");
+  const mobileMenu = document.getElementById("mobile-menu");
+
+  hamburger.addEventListener("click", () => {
+    mobileMenu.classList.toggle("hidden");
+  });
+
+  const desktopBtn = document.getElementById("desktop-get-started");
+  const mobileBtn = document.getElementById("mobile-get-started");
+  const url = "../login_insights_pricing_term/login.html";
+
+  if (desktopBtn) {
+    desktopBtn.onclick = () => window.open(url, "_blank");
+  }
+  if (mobileBtn) {
+    mobileBtn.onclick = () => window.open(url, "_blank");
+  }
+});
 
 // Toggle mobile menu
 document.addEventListener("DOMContentLoaded", () => {
