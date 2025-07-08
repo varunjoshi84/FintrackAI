@@ -55,7 +55,12 @@
               
             </button>
           </div>
-
+          <script>
+      document.querySelector('form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      window.location.href = '../dasboard.html';
+      });
+    </script>
           <button type="submit" 
             class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
             Sign In

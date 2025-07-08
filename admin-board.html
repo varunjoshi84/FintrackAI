@@ -14,21 +14,20 @@
 </head>
 <body class="font-inter bg-gray-50 flex">
 
-  <!-- Header -->
-  <header class="bg-white shadow-md sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto flex justify-between items-center h-16 px-4">
-      <a href="../landingpage/index.html">
-        <div class="flex items-center space-x-3">
-          <div class="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-            <i class="fas fa-chart-line text-white text-sm"></i>
-          </div>
-          <span class="text-xl font-bold text-slate-900">FinTrackAI</span>
-        </div>
-        </a>
-      <nav class="flex space-x-6">
-        <a href="dasboard.html" target="_blank" class="text-slate-600 hover:text-blue-600">User Dashboard</a>
-        <a href="upload.html" target="_blank" class="text-slate-600 hover:text-blue-600">Upload</a>
-        <a href="contact.html" target="_blank" class="text-slate-600 hover:text-blue-600">Contact</a>
+  <!-- Sidebar -->
+  <aside class="w-64 min-h-screen bg-white shadow-lg p-6 flex flex-col justify-between sticky top-0 z-50">
+    <div>
+      <div class="flex items-center space-x-3 mb-10">
+        <img src="landingpage/assests/logo/logo.jpg" alt="Logo" class="w-10 h-10 rounded-md object-cover transition-transform duration-300 hover:rotate-3">
+        <h1 class="text-2xl font-bold text-slate-900">Admin</h1>
+      </div>
+      <nav class="flex flex-col space-y-4">
+        <a href="landingpage/index.html" class="text-slate-700 hover:text-blue-600 transition-all duration-200"><i class="fas fa-home mr-2"></i>Home</a>
+        <a href="dasboard.html" target="_blank" class="text-slate-700 hover:text-blue-600 transition-all duration-200"><i class="fas fa-user mr-2"></i>User Dashboard</a>
+        <a href="upload.html" target="_blank" class="text-slate-700 hover:text-blue-600 transition-all duration-200"><i class="fas fa-upload mr-2"></i>Upload</a>
+        <a href="contact.html" target="_blank" class="text-slate-700 hover:text-blue-600 transition-all duration-200"><i class="fas fa-envelope mr-2"></i>Contact</a>
+        <a href="login_insights_pricing_term/pricing.html" target="_blank" class="text-slate-700 hover:text-blue-600 transition-all duration-200"><i class="fas fa-tags mr-2"></i>Pricing</a>
+        <a href="login_insights_pricing_term/insights.html" target="_blank" class="text-slate-700 hover:text-blue-600 transition-all duration-200"><i class="fas fa-brain mr-2"></i>AI Insights</a>
       </nav>
     </div>
     <div class="mt-8">
@@ -40,20 +39,14 @@
 
   <!-- Main content -->
   <main class="flex-1 p-6">
-    <div class="mb-8">
-      <h2 class="text-3xl font-extrabold flex items-center space-x-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-transparent bg-clip-text border-l-4 border-blue-600 pl-4 drop-shadow-md">
-        <i class="fas fa-tools text-white bg-blue-600 p-2 rounded-full"></i>
-        <span>Admin Control Panel</span>
-      </h2>
-      <p class="text-sm text-gray-500 mt-1 pl-1">Welcome back, Commander! Ready to manage FinTrackAI? 🚀</p>
-    </div>
-
+    <h2 class="text-3xl font-bold mb-6 text-slate-800 animate-pulse">
+      ⚙️ Admin Control Panel
+    </h2>
 
     <!-- User Management -->
-    <!-- Section 1: User Management -->
     <section class="mb-10">
       <h3 class="text-xl font-semibold mb-4">User List</h3>
-      <table class="w-full bg-white shadow-md rounded-lg overflow-hidden">
+      <table class="w-full bg-white shadow-md rounded-lg overflow-hidden transition-all duration-300 hover:shadow-lg">
         <thead class="bg-slate-100">
           <tr>
             <th class="px-4 py-3 text-left">User</th>
@@ -63,18 +56,15 @@
           </tr>
         </thead>
         <tbody id="userTableBody">
-          <!-- Data will be populated by JS -->
+          <!-- JS will insert user rows -->
         </tbody>
       </table>
-
-      <!-- ✅ Add User Button -->
       <div class="mt-4 text-right">
-        <button id="addUserBtn" class="bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-semibold px-5 py-2 rounded-full shadow hover:scale-105 hover:opacity-95 transition-all duration-300">
-          <i class="fas fa-user-plus mr-2"></i> Add User
-        </button>
-      </div>
+          <button id="addUserBtn" class="bg-gradient-to-r from-green-400 to-blue-500 text-white px-4 py-2 rounded-lg shadow hover:from-blue-500 hover:to-green-400 transition">
+            <i class="fas fa-user-plus mr-1"></i>Add User
+          </button>
+        </div>
     </section>
-
 
     <!-- Upload Logs -->
     <section>

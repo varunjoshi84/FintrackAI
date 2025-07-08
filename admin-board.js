@@ -13,21 +13,38 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const userTable = document.getElementById("userTableBody");
   const logsList = document.getElementById("logsList");
+  const addUserBtn = document.getElementById("addUserBtn");
 
-  users.forEach(user => {
-    const row = `
-      <tr>
-        <td class="px-4 py-2">${user.name}</td>
-        <td class="px-4 py-2">${user.email}</td>
-        <td class="px-4 py-2">${user.role}</td>
-        <td class="px-4 py-2">
-          <button class="text-red-600 hover:underline text-sm">Remove</button>
-        </td>
-      </tr>`;
-    userTable.insertAdjacentHTML("beforeend", row);
-  });
+  const renderUsers = () => {
+    userTable.innerHTML = "";
+    users.forEach(user => {
+      const row = `
+        <tr>
+          <td class="px-4 py-2">${user.name}</td>
+          <td class="px-4 py-2">${user.email}</td>
+          <td class="px-4 py-2">${user.role}</td>
+          <td class="px-4 py-2">
+            <button class="text-red-600 hover:underline text-sm">Remove</button>
+          </td>
+        </tr>`;
+      userTable.insertAdjacentHTML("beforeend", row);
+    });
+  };
 
   logs.forEach(log => {
     logsList.insertAdjacentHTML("beforeend", `<li>🔹 ${log}</li>`);
+  });
+
+  renderUsers();
+
+  // Add user functionality (static dummy data for now)
+  addUserBtn.addEventListener("click", () => {
+    const randomId = Math.floor(Math.random() * 1000);
+    users.push({
+      name: `User${randomId}`,
+      email: `user${randomId}@example.com`,
+      role: "User"
+    });
+    renderUsers();
   });
 });

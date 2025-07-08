@@ -12,10 +12,13 @@ document.getElementById('hero').innerHTML = `
           Upload your bank statements and let our AI categorize expenses, analyze spending patterns, and provide personalized savings recommendations.
         </p>
         <div class="flex flex-col sm:flex-row gap-4">
+          
+        <a href="../login_insights_pricing_term/login.html">
           <button class="bg-white text-blue-700 hover:bg-slate-100 text-lg font-medium px-6 py-3 rounded-lg">
             Get Started Free
           </button>
-          <button class="border border-white text-white hover:bg-white hover:text-blue-700 text-lg font-medium px-6 py-3 rounded-lg flex items-center justify-center">
+        </a>
+        <button class="border border-white text-white hover:bg-white hover:text-blue-700 text-lg font-medium px-6 py-3 rounded-lg flex items-center justify-center">
             <i class="fas fa-play mr-2 text-sm"></i>
             Watch Demo
           </button>
