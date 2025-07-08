@@ -4,11 +4,23 @@ body {
 
 table {
   border-collapse: collapse;
+  transition: all 0.3s ease;
 }
 
 th, td {
   border-bottom: 1px solid #e2e8f0;
+  padding: 0.75rem 1rem;
 }
+
+tr:hover {
+  background-color: #f1f5f9;
+}
+
+button:hover {
+  opacity: 0.9;
+  transition: all 0.3s ease;
+}
+
 
 footer {
   background-color: #1e293b; /* slate-900 */

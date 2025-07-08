@@ -12,24 +12,24 @@ document.getElementById('footer').innerHTML = `
         </div>
         <p class="text-slate-400 mb-6">Empowering financial decisions with AI-powered insights and smart categorization.</p>
         <div class="flex space-x-4">
-          <a href="#" class="text-slate-400 hover:text-white transition-colors">
+          <a href="https://twitter.com" target="_blank" class="text-slate-400 hover:text-white transition-colors">
             <i class="fab fa-twitter"></i>
           </a>
-          <a href="#" class="text-slate-400 hover:text-white transition-colors">
+          <a href="https://linkedin.com" target="_blank" class="text-slate-400 hover:text-white transition-colors">
             <i class="fab fa-linkedin"></i>
           </a>
-          <a href="#" class="text-slate-400 hover:text-white transition-colors">
+          <a href="https://github.com" target="_blank" class="text-slate-400 hover:text-white transition-colors">
             <i class="fab fa-github"></i>
           </a>
         </div>
       </div>
+
       <!-- Product -->
       <div>
         <h4 class="font-semibold mb-6">Product</h4>
         <ul class="space-y-3 text-slate-400">
-          <li><a href="#features" class="hover:text-white transition-colors">Features</a></li>
-          <li><a href="#pricing" class="hover:text-white transition-colors">Pricing</a></li>
-        
+          <li><a href="help,feature,privacy/feature.html" target="_blank" class="hover:text-white transition-colors">Features</a></li>
+          <li><a href="login_insights_pricing_term/pricing.html" target="_blank" class="hover:text-white transition-colors">Pricing</a></li>
         </ul>
       </div>
 
@@ -37,10 +37,10 @@ document.getElementById('footer').innerHTML = `
       <div>
         <h4 class="font-semibold mb-6">Support</h4>
         <ul class="space-y-3 text-slate-400">
-          <li><a href="#" class="hover:text-white transition-colors">Help Center</a></li>
-          <li><a href="#" class="hover:text-white transition-colors">Privacy Policy</a></li>
-          <li><a href="#" class="hover:text-white transition-colors">Terms of Service</a></li>
-          <li><a href="#" class="hover:text-white transition-colors">Contact Us</a></li>
+          <li><a href="help,feature,privacy/help.html" target="_blank" class="hover:text-white transition-colors">Help Center</a></li>
+          <li><a href="help,feature,privacy/privacy.html" target="_blank" class="hover:text-white transition-colors">Privacy Policy</a></li>
+          <li><a href="login_insights_pricing_term/terms.html" target="_blank" class="hover:text-white transition-colors">Terms of Service</a></li>
+          <li><a href="contact.html" target="_blank" class="hover:text-white transition-colors">Contact Us</a></li>
         </ul>
       </div>
 
@@ -65,7 +65,6 @@ document.getElementById('footer').innerHTML = `
     <!-- Footer Bottom -->
     <div class="border-t border-slate-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
       <p class="text-slate-400 text-sm text-center">© 2025 FinTrackAI. All rights reserved.</p>
-
     </div>
   </div>
 </footer>

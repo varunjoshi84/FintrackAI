@@ -139,6 +139,15 @@ button:hover:not(:disabled) {
   }
 }
 
+.card {
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+}
+
+
 @media (max-width: 480px) {
   .container {
     padding: 1rem;
@@ -176,4 +185,50 @@ footer button {
 
 footer button:hover {
   background-color: #1d4ed8;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.8s ease-out both;
+}
+
+.animate-fade-in-up.delay-75 {
+  animation-delay: 0.2s;
+}
+
+.animate-fade-in-up.delay-150 {
+  animation-delay: 0.4s;
+}
+
+.dark-mode {
+  background-color: #0f172a;
+  color: #f8fafc;
+}
+
+.dark-mode header,
+.dark-mode main,
+.dark-mode .card,
+.dark-mode .chart,
+.dark-mode .category,
+.dark-mode .transactions {
+  background-color: #1e293b;
+  color: #f1f5f9;
+}
+
+.dark-mode button {
+  background-color: #3b82f6;
+}
+
+.dark-mode nav a {
+  color: #cbd5e1;
 }

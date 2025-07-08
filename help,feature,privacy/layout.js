@@ -10,8 +10,8 @@ document.getElementById('header').innerHTML = `
           <span class="text-xl font-bold text-slate-900">FinTrackAI</span>
         </div>
         <div class="hidden md:flex items-center space-x-8">
-          <a href="#features" class="text-slate-600 hover:text-blue-600 transition-colors">Features</a>
-          <a href="#pricing" class="text-slate-600 hover:text-blue-600 transition-colors">Pricing</a>
+          <a href="../help,feature,privacy/feature.html" class="text-slate-600 hover:text-blue-600 transition-colors">Features</a>
+          <a href="../login_insights_pricing_term/pricing.html" class="text-slate-600 hover:text-blue-600 transition-colors">Pricing</a>
           <a href="#about" class="text-slate-600 hover:text-blue-600 transition-colors">About</a>
           <button class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm font-medium">Get Started</button>
         </div>
@@ -21,8 +21,8 @@ document.getElementById('header').innerHTML = `
       </div>
     </div>
     <div id="mobile-menu" class="hidden md:hidden px-4 pb-4">
-      <a href="#features" class="block py-2 text-slate-600 hover:text-blue-600">Features</a>
-      <a href="#pricing" class="block py-2 text-slate-600 hover:text-blue-600">Pricing</a>
+      <a href="../help,feature,privacy/feature.html" class="block py-2 text-slate-600 hover:text-blue-600">Features</a>
+      <a href="../login_insights_pricing_term/pricing.html" class="block py-2 text-slate-600 hover:text-blue-600">Pricing</a>
       <a href="#about" class="block py-2 text-slate-600 hover:text-blue-600">About</a>
       <button class="w-full mt-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm font-medium">Get Started</button>
     </div>
@@ -51,8 +51,8 @@ document.getElementById('footer').innerHTML = `
       <div>
         <h4 class="font-semibold mb-6">Product</h4>
         <ul class="space-y-3 text-slate-400">
-          <li><a href="#features" class="hover:text-white transition-colors">Features</a></li>
-          <li><a href="#pricing" class="hover:text-white transition-colors">Pricing</a></li>
+          <li><a href="../help,feature,privacy/feature.html" class="hover:text-white transition-colors">Features</a></li>
+          <li><a href="../login_insights_pricing_term/pricing.html" class="hover:text-white transition-colors">Pricing</a></li>
         </ul>
       </div>
       <div>
@@ -60,8 +60,8 @@ document.getElementById('footer').innerHTML = `
         <ul class="space-y-3 text-slate-400">
           <li><a href="help.html" class="hover:text-white transition-colors">Help Center</a></li>
           <li><a href="privacy.html" class="hover:text-white transition-colors">Privacy Policy</a></li>
-          <li><a href="#" class="hover:text-white transition-colors">Terms of Service</a></li>
-          <li><a href="contact.html" class="hover:text-white transition-colors">Contact Us</a></li>
+          <li><a href="../login_insights_pricing_term/terms.html" class="hover:text-white transition-colors">Terms of Service</a></li>
+          <li><a href="../contact.html" class="hover:text-white transition-colors">Contact Us</a></li>
         </ul>
       </div>
       <div>

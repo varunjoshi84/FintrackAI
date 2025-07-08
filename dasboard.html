@@ -1,67 +1,125 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FinTrackAI - Dashboard</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Dashboard</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="dashboard.css">
-  <link 
-  rel="stylesheet" 
-  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" 
-  crossorigin="anonymous">
+  <link rel="stylesheet" href="dashboard.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous">
 </head>
-<body>
+<body class="bg-gray-50 font-inter">
+
+  <!-- Header -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-50 w-full">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
+      <div class="flex items-center space-x-3">
+        <img src="landingpage/assests/logo/logo.jpg" alt="Logo" class="w-9 h-9 rounded-md object-cover">
+        <h1 class="text-xl font-bold text-slate-900">FinTrackAI</h1>
+      </div>
+      <nav class="flex items-center space-x-6">
+        <button id="themeToggle" class="ml-4 focus:outline-none">
+          <i id="themeIcon" class="fas fa-moon text-black text-lg"></i>
+        </button>
 
-    <!-- Logo + Name -->
-    <div class="flex items-center space-x-3">
-      <img src="landingpage/assests/logo/logo.jpg" alt="Logo" class="w-9 h-9 rounded-md object-cover">
-      <h1 class="text-xl font-bold text-slate-900">FinTrackAI</h1>
+
+
+        <a href="upload.html" target="_blank" class="text-slate-600 hover:text-blue-600 transition">Upload</a>
+        <a href="login_insights_pricing_term/insights.html" target="_blank" class="text-slate-600 hover:text-blue-600 transition">AI Insights</a>
+        <a href="help,feature,privacy/feature.html" target="_blank" class="text-slate-600 hover:text-blue-600 transition">Features</a>
+        <a href="login_insights_pricing_term/pricing.html" target="_blank" class="text-slate-600 hover:text-blue-600 transition">Pricing</a>
+        <a href="contact.html" target="_blank" class="text-slate-600 hover:text-blue-600 transition">Contact Us</a>
+
+        <!-- Sign In Pill Button -->
+        <a href="login_insights_pricing_term/login.html">
+          <button class="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-5 py-2 rounded-full shadow hover:scale-105 transition-all duration-300 font-semibold">
+            Sign In
+          </button>
+        </a>
+      </nav>
+
     </div>
+  </header>
 
-    <!-- Nav Links -->
-    <nav class="flex items-center space-x-6">
-      <a href="dasboard.html" class="text-slate-600 hover:text-blue-600 transition">Dashboard</a>
-      <a href="upload.html" target="_blank" class="text-slate-600 hover:text-blue-600 transition">Upload</a>
-      <a href="contact.html" target="_blank" class="text-slate-600 hover:text-blue-600 transition">Contact Us</a>
-    </nav>
+  <!-- Main Dashboard Content -->
+  <main class="container p-6">
+    <h2 class="text-4xl font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 drop-shadow-lg tracking-wide animate-fade-in-up">
+      <i class="fas fa-chart-line mr-2 text-blue-500 animate-pulse"></i>
+      Financial Dashboard
+    </h2>
 
-  </div>
-</header>
+    <p class="text-center text-gray-600 mb-8">Your complete financial overview for July</p>
 
-  <main class="container">
-    <h2>Financial Dashboard</h2>
-    <p>Your complete financial overview for July</p>
-
-    <section class="cards">
-      <div class="card"><h3>Total Spending</h3><p id="totalSpending">₹671.1</p></div>
-      <div class="card"><h3>Total Savings</h3><p id="totalSavings">₹12,340</p></div>
-      <div class="card"><h3>Top Category</h3><p id="topCategory">Food & Dining</p></div>
-      <div class="card"><h3>This Month</h3><p id="transactionCount">10 Transactions</p></div>
+    <section class="cards animate-fade-in-up">
+      <div class="card transform transition-transform duration-300 hover:scale-105">
+        <h3>Total Spending</h3>
+        <p id="totalSpending">₹671.1</p>
+      </div>
+      <div class="card transform transition-transform duration-300 hover:scale-105">
+        <h3>Total Savings</h3>
+        <p id="totalSavings">₹12,340</p>
+      </div>
+      <div class="card transform transition-transform duration-300 hover:scale-105">
+        <h3>Top Category</h3>
+        <p id="topCategory">Food & Dining</p>
+      </div>
+      <div class="card transform transition-transform duration-300 hover:scale-105">
+        <h3>This Month</h3>
+        <p id="transactionCount">10 Transactions</p>
+      </div>
     </section>
 
-    <section class="chart-section">
-      <div class="chart"><h3>Spending Trend</h3><div class="placeholder">[Graph]</div></div>
-      <div class="category"><h3>Category Breakdown</h3><div class="placeholder">[Pie Chart]</div></div>
+    <section class="chart-section animate-fade-in-up delay-75">
+      <div class="chart">
+        <h3>Spending Trend</h3>
+        <canvas id="spendingChart" width="400" height="200"></canvas>
+      </div>
+
+      <div class="category">
+        <h3>Category Breakdown</h3>
+        <canvas id="categoryChart" width="400" height="200"></canvas>
+      </div>
+
     </section>
 
-    <section class="transactions">
+    <section class="transactions animate-fade-in-up delay-150">
       <h3>Recent Transactions</h3>
       <ul id="transactionList">
-        <li><span>01/12/2024</span><span>₹-45.67</span></li>
-        <li><span>02/12/2024</span><span>₹-89.99</span></li>
-        <li><span>03/12/2024</span><span>₹2,500</span></li>
-        <li><span>04/12/2024</span><span>₹-125.5</span></li>
-        <li><span>05/12/2024</span><span>₹-39.99</span></li>
+        <li>
+          <span>01/12/2024</span>
+          <span>₹-45.67</span>
+          <span class="text-xs text-gray-500">(Food)</span>
+        </li>
+        <li>
+          <span>02/12/2024</span>
+          <span>₹-89.99</span>
+          <span class="text-xs text-gray-500">(Travel)</span>
+        </li>
+        <li>
+          <span>03/12/2024</span>
+          <span>₹2,500</span>
+          <span class="text-xs text-gray-500">(Salary)</span>
+        </li>
+        <li>
+          <span>04/12/2024</span>
+          <span>₹-125.5</span>
+          <span class="text-xs text-gray-500">(Bills)</span>
+        </li>
+        <li>
+          <span>05/12/2024</span>
+          <span>₹-39.99</span>
+          <span class="text-xs text-gray-500">(Entertainment)</span>
+        </li>
       </ul>
-      <button id="addTransactionBtn">Add Random Transaction</button>
+      <button id="addTransactionBtn" class="mt-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-2 rounded-full shadow-md hover:opacity-90 transition duration-300">
+        ➕ Add Transaction
+      </button>
     </section>
   </main>
-  <div id="footer"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <script src="dashboard.js" defer></script>
-  <script src="landingpage/footer.js"></script>
 </body>
 </html>
