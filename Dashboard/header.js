@@ -25,7 +25,7 @@ document.getElementById("header").innerHTML = `
             <i class="fa-solid fa-bars text-2xl text-gray-700"></i>
         </button>
         <!-- User Dropdown (desktop) -->
-        <div class="hidden md:flex items-center">
+        <div class="hidden md:flex items-center relative">
             <button id="dropdownButton" class="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full focus:outline-none shadow-lg transition-transform duration-200 hover:scale-105">
                 <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                     xmlns="http://www.w3.org/2000/svg">
@@ -33,7 +33,7 @@ document.getElementById("header").innerHTML = `
                     <path stroke="white" stroke-width="2" d="M4 20c0-2.2 3.6-4 8-4s8 1.8 8 4"/>
                 </svg>
             </button>
-            <div id="dropdownMenu" class="absolute right-4 top-16 w-56 bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl opacity-0 scale-95 pointer-events-none transition-all duration-300 z-50 flex flex-col items-center py-4">
+            <div id="dropdownMenu" class="absolute right-0 top-full mt-2 w-56 bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl opacity-0 scale-95 pointer-events-none transition-all duration-300 z-50 flex flex-col items-center py-4">
                 <a href="#" class="block px-4 py-2 text-gray-300 hover:bg-gray-700 rounded-full w-48 text-center">John Doe</a>
                 <a href="#" class="block px-4 py-2 text-gray-300 hover:bg-gray-700 rounded-full w-48 text-center">name@fintrackai.com</a>
                 <a href="../userdashboard/index.html" class="block px-4 py-2 text-gray-300 hover:bg-gray-700 rounded-full w-48 text-center">My profile</a>
