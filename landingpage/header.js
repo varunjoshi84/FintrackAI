@@ -6,12 +6,15 @@ document.getElementById('header').innerHTML = `
       <div class="flex justify-between items-center h-16">
         
         <!-- Logo -->
+        
+        <a href="../landingpage/index.html">
         <div class="flex items-center space-x-3">
           <div class="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
             <i class="fas fa-chart-line text-white text-sm"></i>
           </div>
           <span class="text-xl font-bold text-slate-900">FinTrackAI</span>
         </div>
+        </a>
 
         <!-- Desktop Nav -->
         <div class="hidden md:flex items-center space-x-8">

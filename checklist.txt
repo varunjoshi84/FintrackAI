@@ -1,0 +1,2 @@
+//login_insights_pricing_term folder routing completed
+//landding page rounting completed

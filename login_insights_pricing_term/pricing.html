@@ -246,43 +246,46 @@
 </section>
 
   </div>
-  
+ 
 </div>
 
 
-<script src="header.js"></script>
+<script src="../landingpage/header.js"></script>
 
-  <script>
-    const monthlyBtn = document.getElementById('monthlyBtn');
-    const yearlyBtn = document.getElementById('yearlyBtn');
+<script>
+  const monthlyBtn = document.getElementById('monthlyBtn');
+  const yearlyBtn = document.getElementById('yearlyBtn');
 
-    const basicPrice = document.getElementById('basicPrice');
-    const proPrice = document.getElementById('proPrice');
-    const proBilling = document.getElementById('proBilling');
-    const enterpriseBilling = document.getElementById('enterpriseBilling');
+  const basicPrice = document.getElementById('basicPrice');
+  const proPrice = document.getElementById('proPrice');
+  const proBilling = document.getElementById('proBilling');
+  const enterpriseBilling = document.getElementById('enterpriseBilling');
 
-    monthlyBtn.addEventListener('click', () => {
-      monthlyBtn.classList.add('bg-white', 'text-gray-900', 'shadow');
-      yearlyBtn.classList.remove('bg-white', 'text-gray-900', 'shadow');
-      yearlyBtn.classList.add('text-gray-600');
+  monthlyBtn.addEventListener('click', () => {
+    monthlyBtn.classList.add('bg-white', 'text-gray-900', 'shadow');
+    yearlyBtn.classList.remove('bg-white', 'text-gray-900', 'shadow');
+    yearlyBtn.classList.add('text-gray-600');
 
-      basicPrice.innerHTML = '$0 <span class="text-base font-normal text-gray-500">per month.</span>';
-      proPrice.innerHTML = '$30 <span class="text-base font-normal text-gray-500">per month.</span>';
-      proBilling.textContent = 'Billed monthly';
-      enterpriseBilling.textContent = 'Billed monthly';
-    });
+    basicPrice.innerHTML = '$0 <span class="text-base font-normal text-gray-500">per month.</span>';
+    proPrice.innerHTML = '$30 <span class="text-base font-normal text-gray-500">per month.</span>';
+    proBilling.textContent = 'Billed monthly';
+    enterpriseBilling.textContent = 'Billed monthly';
+  });
 
-    yearlyBtn.addEventListener('click', () => {
-      yearlyBtn.classList.add('bg-white', 'text-gray-900', 'shadow');
-      monthlyBtn.classList.remove('bg-white', 'text-gray-900', 'shadow');
-      monthlyBtn.classList.add('text-gray-600');
+  yearlyBtn.addEventListener('click', () => {
+    yearlyBtn.classList.add('bg-white', 'text-gray-900', 'shadow');
+    monthlyBtn.classList.remove('bg-white', 'text-gray-900', 'shadow');
+    monthlyBtn.classList.add('text-gray-600');
 
-      basicPrice.innerHTML = '$0 <span class="text-base font-normal text-gray-500">per month.</span>';
-      proPrice.innerHTML = '$300 <span class="text-base font-normal text-gray-500">per year.</span>';
-      proBilling.textContent = 'Billed annually';
-      enterpriseBilling.textContent = 'Billed annually';
-    });
-  </script>
+    basicPrice.innerHTML = '$0 <span class="text-base font-normal text-gray-500">per month.</span>';
+    proPrice.innerHTML = '$300 <span class="text-base font-normal text-gray-500">per year.</span>';
+    proBilling.textContent = 'Billed annually';
+    enterpriseBilling.textContent = 'Billed annually';
+  });
+</script>
 
+<div id= "footer"></div>
+<script src= "../landingpage/footer.js"></script>
+<!-- <script src="../dynamic-paths.js"></script> -->
 </body>
 </html>

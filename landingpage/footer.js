@@ -27,8 +27,8 @@ document.getElementById('footer').innerHTML = `
       <div>
         <h4 class="font-semibold mb-6">Product</h4>
         <ul class="space-y-3 text-slate-400">
-          <li><a href="#features" class="hover:text-white transition-colors">Features</a></li>
-          <li><a href="#pricing" class="hover:text-white transition-colors">Pricing</a></li>
+          <li><a href="../help,feature,privacy/feature.html" class="hover:text-white transition-colors">Features</a></li>
+          <li><a href="../login_insights_pricing_term/pricing.html" class="hover:text-white transition-colors">Pricing</a></li>
         
         </ul>
       </div>
@@ -37,10 +37,10 @@ document.getElementById('footer').innerHTML = `
       <div>
         <h4 class="font-semibold mb-6">Support</h4>
         <ul class="space-y-3 text-slate-400">
-          <li><a href="#" class="hover:text-white transition-colors">Help Center</a></li>
-          <li><a href="#" class="hover:text-white transition-colors">Privacy Policy</a></li>
-          <li><a href="#" class="hover:text-white transition-colors">Terms of Service</a></li>
-          <li><a href="#" class="hover:text-white transition-colors">Contact Us</a></li>
+          <li><a href="../help,feature,privacy/help.html" class="hover:text-white transition-colors">Help Center</a></li>
+          <li><a href="../help,feature,privacy/privacy.html" class="hover:text-white transition-colors">Privacy Policy</a></li>
+          <li><a href="../login_insights_pricing_term/terms.html" class="hover:text-white transition-colors">Terms of Service</a></li>
+          <li><a href="../contact.html" class="hover:text-white transition-colors">Contact Us</a></li>
         </ul>
       </div>
 
