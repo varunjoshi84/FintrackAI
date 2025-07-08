@@ -1,17 +1,18 @@
 document.getElementById("header").innerHTML = `
 <header class="w-full bg-white border-b border-gray-200 shadow-sm">
-    <div class="flex items-center justify-between px-4 py-3 md:py-4">
-        <!-- Logo -->
-       <a href="../landingpage/index.html">
-        <div class="flex items-center space-x-3">
-          <div class="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-            <i class="fas fa-chart-line text-white text-sm"></i>
-          </div>
-          <span class="text-xl font-bold text-slate-900">FinTrackAI</span>
-        </div>
-        </a>
-        <!-- Desktop Nav -->
-        <nav class="hidden md:flex space-x-4 ml-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between py-3 md:py-4">
+            <!-- Logo -->
+           <a href="../landingpage/index.html">
+            <div class="flex items-center space-x-3">
+              <div class="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                <i class="fas fa-chart-line text-white text-sm"></i>
+              </div>
+              <span class="text-xl font-bold text-slate-900">FinTrackAI</span>
+            </div>
+            </a>
+            <!-- Desktop Nav -->
+            <nav class="hidden md:flex space-x-4 ml-8">
             <a href="../dasboard.html" class="hover:text-blue-400 px-3 py-2 rounded-lg text-gray-700">Dashboard</a>
             <a href="../Dashboard/transaction.html" class="hover:text-blue-400 px-3 py-2 rounded-lg text-gray-700">Transactions</a>
             <a href="../upload.html" class="hover:text-blue-400 px-3 py-2 rounded-lg text-gray-700">Upload</a>
@@ -38,11 +39,14 @@ document.getElementById("header").innerHTML = `
                 <a href="../userdashboard/index.html" class="block px-4 py-2 text-gray-300 hover:bg-gray-700 rounded-full w-48 text-center">My profile</a>
                 <a href="../landingpage/index.html" class="block px-4 py-2 text-red-400 hover:bg-gray-700 rounded-full w-48 text-center">Sign out</a>
             </div>
+            </div>
         </div>
     </div>
     <!-- Mobile Nav & User -->
-    <div id="mobileNav" class="md:hidden hidden flex-col items-center w-full px-2 pb-4 animate-fade-in-down">
-        <nav class="flex flex-col space-y-2 w-full mt-2">
+    <div id="mobileNav" class="md:hidden hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col items-center w-full py-4 animate-fade-in-down">
+                <nav class="flex flex-col space-y-2 w-full mt-2">
             <a href="../dasboard.html" class="hover:text-blue-400 block px-4 py-2 rounded-lg text-gray-700">Dashboard</a>
             <a href="../Dashboard/transaction.html" class="hover:text-blue-400 block px-4 py-2 rounded-lg text-gray-700">Transactions</a>
             <a href="../upload.html" class="hover:text-blue-400 block px-4 py-2 rounded-lg text-gray-700">Upload</a>
@@ -62,7 +66,9 @@ document.getElementById("header").innerHTML = `
             <a href="#" class="block px-4 py-2 text-gray-300 hover:bg-gray-700 rounded-full w-48 text-center">John Doe</a>
             <a href="#" class="block px-4 py-2 text-gray-300 hover:bg-gray-700 rounded-full w-48 text-center">name@fintrackai.com</a>
             <a href="../userdashboard/index.html" class="block px-4 py-2 text-gray-300 hover:bg-gray-700 rounded-full w-48 text-center">My profile</a>
-            <a href="../landingpage/index.html" class="block px-4 py-2 text-red-400 hover:bg-gray-700 rounded-full w-48 text-center">Sign out</a>
+                    <a href="../landingpage/index.html" class="block px-4 py-2 text-red-400 hover:bg-gray-700 rounded-full w-48 text-center">Sign out</a>
+                </div>
+            </div>
         </div>
     </div>
 </header>
