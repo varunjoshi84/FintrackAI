@@ -1,2 +1,6 @@
 //login_insights_pricing_term folder routing completed
 //landding page rounting completed
+//landing page converted in react
+//dashboard folder files converted to .jsx file
+//admin,login,signup converted to .jsx file
+//MainPricing converted to .jsx file 
