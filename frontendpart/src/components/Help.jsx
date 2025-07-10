@@ -1,5 +1,6 @@
-import Header from './components/Header';
-import Footer from './components/Footer';
+import React from 'react';
+import Header from './Header';
+import Footer from './Footer';
 
 const Help = () => {
   return (
@@ -39,7 +40,6 @@ const Help = () => {
           </div>
         </div>
       </main>
-      <div id="footer"></div>
       <Footer />
     </div>
   );

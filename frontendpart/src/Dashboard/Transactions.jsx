@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import Header from './Dashboard/Header';
-import Footer from './components/Footer';
+import Header from './Header';
+import Footer from '../components/Footer';
 
 const Transactions = () => {
   const [searchTerm, setSearchTerm] = useState('');

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const Hero = () => {
   return (
@@ -12,11 +13,11 @@ const Hero = () => {
             Upload your bank statements and let our AI categorize expenses, analyze spending patterns, and provide personalized savings recommendations.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
-            <a href="/login">
+            <Link to="/login">
               <button className="bg-white text-blue-700 hover:bg-slate-100 text-lg font-medium px-6 py-3 rounded-lg">
                 Get Started Free
               </button>
-            </a>
+            </Link>
             <button className="border border-white text-white hover:bg-white hover:text-blue-700 text-lg font-medium px-6 py-3 rounded-lg flex items-center justify-center">
               <i className="fas fa-play mr-2 text-sm"></i>
               Watch Demo

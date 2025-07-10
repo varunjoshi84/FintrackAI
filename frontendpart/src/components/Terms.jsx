@@ -1,87 +1,57 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import Header from './components/Header';
-import Footer from './components/Footer';
+import React from 'react';
+import Header from './Header';
+import Footer from './Footer';
 
 const Terms = () => {
-  const [agreed, setAgreed] = useState(false);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!agreed) {
-      alert('Please agree to the terms and conditions before continuing.');
-      return;
-    }
-    alert('Terms accepted! Redirecting...'); // Replace with navigation logic if needed
-  };
-
   return (
-    <div className="bg-gradient-to-b from-blue-300 to-purple-300 min-h-screen flex items-center justify-center">
+    <div className="bg-gray-50 text-gray-800 font-inter">
       <Header />
-      <div className="bg-white p-8 rounded-xl shadow-md w-full max-w-2xl mt-20 mb-20 mx-auto">
-        <div className="flex flex-col items-center">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-              <i className="fas fa-chart-line text-white text-sm"></i>
-            </div>
-          </div>
-          <h1 className="text-2xl font-bold text-blue-600 mt-4">FinTrackAI</h1>
-          <p className="text-gray-500 text-sm">Master Your Finances with AI Intelligence</p>
-        </div>
-
-        <h2 className="text-xl font-semibold text-gray-800 mt-6 mb-2 text-center">Terms & Services</h2>
-
-        <div className="text-gray-600 text-sm space-y-4 mt-4 max-h-[300px] overflow-y-auto px-2">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <h1 className="text-3xl font-bold mb-12 text-center">Terms of Service</h1>
+        <div className="space-y-6 text-gray-700 text-base leading-relaxed">
           <p>
             Welcome to FinTrackAI! By using our platform, you agree to comply with and be bound by the following terms and conditions of use, which together with our privacy policy govern FinTrackAI's relationship with you in relation to this website.
           </p>
+          
+          <h2 className="text-xl font-semibold text-blue-600">Acceptance of Terms</h2>
           <p>
-            The content of the pages of this website is for your general information and use only. It is subject to change without notice.
+            By accessing and using this website, you accept and agree to be bound by the terms and provision of this agreement.
           </p>
+          
+          <h2 className="text-xl font-semibold text-blue-600">Use License</h2>
           <p>
-            Neither we nor any third parties provide any warranty or guarantee as to the accuracy, timeliness, performance, completeness, or suitability of the information and materials found or offered on this website for any particular purpose.
+            Permission is granted to temporarily download one copy of the materials on FinTrackAI's website for personal, non-commercial transitory viewing only. This is the grant of a license, not a transfer of title.
           </p>
+          
+          <h2 className="text-xl font-semibold text-blue-600">Disclaimer</h2>
           <p>
-            Your use of any information or materials on this website is entirely at your own risk, for which we shall not be liable. It shall be your own responsibility to ensure that any products, services, or information available through this website meet your specific requirements.
+            The materials on FinTrackAI's website are provided on an 'as is' basis. FinTrackAI makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties including without limitation, implied warranties or conditions of merchantability, fitness for a particular purpose, or non-infringement of intellectual property or other violation of rights.
           </p>
+          
+          <h2 className="text-xl font-semibold text-blue-600">Limitations</h2>
           <p>
-            Unauthorized use of this website may give rise to a claim for damages and/or be a criminal offense.
+            In no event shall FinTrackAI or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use the materials on FinTrackAI's website.
           </p>
+          
+          <h2 className="text-xl font-semibold text-blue-600">Privacy Policy</h2>
           <p>
-            This website may also include links to other websites. These links are provided for your convenience to provide further information. They do not signify that we endorse the website(s). We have no responsibility for the content of the linked website(s).
+            Your privacy is important to us. Please review our Privacy Policy, which also governs your use of the Service, to understand our practices.
           </p>
+          
+          <h2 className="text-xl font-semibold text-blue-600">Modifications</h2>
           <p>
-            Your use of this website and any dispute arising out of such use of the website is subject to the laws of your jurisdiction.
+            FinTrackAI may revise these terms of service for its website at any time without notice. By using this website, you are agreeing to be bound by the then current version of these terms of service.
+          </p>
+          
+          <h2 className="text-xl font-semibold text-blue-600">Contact Information</h2>
+          <p>
+            If you have any questions about these Terms of Service, please contact us at{' '}
+            <a href="mailto:support@fintrackai.in" className="text-blue-600 underline">
+              support@fintrackai.in
+            </a>
           </p>
         </div>
-
-        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="agree"
-              checked={agreed}
-              onChange={(e) => setAgreed(e.target.checked)}
-              className="w-4 h-4 text-blue-600 border-gray-300 rounded"
-            />
-            <span className="text-sm text-gray-700">I have read and agree to all the conditions</span>
-          </label>
-
-          <button
-            type="submit"
-            className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white py-2 rounded-lg hover:from-blue-700 hover:to-blue-600"
-          >
-            Continue
-          </button>
-        </form>
-
-        <div className="text-center mt-4">
-          <Link to="/login" className="text-blue-600 hover:underline">
-            Back to Login
-          </Link>
-        </div>
-      </div>
-      <div id="footer"></div>
+      </main>
       <Footer />
     </div>
   );

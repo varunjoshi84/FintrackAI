@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import Header from './components/Header';
-import Footer from './components/Footer';
+import { Link, useNavigate } from 'react-router-dom';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
 
   const validateEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -26,7 +27,9 @@ const Login = () => {
       return;
     }
 
+    // Temporary login - redirect to dashboard
     alert(`Signed in as: ${email}`);
+    navigate('/dashboard');
   };
 
   return (
@@ -35,14 +38,18 @@ const Login = () => {
       <div className="py-6">
         <div className="text-center text-white">
           <h1 className="text-4xl font-bold text-blue-600 bg-clip-text pb-3">Sign In</h1>
-          <p className="text-sm mt-2 text-blue-500">Home > Sign In</p>
+          <p className="text-sm mt-2 text-blue-500">Home &gt; Sign In</p>
         </div>
       </div>
 
       <div className="flex justify-center mt-10 px-4">
         <div className="bg-white shadow-lg rounded-lg overflow-hidden flex max-w-4xl w-full">
           <div className="hidden md:block w-1/2">
-            <img src="login.jpg" alt="Laptop" className="h-full w-full object-cover" />
+            <img
+              src="../assets/login.png"
+              alt="Person working on a laptop at a desk in a bright modern workspace, conveying a focused and welcoming atmosphere"
+              className="h-full w-full object-cover"
+            />
           </div>
 
           <div className="w-full md:w-1/2 p-8">

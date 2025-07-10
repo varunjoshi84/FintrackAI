@@ -1,15 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
 import gsap from 'gsap';
-import Header from './Dashboard/Header';
-import Footer from './components/Footer';
+import Header from './Header';
+import Footer from '../components/Footer';
+import uploadIllustration from '../assets/images/upload-illustration.jpg';
 
 const Upload = () => {
   const [fileName, setFileName] = useState('Drag and drop or click to upload a file');
   const [previewVisible, setPreviewVisible] = useState(false);
   const [downloadVisible, setDownloadVisible] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const previewRef = useRef(null);
   const downloadRef = useRef(null);
+  const dropZoneRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const maxSizeMB = 5;
   const maxSizeBytes = maxSizeMB * 1024 * 1024;
@@ -20,10 +24,31 @@ const Upload = () => {
     'text/csv',
   ];
 
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    if (dropZoneRef.current) {
+      dropZoneRef.current.style.borderColor = '#3182ce';
+      dropZoneRef.current.style.backgroundColor = '#e6f0fb';
+    }
+  };
+
+  const handleDragLeave = () => {
+    if (dropZoneRef.current) {
+      dropZoneRef.current.style.borderColor = '#cbd5e0';
+      dropZoneRef.current.style.backgroundColor = '#edf2f7';
+    }
+  };
+
   const handleDrop = (e) => {
     e.preventDefault();
+    if (dropZoneRef.current) {
+      dropZoneRef.current.style.borderColor = '#cbd5e0';
+      dropZoneRef.current.style.backgroundColor = '#edf2f7';
+    }
+    
     const file = e.dataTransfer.files[0];
-    if (file) {
+    if (file && fileInputRef.current) {
+      fileInputRef.current.files = e.dataTransfer.files;
       setFileName(file.name);
     }
   };
@@ -35,8 +60,7 @@ const Upload = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const fileInput = e.target.querySelector('#fileInput');
-    const file = fileInput.files[0];
+    const file = fileInputRef.current?.files[0];
 
     if (!file) {
       alert('Please select a file to upload.');
@@ -45,23 +69,55 @@ const Upload = () => {
 
     if (file.size > maxSizeBytes) {
       alert(`File size exceeds ${maxSizeMB}MB. Please choose a smaller file.`);
-      fileInput.value = '';
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
       setFileName('Drag and drop or click to upload a file');
       return;
     }
 
     if (!allowedTypes.includes(file.type)) {
       alert('Invalid file type. Only PDF, DOC, DOCX, and CSV are allowed.');
-      fileInput.value = '';
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
       setFileName('Drag and drop or click to upload a file');
       return;
     }
 
-    setPreviewVisible(true);
+    setUploading(true);
+    
+    setTimeout(() => {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      setFileName('Drag and drop or click to upload a file');
+      setPreviewVisible(true);
+      
+      // Animate preview section
+      if (previewRef.current) {
+        requestAnimationFrame(() => {
+          gsap.fromTo(previewRef.current, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6 });
+        });
+      }
+    }, 1200);
   };
 
   const handleGenerateReport = () => {
-    setDownloadVisible(true);
+    setGenerating(true);
+    
+    setTimeout(() => {
+      setGenerating(false);
+      setDownloadVisible(true);
+      
+      // Animate download section
+      if (downloadRef.current) {
+        requestAnimationFrame(() => {
+          gsap.fromTo(downloadRef.current, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6 });
+        });
+      }
+    }, 1200);
   };
 
   const handleDownload = () => {
@@ -69,27 +125,21 @@ const Upload = () => {
   };
 
   useEffect(() => {
-    if (previewVisible && previewRef.current) {
-      gsap.fromTo(previewRef.current, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6 });
-    }
-  }, [previewVisible]);
-
-  useEffect(() => {
-    if (downloadVisible && downloadRef.current) {
-      gsap.fromTo(downloadRef.current, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6 });
-    }
-  }, [downloadVisible]);
-
-  useEffect(() => {
-    gsap.from('.hero h2', { y: -30, opacity: 0, duration: 1 });
-    gsap.from('.hero p', { y: 30, opacity: 0, duration: 1, delay: 0.3 });
-    gsap.from('.upload-illustration', { x: -50, opacity: 0, duration: 1, delay: 0.6 });
-    gsap.from('.upload-form-block', { x: 50, opacity: 0, duration: 1, delay: 0.6 });
+    // Simplified animations
+    const timer = setTimeout(() => {
+      gsap.from('.hero h2', { y: -30, opacity: 0, duration: 1 });
+      gsap.from('.hero p', { y: 30, opacity: 0, duration: 1, delay: 0.3 });
+      gsap.from('.upload-illustration', { x: -50, opacity: 0, duration: 1, delay: 0.6 });
+      gsap.from('.upload-form-block', { x: 50, opacity: 0, duration: 1, delay: 0.6 });
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   return (
     <div className="bg-gray-50 font-inter">
       <Header />
+      
       <section className="hero">
         <h2>Upload Your Financial Documents</h2>
         <p>Drag, drop or select your expense files to begin your smart analysis journey.</p>
@@ -97,52 +147,276 @@ const Upload = () => {
 
       <main className="container upload-layout">
         <div className="upload-illustration">
-          <img src="images/upload-illustration.jpg" alt="Upload Illustration" />
+          <img src={uploadIllustration} alt="Upload Illustration" />
         </div>
         <div className="upload-form-block">
           <form className="upload-form" onSubmit={handleSubmit}>
-            <label htmlFor="fileInput" className="drop-zone" onDragOver={(e) => e.preventDefault()} onDragLeave={(e) => e.preventDefault()} onDrop={handleDrop}>
-              <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.csv" required onChange={handleFileChange} />
+            <label 
+              htmlFor="fileInput" 
+              className="drop-zone" 
+              ref={dropZoneRef}
+              onDragOver={handleDragOver} 
+              onDragLeave={handleDragLeave} 
+              onDrop={handleDrop}
+            >
+              <input 
+                type="file" 
+                id="fileInput" 
+                ref={fileInputRef}
+                accept=".pdf,.doc,.docx,.csv" 
+                required 
+                onChange={handleFileChange} 
+              />
               <span id="fileName">{fileName}</span>
             </label>
-            <button type="submit" id="uploadBtn" className="bg-blue-600 text-white px-6 py-2 rounded-full shadow-md hover:bg-blue-700 transition duration-300">
-              Upload
+            <button 
+              type="submit" 
+              id="uploadBtn" 
+              disabled={uploading}
+              className="bg-blue-600 text-white px-6 py-2 rounded-full shadow-md hover:bg-blue-700 transition duration-300"
+            >
+              {uploading ? 'Uploading...' : 'Upload'}
             </button>
           </form>
 
-          <div ref={previewRef} id="previewSection" className={`preview-section ${!previewVisible ? 'hidden' : ''}`}>
-            <p className="inline-flex items-center bg-green-100 text-green-700 px-4 py-1 rounded-full font-medium text-sm">
-              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-              File is ready for processing.
-            </p>
-            <br />
-            <button
-              id="generateBtn"
-              className="bg-green-600 text-white px-6 py-2 rounded-full shadow-md hover:bg-green-700 transition duration-300"
-              onClick={handleGenerateReport}
-            >
-              Generate Report
-            </button>
-          </div>
-
-          <div ref={downloadRef} id="downloadSection" className={`download-section ${!downloadVisible ? 'hidden' : ''}`}>
-            <p className="inline-flex items-center gap-2 bg-indigo-100 text-indigo-700 px-4 py-1 rounded-full font-semibold text-sm">
-              🎉 Report generated!
-            </p>
-            <div className="download-buttons flex flex-wrap justify-center gap-4 mt-4">
-              <button className="download-btn bg-purple-600 text-white px-6 py-2 rounded-full shadow-md hover:bg-purple-700 transition duration-300" onClick={handleDownload}>
-                Download as PDF
-              </button>
-              <button className="download-btn bg-pink-600 text-white px-6 py-2 rounded-full shadow-md hover:bg-pink-700 transition duration-300" onClick={handleDownload}>
-                Download as CSV
+          {previewVisible && (
+            <div ref={previewRef} id="previewSection" className="preview-section">
+              <p className="inline-flex items-center bg-green-100 text-green-700 px-4 py-1 rounded-full font-medium text-sm">
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                File is ready for processing.
+              </p>
+              <br />
+              <button
+                id="generateBtn"
+                disabled={generating}
+                className="bg-green-600 text-white px-6 py-2 rounded-full shadow-md hover:bg-green-700 transition duration-300"
+                onClick={handleGenerateReport}
+              >
+                {generating ? 'Generating...' : 'Generate Report'}
               </button>
             </div>
-          </div>
+          )}
+
+          {downloadVisible && (
+            <div ref={downloadRef} id="downloadSection" className="download-section">
+              <p className="inline-flex items-center gap-2 bg-indigo-100 text-indigo-700 px-4 py-1 rounded-full font-semibold text-sm">
+                🎉 Report generated!
+              </p>
+              <div className="download-buttons flex flex-wrap justify-center gap-4 mt-4">
+                <button className="download-btn bg-purple-600 text-white px-6 py-2 rounded-full shadow-md hover:bg-purple-700 transition duration-300" onClick={handleDownload}>
+                  Download as PDF
+                </button>
+                <button className="download-btn bg-pink-600 text-white px-6 py-2 rounded-full shadow-md hover:bg-pink-700 transition duration-300" onClick={handleDownload}>
+                  Download as CSV
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </main>
+      
       <Footer />
+
+      <style>{`
+        /* Upload CSS */
+        .hero {
+          background: linear-gradient(to right, #ebf8ff, #fefcbf);
+          text-align: center;
+          padding: 3rem 1rem 2rem;
+          border-bottom: 1px solid #e2e8f0;
+        }
+
+        .hero h2 {
+          font-size: 2rem;
+          font-weight: 700;
+          margin-bottom: 0.5rem;
+        }
+
+        .hero p {
+          font-size: 1.125rem;
+          color: #4a5568;
+        }
+
+        .container.upload-layout {
+          display: flex;
+          gap: 3rem;
+          padding: 3rem;
+          justify-content: center;
+          align-items: flex-start;
+          flex-wrap: wrap;
+          max-width: 1200px;
+          margin: auto;
+        }
+
+        .upload-illustration {
+          flex: 1;
+          max-width: 35%;
+          min-width: 250px;
+          opacity: 1;
+        }
+
+        .upload-illustration img {
+          max-width: 400px;
+          width: 100%;
+          height: auto;
+        }
+
+        .upload-form-block {
+          flex: 2;
+          min-width: 320px;
+          opacity: 1;
+        }
+
+        .upload-form {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+          background: #ffffff;
+          padding: 2rem;
+          border-radius: 12px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .drop-zone {
+          background-color: #edf2f7;
+          border: 2px dashed #cbd5e0;
+          padding: 1.5rem;
+          border-radius: 8px;
+          text-align: center;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          display: block;
+        }
+
+        .drop-zone:hover {
+          background-color: #e2e8f0;
+          border-color: #3182ce;
+        }
+
+        .drop-zone input[type="file"] {
+          display: none;
+        }
+
+        .drop-zone span {
+          display: block;
+          color: #4a5568;
+          font-size: 1rem;
+          font-weight: 500;
+        }
+
+        .upload-form button,
+        .preview-section button,
+        .download-btn,
+        #generateBtn {
+          font-family: 'Inter', sans-serif;
+          font-size: 0.95rem;
+          font-weight: 600;
+          letter-spacing: 0.3px;
+          padding: 0.75rem 1.2rem;
+          border: none;
+          border-radius: 9999px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+          text-transform: capitalize;
+        }
+
+        .upload-form button:hover:not(:disabled),
+        .preview-section button:hover:not(:disabled),
+        .download-btn:hover {
+          transform: scale(1.02);
+          opacity: 0.95;
+        }
+
+        .upload-form button:disabled {
+          background-color: #a0aec0 !important;
+          cursor: not-allowed;
+        }
+
+        .preview-section,
+        .download-section {
+          background: #ffffff;
+          padding: 2rem;
+          margin-top: 2rem;
+          border-radius: 12px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+          text-align: center;
+        }
+
+        .preview-section p {
+          font-family: 'Inter', sans-serif;
+          font-size: 0.88rem;
+          font-weight: 500;
+          letter-spacing: 0.2px;
+          color: #047857;
+          background-color: #d1fae5;
+          border-radius: 9999px;
+          padding: 0.5rem 1rem;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+          margin-bottom: 1rem;
+        }
+
+        .download-section p {
+          font-family: 'Inter', sans-serif;
+          font-size: 0.88rem;
+          font-weight: 500;
+          letter-spacing: 0.2px;
+          color: #1e40af;
+          background-color: #e0e7ff;
+          border-radius: 9999px;
+          padding: 0.5rem 1rem;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+          margin-bottom: 1rem;
+        }
+
+        /* Purple Gradient - PDF */
+        .download-btn:nth-child(1) {
+          background: linear-gradient(to right, #7e5bef, #5a3cc2);
+        }
+
+        .download-btn:nth-child(1):hover {
+          background: linear-gradient(to right, #6b46c1, #4c2882);
+        }
+
+        /* Pink Gradient - CSV */
+        .download-btn:nth-child(2) {
+          background: linear-gradient(to right, #ed64a6, #d53f8c);
+        }
+
+        .download-btn:nth-child(2):hover {
+          background: linear-gradient(to right, #d53f8c, #b83280);
+        }
+
+        @media (max-width: 768px) {
+          .container.upload-layout {
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem 1rem;
+          }
+
+          .upload-illustration,
+          .upload-form-block {
+            max-width: 100%;
+          }
+
+          .upload-illustration img {
+            max-width: 280px;
+          }
+
+          .download-section button {
+            width: 100%;
+            margin-bottom: 1rem;
+          }
+        }
+      `}</style>
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import Header from './components/Header';
-import Footer from './components/Footer';
+import { Link, useNavigate } from 'react-router-dom';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
 
 const Signup = () => {
   const [name, setName] = useState('');
@@ -10,6 +10,7 @@ const Signup = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const navigate = useNavigate();
 
   const validateEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -34,7 +35,9 @@ const Signup = () => {
       return;
     }
 
+    // Temporary signup - redirect to dashboard
     alert(`Signed up successfully with email: ${email}`);
+    navigate('/dashboard');
   };
 
   return (
@@ -43,7 +46,7 @@ const Signup = () => {
       <div className="py-6">
         <div className="text-center text-white">
           <h1 className="text-3xl text-blue-600 font-bold">Sign Up</h1>
-          <p className="text-sm mt-2 text-blue-500">Home > Sign Up</p>
+          <p className="text-sm mt-2 text-blue-500">Home &gt; Sign Up</p>
         </div>
       </div>
 
@@ -122,6 +125,9 @@ const Signup = () => {
               Already have an account?{' '}
               <Link to="/login" className="text-blue-600">
                 Sign In?
+              </Link>{' '}
+              <Link to="/admin" className="text-blue-600 ml-2">
+                Admin
               </Link>
             </p>
 

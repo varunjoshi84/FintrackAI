@@ -26,7 +26,7 @@ const Header = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between py-3 md:py-4">
           {/* Logo */}
-          <Link to="/landingpage">
+          <Link to="/">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                 <i className="fas fa-chart-line text-white text-sm"></i>
@@ -71,7 +71,7 @@ const Header = () => {
               <a href="#" className="block px-4 py-2 text-gray-300 hover:bg-gray-700 rounded-full w-48 text-center">John Doe</a>
               <a href="#" className="block px-4 py-2 text-gray-300 hover:bg-gray-700 rounded-full w-48 text-center">name@fintrackai.com</a>
               <Link to="/userdashboard" className={`block px-4 py-2 ${currentPath.includes('userdashboard') ? 'text-blue-400 font-semibold' : 'text-gray-300'} hover:bg-gray-700 rounded-full w-48 text-center`}>My profile</Link>
-              <Link to="/landingpage" className="block px-4 py-2 text-red-400 hover:bg-gray-700 rounded-full w-48 text-center">Sign out</Link>
+              <Link to="/" className="block px-4 py-2 text-red-400 hover:bg-gray-700 rounded-full w-48 text-center">Sign out</Link>
             </div>
           </div>
         </div>
@@ -108,7 +108,7 @@ const Header = () => {
               <a href="#" className="block px-4 py-2 text-gray-300 hover:bg-gray-700 rounded-full w-48 text-center">John Doe</a>
               <a href="#" className="block px-4 py-2 text-gray-300 hover:bg-gray-700 rounded-full w-48 text-center">name@fintrackai.com</a>
               <Link to="/userdashboard" className={`block px-4 py-2 ${currentPath.includes('userdashboard') ? 'text-blue-400 font-semibold' : 'text-gray-300'} hover:bg-gray-700 rounded-full w-48 text-center`}>My profile</Link>
-              <Link to="/landingpage" className="block px-4 py-2 text-red-400 hover:bg-gray-700 rounded-full w-48 text-center">Sign out</Link>
+              <Link to="/" className="block px-4 py-2 text-red-400 hover:bg-gray-700 rounded-full w-48 text-center">Sign out</Link>
             </div>
           </div>
         </div>

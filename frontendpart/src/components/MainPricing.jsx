@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import Header from './components/Header';
-import Footer from './components/Footer';
+import Header from './Header';
+import Footer from './Footer';
 
 const MainPricing = () => {
   const [isMonthly, setIsMonthly] = useState(true);
@@ -31,8 +31,8 @@ const MainPricing = () => {
         <div className="inline-flex bg-gray-200 rounded-full mb-12">
           <button
             id="monthlyBtn"
-            className={`px-6 py-2 text-sm font-medium focus:outline-none ${
-              isMonthly ? 'bg-white text-gray-900 rounded-full shadow' : 'text-gray-600'
+            className={`px-6 py-2 bg-white text-gray-900 rounded-full shadow text-sm font-medium focus:outline-none ${
+              !isMonthly ? 'bg-gray-200 text-gray-600' : ''
             }`}
             onClick={() => setIsMonthly(true)}
           >
@@ -41,7 +41,7 @@ const MainPricing = () => {
           <button
             id="yearlyBtn"
             className={`px-6 py-2 text-sm font-medium focus:outline-none ${
-              !isMonthly ? 'bg-white text-gray-900 rounded-full shadow' : 'text-gray-600'
+              isMonthly ? 'bg-gray-200 text-gray-600' : 'bg-white text-gray-900 rounded-full shadow'
             }`}
             onClick={() => setIsMonthly(false)}
           >
@@ -60,51 +60,19 @@ const MainPricing = () => {
                 </div>
                 <h3 className="text-lg font-semibold">Basic Plan</h3>
               </div>
-              <p className="text-sm text-gray-500 mb-4">
-                Perfect for individuals or small teams looking to stay organized with basic features.
-              </p>
+              <p className="text-sm text-gray-500 mb-4">Perfect for individuals or small teams looking to stay organized with basic features.</p>
               <p
                 id="basicPrice"
                 className="text-3xl font-bold mb-1"
                 dangerouslySetInnerHTML={{ __html: pricingData[isMonthly ? 'monthly' : 'yearly'].basic.replace('per', '<span class="text-base font-normal text-gray-500">per</span>') }}
               />
               <ul className="mt-4 space-y-2 text-sm text-gray-700">
-                <li className="flex items-center gap-2">
-                  <span className="text-green-500">
-                    <i className="fas fa-check"></i>
-                  </span>
-                  Basic task management
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-green-500">
-                    <i className="fas fa-calendar-alt"></i>
-                  </span>
-                  Personal calendar
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-green-500">
-                    <i className="fas fa-bell"></i>
-                  </span>
-                  Task reminders
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-green-500">
-                    <i className="fas fa-users"></i>
-                  </span>
-                  Collaboration with 3 team members
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-green-500">
-                    <i className="fas fa-hdd"></i>
-                  </span>
-                  Limited file storage (up to 1 GB)
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-green-500">
-                    <i className="fas fa-desktop"></i>
-                  </span>
-                  Access to mobile and desktop apps
-                </li>
+                <li className="flex items-center gap-2"><span className="text-green-500"><i className="fas fa-check"></i></span> Basic task management</li>
+                <li className="flex items-center gap-2"><span className="text-green-500"><i className="fas fa-calendar-alt"></i></span> Personal calendar</li>
+                <li className="flex items-center gap-2"><span className="text-green-500"><i className="fas fa-bell"></i></span> Task reminders</li>
+                <li className="flex items-center gap-2"><span className="text-green-500"><i className="fas fa-users"></i></span> Collaboration with 3 team members</li>
+                <li className="flex items-center gap-2"><span className="text-green-500"><i className="fas fa-hdd"></i></span> Limited file storage (up to 1 GB)</li>
+                <li className="flex items-center gap-2"><span className="text-green-500"><i className="fas fa-desktop"></i></span> Access to mobile and desktop apps</li>
               </ul>
             </div>
             <button className="mt-6 w-full bg-gradient-to-r from-green-500 to-blue-400 text-white font-medium py-2 rounded-md hover:bg-gray-200 transition">
@@ -120,61 +88,24 @@ const MainPricing = () => {
                   <i className="fas fa-rocket text-white"></i>
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900">Pro</h3>
-                <span className="ml-auto text-xs text-purple-600 bg-purple-100 rounded-full px-2 py-0.5 font-medium">
-                  Most Popular
-                </span>
+                <span className="ml-auto text-xs text-purple-600 bg-purple-100 rounded-full px-2 py-0.5 font-medium">Most Popular</span>
               </div>
-              <p className="text-sm text-gray-500 mb-4">
-                Ideal for growing teams needing more robust tools and integrations.
-              </p>
+              <p className="text-sm text-gray-500 mb-4">Ideal for growing teams needing more robust tools and integrations.</p>
               <p
                 id="proPrice"
                 className="text-3xl font-bold mb-1"
                 dangerouslySetInnerHTML={{ __html: pricingData[isMonthly ? 'monthly' : 'yearly'].pro.replace('per', '<span class="text-base font-normal text-gray-500">per</span>') }}
               />
-              <p
-                id="proBilling"
-                className="text-sm text-gray-500 mb-4"
-              >
+              <p className="text-sm text-gray-500 mb-4" id="proBilling">
                 {isMonthly ? 'Billed monthly' : 'Billed annually'}
               </p>
               <ul className="mt-4 space-y-2 text-sm text-gray-700">
-                <li className="flex items-center gap-2">
-                  <span className="text-purple-500">
-                    <i className="fas fa-check"></i>
-                  </span>
-                  Advanced task management
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-purple-500">
-                    <i className="fas fa-calendar-alt"></i>
-                  </span>
-                  Shared team calendar
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-purple-500">
-                    <i className="fas fa-users"></i>
-                  </span>
-                  Unlimited team collaboration
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-purple-500">
-                    <i className="fas fa-hdd"></i>
-                  </span>
-                  50 GB file storage
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-purple-500">
-                    <i className="fas fa-headset"></i>
-                  </span>
-                  Priority customer support
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-purple-500">
-                    <i className="fas fa-plug"></i>
-                  </span>
-                  Integrations with popular apps
-                </li>
+                <li className="flex items-center gap-2"><span className="text-purple-500"><i className="fas fa-check"></i></span> Advanced task management</li>
+                <li className="flex items-center gap-2"><span className="text-purple-500"><i className="fas fa-calendar-alt"></i></span> Shared team calendar</li>
+                <li className="flex items-center gap-2"><span className="text-purple-500"><i className="fas fa-users"></i></span> Unlimited team collaboration</li>
+                <li className="flex items-center gap-2"><span className="text-purple-500"><i className="fas fa-hdd"></i></span> 50 GB file storage</li>
+                <li className="flex items-center gap-2"><span className="text-purple-500"><i className="fas fa-headset"></i></span> Priority customer support</li>
+                <li className="flex items-center gap-2"><span className="text-purple-500"><i className="fas fa-plug"></i></span> Integrations with popular apps</li>
               </ul>
             </div>
             <button className="mt-6 w-full text-white font-medium py-2 rounded-md bg-gradient-to-r from-purple-500 to-blue-400 hover:opacity-90 transition">
@@ -191,58 +122,22 @@ const MainPricing = () => {
                 </div>
                 <h3 className="text-lg font-semibold">Enterprise</h3>
               </div>
-              <p className="text-sm text-gray-500 mb-4">
-                Designed for businesses requiring comprehensive, scalable management tools.
-              </p>
+              <p className="text-sm text-gray-500 mb-4">Designed for businesses requiring comprehensive, scalable management tools.</p>
               <p
                 id="enterprisePrice"
                 className="text-2xl font-bold mb-1"
-              >
-                Custom
-              </p>
-              <p
-                id="enterpriseBilling"
-                className="text-sm text-gray-500 mb-4"
-              >
+                dangerouslySetInnerHTML={{ __html: pricingData[isMonthly ? 'monthly' : 'yearly'].enterprise.replace('per', '<span class="text-base font-normal text-gray-500">per</span>') }}
+              />
+              <p className="text-sm text-gray-500 mb-4" id="enterpriseBilling">
                 {isMonthly ? 'Billed monthly' : 'Billed annually'}
               </p>
               <ul className="mt-4 space-y-2 text-sm text-gray-700">
-                <li className="flex items-center gap-2">
-                  <span className="text-blue-500">
-                    <i className="fas fa-check"></i>
-                  </span>
-                  Custom solutions
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-blue-500">
-                    <i className="fas fa-hdd"></i>
-                  </span>
-                  Unlimited file storage
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-blue-500">
-                    <i className="fas fa-lock"></i>
-                  </span>
-                  Advanced security
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-blue-500">
-                    <i className="fas fa-chart-line"></i>
-                  </span>
-                  Detailed analytics
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-blue-500">
-                    <i className="fas fa-user-tie"></i>
-                  </span>
-                  Dedicated account manager
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-blue-500">
-                    <i className="fas fa-headset"></i>
-                  </span>
-                  24/7 premium support
-                </li>
+                <li className="flex items-center gap-2"><span className="text-blue-500"><i className="fas fa-check"></i></span> Custom solutions</li>
+                <li className="flex items-center gap-2"><span className="text-blue-500"><i className="fas fa-hdd"></i></span> Unlimited file storage</li>
+                <li className="flex items-center gap-2"><span className="text-blue-500"><i className="fas fa-lock"></i></span> Advanced security</li>
+                <li className="flex items-center gap-2"><span className="text-blue-500"><i className="fas fa-chart-line"></i></span> Detailed analytics</li>
+                <li className="flex items-center gap-2"><span className="text-blue-500"><i className="fas fa-user-tie"></i></span> Dedicated account manager</li>
+                <li className="flex items-center gap-2"><span className="text-blue-500"><i className="fas fa-headset"></i></span> 24/7 premium support</li>
               </ul>
             </div>
             <button className="mt-6 w-full bg-gradient-to-br from-pink-500 to-indigo-500 text-white font-medium py-2 rounded-md hover:bg-blue-700 transition">

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const Footer = () => {
   return (
@@ -34,14 +35,14 @@ const Footer = () => {
             <h4 className="font-semibold mb-6">Product</h4>
             <ul className="space-y-3 text-slate-400">
               <li>
-                <a href="/features" className="hover:text-white transition-colors">
+                <Link to="/features" className="hover:text-white transition-colors">
                   Features
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/pricing" className="hover:text-white transition-colors">
+                <Link to="/pricing" className="hover:text-white transition-colors">
                   Pricing
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -51,24 +52,24 @@ const Footer = () => {
             <h4 className="font-semibold mb-6">Support</h4>
             <ul className="space-y-3 text-slate-400">
               <li>
-                <a href="/help" className="hover:text-white transition-colors">
+                <Link to="/help" className="hover:text-white transition-colors">
                   Help Center
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/privacy" className="hover:text-white transition-colors">
+                <Link to="/privacy" className="hover:text-white transition-colors">
                   Privacy Policy
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/terms" className="hover:text-white transition-colors">
+                <Link to="/terms" className="hover:text-white transition-colors">
                   Terms of Service
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/contact" className="hover:text-white transition-colors">
+                <Link to="/contact" className="hover:text-white transition-colors">
                   Contact Us
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

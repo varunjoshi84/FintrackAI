@@ -1,0 +1,11 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Test React App",
+			"type": "shell",
+			"command": "echo 'React app is running at http://localhost:5176'",
+			"group": "test"
+		}
+	]
+}
