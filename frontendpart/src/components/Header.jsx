@@ -21,7 +21,7 @@ const Header = () => {
           <div className="hidden md:flex items-center space-x-8">
             <Link to="/features" className="text-slate-600 hover:text-blue-600">Features</Link>
             <Link to="/pricing" className="text-slate-600 hover:text-blue-600">Pricing</Link>
-            <a href="#about" className="text-slate-600 hover:text-blue-600">About</a>
+            <Link to="/about" className="text-slate-600 hover:text-blue-600">About</Link>
             <Link
               to="/login"
               className="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700"
@@ -39,7 +39,7 @@ const Header = () => {
           <div className="flex flex-col space-y-3">
             <Link to="/features" className="block py-2 text-slate-600 hover:text-blue-600">Features</Link>
             <Link to="/pricing" className="block py-2 text-slate-600 hover:text-blue-600">Pricing</Link>
-            <a href="#about" className="block py-2 text-slate-600 hover:text-blue-600">About</a>
+            <Link to="/about" className="block py-2 text-slate-600 hover:text-blue-600">About</Link>
             <Link
               to="/login"
               className="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700"

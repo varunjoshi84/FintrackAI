@@ -27,9 +27,9 @@ const AdminLogin = () => {
       return;
     }
 
-    // Temporary admin login - redirect to dashboard
+    // Temporary admin login - redirect to admin dashboard
     alert(`Admin signed in as: ${email}`);
-    navigate('/dashboard');
+    navigate('/admin-dashboard');
   };
 
   return (
