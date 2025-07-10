@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import loginImage from '../assets/images/login.jpg';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -46,7 +47,7 @@ const Login = () => {
         <div className="bg-white shadow-lg rounded-lg overflow-hidden flex max-w-4xl w-full">
           <div className="hidden md:block w-1/2">
             <img
-              src="../assets/login.png"
+              src={loginImage}
               alt="Person working on a laptop at a desk in a bright modern workspace, conveying a focused and welcoming atmosphere"
               className="h-full w-full object-cover"
             />

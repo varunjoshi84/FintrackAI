@@ -42,28 +42,12 @@ const AdminLogin = () => {
         </div>
       </div>
 
-      <div className="flex justify-center mt-10 px-4">
-        <div className="bg-white shadow-lg rounded-lg overflow-hidden flex max-w-4xl w-full">
-          {/* Left side - Image (hidden on mobile) */}
-          <div className="hidden md:block w-1/2 relative">
-            <img src="login.jpg" alt="Admin Login" className="h-full w-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/80 to-purple-600/80 flex items-center justify-center">
-              <div className="text-center text-white p-8">
-                <div className="bg-white/20 rounded-full p-6 mb-4 inline-flex">
-                  <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 3.5V6L10.5 4L9 4.5L15 7V9C15 10.1 15.9 11 17 11S19 10.1 19 11C19 10.1 19.9 9 21 9ZM17 12C15.9 12 15 12.9 15 14V22H17V16H19V22H21V14C21 12.9 20.1 12 19 12H17Z"/>
-                  </svg>
-                </div>
-                <h2 className="text-2xl font-bold mb-2">Admin Portal</h2>
-                <p className="text-sm opacity-90">Secure access to administrative dashboard</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Right side - Form */}
-          <div className="w-full md:w-1/2 p-8">
+      <div className="flex justify-center mt-10 px-4 mb-10">
+        <div className="bg-white shadow-lg rounded-lg overflow-hidden max-w-md w-full">
+          {/* Centered Form */}
+          <div className="p-8">
             {/* Admin Badge */}
-            <div className="mb-6">
+            <div className="mb-6 text-center">
               <div className="inline-flex items-center bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-medium">
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4" />
@@ -72,8 +56,8 @@ const AdminLogin = () => {
               </div>
             </div>
 
-            <h2 className="text-2xl font-semibold mb-2 text-gray-900">Welcome Back, Admin!</h2>
-            <p className="text-sm text-gray-600 mb-6">Please sign in to access the admin dashboard.</p>
+            <h2 className="text-2xl font-semibold mb-2 text-gray-900 text-center">Welcome Back, Admin!</h2>
+            <p className="text-sm text-gray-600 mb-6 text-center">Please sign in to access the admin dashboard.</p>
 
             <form onSubmit={handleSubmit}>
               <input

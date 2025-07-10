@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import Header from './Header';
 import Footer from '../components/Footer';
 
@@ -11,9 +12,107 @@ const Dashboard = () => {
     { date: '05/12/2024', amount: '-39.99', category: 'Entertainment' },
   ]);
   const [transactionCount, setTransactionCount] = useState(10);
-  const [isDarkMode] = useState(() => localStorage.getItem('fintrack-theme') === 'dark');
+  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('fintrack-theme') === 'dark');
+  
+  const spendingChartRef = useRef(null);
+  const categoryChartRef = useRef(null);
+  const spendingChartInstance = useRef(null);
+  const categoryChartInstance = useRef(null);
 
   const categories = ['Food', 'Travel', 'Entertainment', 'Bills', 'Shopping', 'Other'];
+
+  // Initialize charts
+  useEffect(() => {
+    const loadCharts = async () => {
+      if (typeof window !== 'undefined') {
+        // Dynamically import Chart.js
+        const { Chart, registerables } = await import('chart.js');
+        Chart.register(...registerables);
+
+        // Spending Trend Chart
+        if (spendingChartRef.current && !spendingChartInstance.current) {
+          spendingChartInstance.current = new Chart(spendingChartRef.current, {
+            type: 'line',
+            data: {
+              labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+              datasets: [{
+                label: '₹ Spent',
+                data: [500, 300, 200, 800, 600, 450, 700],
+                backgroundColor: 'rgba(59,130,246,0.2)',
+                borderColor: 'rgba(59,130,246,1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: { display: true }
+              },
+              scales: {
+                y: { beginAtZero: true }
+              }
+            }
+          });
+        }
+
+        // Category Breakdown Chart
+        if (categoryChartRef.current && !categoryChartInstance.current) {
+          categoryChartInstance.current = new Chart(categoryChartRef.current, {
+            type: 'pie',
+            data: {
+              labels: ['Food & Dining', 'Transport', 'Utilities', 'Entertainment', 'Others'],
+              datasets: [{
+                label: 'Spending by Category',
+                data: [300, 150, 100, 200, 120],
+                backgroundColor: [
+                  '#3b82f6', // blue
+                  '#f97316', // orange
+                  '#10b981', // green
+                  '#facc15', // yellow
+                  '#a855f7'  // purple
+                ],
+                borderWidth: 1
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: {
+                  position: 'bottom',
+                  labels: { font: { size: 13 } }
+                },
+                tooltip: {
+                  callbacks: {
+                    label: function (context) {
+                      const label = context.label || '';
+                      const value = context.raw || 0;
+                      return `${label}: ₹${value}`;
+                    }
+                  }
+                }
+              }
+            }
+          });
+        }
+      }
+    };
+
+    loadCharts();
+
+    // Cleanup charts on unmount
+    return () => {
+      if (spendingChartInstance.current) {
+        spendingChartInstance.current.destroy();
+        spendingChartInstance.current = null;
+      }
+      if (categoryChartInstance.current) {
+        categoryChartInstance.current.destroy();
+        categoryChartInstance.current = null;
+      }
+    };
+  }, []);
 
   // Animation effects
   useEffect(() => {
@@ -36,6 +135,12 @@ const Dashboard = () => {
     setTransactionCount(prev => prev + 1);
   };
 
+  const toggleDarkMode = () => {
+    const newDarkMode = !isDarkMode;
+    setIsDarkMode(newDarkMode);
+    localStorage.setItem('fintrack-theme', newDarkMode ? 'dark' : 'light');
+  };
+
   return (
     <div className={`bg-gray-50 font-inter ${isDarkMode ? 'dark-mode' : ''}`}>
       <Header />
@@ -43,14 +148,14 @@ const Dashboard = () => {
       {/* Main Dashboard Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="text-center mb-8" data-animation="animate-fade-in-up">
-          <h2 className="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 drop-shadow-lg tracking-wide">
+          <h2 className="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 drop-shadow-lg tracking-wide opacity-0">
             <i className="fas fa-chart-line mr-2 text-blue-500 animate-pulse"></i>
             Financial Dashboard
           </h2>
           <p className="text-gray-600 mt-2">Your complete financial overview for July</p>
         </div>
 
-        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" data-animation="animate-fade-in-up">
+        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 opacity-0" data-animation="animate-fade-in-up">
           <div className="bg-white rounded-lg p-6 shadow-sm transform transition-transform duration-300 hover:scale-105">
             <h3 className="text-sm font-medium text-gray-500 mb-2">Total Spending</h3>
             <p id="totalSpending" className="text-2xl font-bold text-gray-900">₹671.1</p>
@@ -69,31 +174,19 @@ const Dashboard = () => {
           </div>
         </section>
 
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8" data-animation="animate-fade-in-up delay-75">
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 opacity-0" data-animation="animate-fade-in-up delay-75">
           <div className="bg-white rounded-lg p-6 shadow-sm">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Spending Trend</h3>
-            <div className="h-64 bg-gray-100 rounded-lg flex items-center justify-center">
-              <div className="text-center">
-                <i className="fas fa-chart-line text-4xl text-gray-400 mb-2"></i>
-                <p className="text-gray-500">Chart will be available soon</p>
-                <p className="text-sm text-gray-400">Weekly spending trends</p>
-              </div>
-            </div>
+            <canvas ref={spendingChartRef} width="400" height="200"></canvas>
           </div>
 
           <div className="bg-white rounded-lg p-6 shadow-sm">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Category Breakdown</h3>
-            <div className="h-64 bg-gray-100 rounded-lg flex items-center justify-center">
-              <div className="text-center">
-                <i className="fas fa-chart-pie text-4xl text-gray-400 mb-2"></i>
-                <p className="text-gray-500">Chart will be available soon</p>
-                <p className="text-sm text-gray-400">Spending by category</p>
-              </div>
-            </div>
+            <canvas ref={categoryChartRef} width="400" height="200"></canvas>
           </div>
         </section>
 
-        <section className="bg-white rounded-lg p-6 shadow-sm" data-animation="animate-fade-in-up delay-150">
+        <section className="bg-white rounded-lg p-6 shadow-sm opacity-0" data-animation="animate-fade-in-up delay-150">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Transactions</h3>
           <ul id="transactionList" className="space-y-3">
             {transactions.map((transaction, index) => (

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import loginImage from '../assets/images/login.jpg';
 
 const Signup = () => {
   const [name, setName] = useState('');
@@ -53,7 +54,7 @@ const Signup = () => {
       <div className="flex justify-center mt-10 px-4">
         <div className="bg-white shadow-lg rounded-lg overflow-hidden flex max-w-4xl w-full">
           <div className="hidden md:block w-1/2">
-            <img src="login.jpg" alt="Laptop" className="h-full w-full object-cover" />
+            <img src={loginImage} alt="Laptop" className="h-full w-full object-cover" />
           </div>
 
           <div className="w-full md:w-1/2 p-8">

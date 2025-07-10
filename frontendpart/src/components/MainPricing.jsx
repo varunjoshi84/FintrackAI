@@ -28,11 +28,11 @@ const MainPricing = () => {
         </p>
 
         {/* Toggle Buttons */}
-        <div className="inline-flex bg-gray-200 rounded-full mb-12">
+        <div className="inline-flex bg-gray-200 rounded-full p-1 mb-12">
           <button
             id="monthlyBtn"
-            className={`px-6 py-2 bg-white text-gray-900 rounded-full shadow text-sm font-medium focus:outline-none ${
-              !isMonthly ? 'bg-gray-200 text-gray-600' : ''
+            className={`px-6 py-2 text-sm font-medium focus:outline-none transition-all duration-200 rounded-full ${
+              isMonthly ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-800'
             }`}
             onClick={() => setIsMonthly(true)}
           >
@@ -40,8 +40,8 @@ const MainPricing = () => {
           </button>
           <button
             id="yearlyBtn"
-            className={`px-6 py-2 text-sm font-medium focus:outline-none ${
-              isMonthly ? 'bg-gray-200 text-gray-600' : 'bg-white text-gray-900 rounded-full shadow'
+            className={`px-6 py-2 text-sm font-medium focus:outline-none transition-all duration-200 rounded-full ${
+              !isMonthly ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-800'
             }`}
             onClick={() => setIsMonthly(false)}
           >

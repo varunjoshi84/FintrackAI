@@ -5,14 +5,14 @@ document.addEventListener("DOMContentLoaded", () => {
   // Hero Section
   gsap.from(".hero h2", {
     y: -50,
-    autoAlpha: 0,
+    autoAlpha: 1,
     duration: 1,
     ease: "power3.out"
   });
 
   gsap.from(".hero p", {
     y: 50,
-    autoAlpha: 0,
+    autoAlpha: 1,
     duration: 1,
     delay: 0.3,
     ease: "power3.out"
@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Intro Section
   gsap.from(".intro-image img", {
     x: -100,
-    autoAlpha: 0,
+    autoAlpha: 1,
     duration: 1,
     delay: 0.5,
     ease: "power2.out",
@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   gsap.from(".intro-text", {
     x: 100,
-    autoAlpha: 0,
+    autoAlpha: 1,
     duration: 1,
     delay: 0.6,
     ease: "power2.out",
@@ -39,7 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Contact Form Rows
   gsap.from(".contact-form .row", {
-    autoAlpha: 0,
+    autoAlpha: 1,
     y: 30,
     duration: 0.8,
     delay: 0.9,
