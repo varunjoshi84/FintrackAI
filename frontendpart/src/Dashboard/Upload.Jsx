@@ -3,6 +3,7 @@ import gsap from 'gsap';
 import Header from './Header';
 import Footer from '../components/Footer';
 import uploadIllustration from '../assets/images/upload-illustration.jpg';
+import { uploadFile, generateReport, downloadReport } from '../api';
 
 const Upload = () => {
   const [fileName, setFileName] = useState('Drag and drop or click to upload a file');
@@ -10,6 +11,9 @@ const Upload = () => {
   const [downloadVisible, setDownloadVisible] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState('');
+  const [uploadedFileId, setUploadedFileId] = useState(null);
+  const [reportData, setReportData] = useState(null);
   const previewRef = useRef(null);
   const downloadRef = useRef(null);
   const dropZoneRef = useRef(null);
@@ -58,7 +62,7 @@ const Upload = () => {
     setFileName(file ? file.name : 'Drag and drop or click to upload a file');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const file = fileInputRef.current?.files[0];
 
@@ -86,42 +90,100 @@ const Upload = () => {
     }
 
     setUploading(true);
+    setError('');
     
-    setTimeout(() => {
+    try {
+      // Call real API instead of setTimeout
+      const result = await uploadFile(file);
+      
+      if (result.success) {
+        setUploadedFileId(result.fileId);
+        setPreviewVisible(true);
+        
+        // Reset form
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+        setFileName('Drag and drop or click to upload a file');
+        
+        // Animate preview section
+        if (previewRef.current) {
+          requestAnimationFrame(() => {
+            gsap.fromTo(previewRef.current, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6 });
+          });
+        }
+      } else {
+        throw new Error(result.message || 'Upload failed');
+      }
+    } catch (err) {
+      console.error('Upload error:', err);
+      setError(err.message || 'Failed to upload file. Please try again.');
+      alert('Upload failed. Please try again.');
+    } finally {
       setUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-      setFileName('Drag and drop or click to upload a file');
-      setPreviewVisible(true);
-      
-      // Animate preview section
-      if (previewRef.current) {
-        requestAnimationFrame(() => {
-          gsap.fromTo(previewRef.current, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6 });
-        });
-      }
-    }, 1200);
+    }
   };
 
-  const handleGenerateReport = () => {
+  const handleGenerateReport = async () => {
+    if (!uploadedFileId) {
+      alert('No file uploaded to generate report from.');
+      return;
+    }
+
     setGenerating(true);
+    setError('');
     
-    setTimeout(() => {
-      setGenerating(false);
-      setDownloadVisible(true);
+    try {
+      const result = await generateReport(uploadedFileId);
       
-      // Animate download section
-      if (downloadRef.current) {
-        requestAnimationFrame(() => {
-          gsap.fromTo(downloadRef.current, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6 });
-        });
+      if (result.success) {
+        setReportData(result.data);
+        setDownloadVisible(true);
+        
+        // Animate download section
+        if (downloadRef.current) {
+          requestAnimationFrame(() => {
+            gsap.fromTo(downloadRef.current, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6 });
+          });
+        }
+      } else {
+        throw new Error(result.message || 'Report generation failed');
       }
-    }, 1200);
+    } catch (err) {
+      console.error('Report generation error:', err);
+      setError(err.message || 'Failed to generate report. Please try again.');
+      alert('Failed to generate report. Please try again.');
+    } finally {
+      setGenerating(false);
+    }
   };
 
-  const handleDownload = () => {
-    alert('Download functionality will be added soon.');
+  const handleDownload = async (format) => {
+    if (!reportData) {
+      alert('No report data available to download.');
+      return;
+    }
+
+    try {
+      const result = await downloadReport(reportData.id, format);
+      
+      if (result.success) {
+        // Create download link
+        const url = window.URL.createObjectURL(result.blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `financial-report.${format}`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+      } else {
+        throw new Error(result.message || 'Download failed');
+      }
+    } catch (err) {
+      console.error('Download error:', err);
+      alert('Download failed. Please try again.');
+    }
   };
 
   useEffect(() => {
@@ -150,6 +212,11 @@ const Upload = () => {
           <img src={uploadIllustration} alt="Upload Illustration" />
         </div>
         <div className="upload-form-block">
+          {error && (
+            <div className="error-message bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+              <strong>Error:</strong> {error}
+            </div>
+          )}
           <form className="upload-form" onSubmit={handleSubmit}>
             <label 
               htmlFor="fileInput" 
@@ -205,10 +272,16 @@ const Upload = () => {
                 🎉 Report generated!
               </p>
               <div className="download-buttons flex flex-wrap justify-center gap-4 mt-4">
-                <button className="download-btn bg-purple-600 text-white px-6 py-2 rounded-full shadow-md hover:bg-purple-700 transition duration-300" onClick={handleDownload}>
+                <button 
+                  className="download-btn bg-purple-600 text-white px-6 py-2 rounded-full shadow-md hover:bg-purple-700 transition duration-300" 
+                  onClick={() => handleDownload('pdf')}
+                >
                   Download as PDF
                 </button>
-                <button className="download-btn bg-pink-600 text-white px-6 py-2 rounded-full shadow-md hover:bg-pink-700 transition duration-300" onClick={handleDownload}>
+                <button 
+                  className="download-btn bg-pink-600 text-white px-6 py-2 rounded-full shadow-md hover:bg-pink-700 transition duration-300" 
+                  onClick={() => handleDownload('csv')}
+                >
                   Download as CSV
                 </button>
               </div>

@@ -3,11 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import loginImage from '../assets/images/login.jpg';
+import { login } from '../api';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const validateEmail = (email) => {
@@ -15,22 +18,41 @@ const Login = () => {
     return re.test(email);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
 
     if (!email || !password) {
-      alert('Please enter both email and password.');
+      setError('Please enter both email and password.');
       return;
     }
 
     if (!validateEmail(email)) {
-      alert('Please enter a valid email.');
+      setError('Please enter a valid email.');
       return;
     }
 
-    // Temporary login - redirect to dashboard
-    alert(`Signed in as: ${email}`);
-    navigate('/dashboard');
+    setLoading(true);
+    
+    try {
+      const result = await login({ email, password });
+      
+      if (result.success) {
+        // Store auth token
+        localStorage.setItem('authToken', result.token);
+        localStorage.setItem('userEmail', email);
+        
+        // Redirect to dashboard
+        navigate('/dashboard');
+      } else {
+        setError(result.message || 'Login failed. Please try again.');
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      setError(err.message || 'Login failed. Please check your credentials.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -56,6 +78,12 @@ const Login = () => {
           <div className="w-full md:w-1/2 p-8">
             <h2 className="text-2xl font-semibold mb-2">Welcome Back</h2>
             <p className="text-sm text-gray-600 mb-6">Fill your email and password to sign in.</p>
+
+            {error && (
+              <div className="error-message bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                <strong>Error:</strong> {error}
+              </div>
+            )}
 
             <form id="loginForm" onSubmit={handleSubmit}>
               <input
@@ -88,9 +116,10 @@ const Login = () => {
 
               <button
                 type="submit"
-                className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+                disabled={loading}
+                className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Sign In
+                {loading ? 'Signing In...' : 'Sign In'}
               </button>
             </form>
 

@@ -2,11 +2,14 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { adminLogin } from '../api';
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const validateEmail = (email) => {
@@ -14,22 +17,41 @@ const AdminLogin = () => {
     return re.test(email);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
 
     if (!email || !password) {
-      alert('Please enter both admin email and password.');
+      setError('Please enter both admin email and password.');
       return;
     }
 
     if (!validateEmail(email)) {
-      alert('Please enter a valid admin email.');
+      setError('Please enter a valid admin email.');
       return;
     }
 
-    // Temporary admin login - redirect to admin dashboard
-    alert(`Admin signed in as: ${email}`);
-    navigate('/admin-dashboard');
+    setLoading(true);
+    
+    try {
+      const result = await adminLogin({ email, password });
+      
+      if (result.success) {
+        // Store admin auth token
+        localStorage.setItem('adminToken', result.token);
+        localStorage.setItem('adminEmail', email);
+        
+        // Redirect to admin dashboard
+        navigate('/admin-dashboard');
+      } else {
+        setError(result.message || 'Admin login failed. Please check your credentials.');
+      }
+    } catch (err) {
+      console.error('Admin login error:', err);
+      setError(err.message || 'Admin login failed. Please check your credentials.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -58,6 +80,12 @@ const AdminLogin = () => {
 
             <h2 className="text-2xl font-semibold mb-2 text-gray-900 text-center">Welcome Back, Admin!</h2>
             <p className="text-sm text-gray-600 mb-6 text-center">Please sign in to access the admin dashboard.</p>
+
+            {error && (
+              <div className="error-message bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                <strong>Error:</strong> {error}
+              </div>
+            )}
 
             <form onSubmit={handleSubmit}>
               <input
@@ -89,9 +117,10 @@ const AdminLogin = () => {
 
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 rounded hover:from-blue-700 hover:to-purple-700 transition-all"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 rounded hover:from-blue-700 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Sign In as Admin
+                {loading ? 'Signing In...' : 'Sign In as Admin'}
               </button>
             </form>
 

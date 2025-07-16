@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import loginImage from '../assets/images/login.jpg';
+import { register } from '../api';
 
 const Signup = () => {
   const [name, setName] = useState('');
@@ -11,6 +12,8 @@ const Signup = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const validateEmail = (email) => {
@@ -18,27 +21,55 @@ const Signup = () => {
     return re.test(email);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
 
     if (!name || !email || !password || !confirmPassword) {
-      alert('Please fill in all fields.');
+      setError('Please fill in all fields.');
       return;
     }
 
     if (!validateEmail(email)) {
-      alert('Please enter a valid email.');
+      setError('Please enter a valid email.');
       return;
     }
 
     if (password !== confirmPassword) {
-      alert('Passwords do not match.');
+      setError('Passwords do not match.');
       return;
     }
 
-    // Temporary signup - redirect to dashboard
-    alert(`Signed up successfully with email: ${email}`);
-    navigate('/dashboard');
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long.');
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      const result = await register({ 
+        name, 
+        email, 
+        password 
+      });
+      
+      if (result.success) {
+        // Store auth token
+        localStorage.setItem('authToken', result.token);
+        localStorage.setItem('userEmail', email);
+        
+        // Redirect to dashboard
+        navigate('/dashboard');
+      } else {
+        setError(result.message || 'Registration failed. Please try again.');
+      }
+    } catch (err) {
+      console.error('Registration error:', err);
+      setError(err.message || 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -58,6 +89,11 @@ const Signup = () => {
           </div>
 
           <div className="w-full md:w-1/2 p-8">
+            {error && (
+              <div className="error-message bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                <strong>Error:</strong> {error}
+              </div>
+            )}
             <form id="loginForm" onSubmit={handleSubmit}>
               <input
                 id="name"
@@ -116,9 +152,10 @@ const Signup = () => {
 
               <button
                 type="submit"
-                className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+                disabled={loading}
+                className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Sign Up
+                {loading ? 'Creating Account...' : 'Sign Up'}
               </button>
             </form>
 

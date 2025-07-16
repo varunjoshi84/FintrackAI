@@ -1,7 +1,43 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { subscribeNewsletter } from '../api';
 
 const Footer = () => {
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+
+  const handleNewsletterSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!email) {
+      setMessage('Please enter your email address.');
+      return;
+    }
+
+    setLoading(true);
+    setMessage('');
+
+    try {
+      const result = await subscribeNewsletter({ email });
+      
+      if (result.success) {
+        setMessage('Successfully subscribed to newsletter!');
+        setEmail('');
+      } else {
+        setMessage(result.message || 'Subscription failed. Please try again.');
+      }
+    } catch (err) {
+      console.error('Newsletter subscription error:', err);
+      setMessage(err.message || 'Subscription failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+
+    // Clear message after 3 seconds
+    setTimeout(() => setMessage(''), 3000);
+  };
+
   return (
     <footer className="bg-slate-900 text-white py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -80,16 +116,31 @@ const Footer = () => {
             <p className="text-slate-400 mb-4">
               Get the latest updates on new features and financial insights.
             </p>
-            <div className="flex">
+            {message && (
+              <div className={`text-sm mb-2 ${message.includes('Success') ? 'text-green-400' : 'text-red-400'}`}>
+                {message}
+              </div>
+            )}
+            <form onSubmit={handleNewsletterSubmit} className="flex">
               <input
                 type="email"
                 placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="flex-1 px-4 py-2 bg-slate-800 border border-slate-700 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-r-lg hover:bg-blue-700">
-                <i className="fas fa-arrow-right"></i>
+              <button 
+                type="submit"
+                disabled={loading}
+                className="bg-blue-600 text-white px-4 py-2 rounded-r-lg hover:bg-blue-700 disabled:opacity-50"
+              >
+                {loading ? (
+                  <i className="fas fa-spinner fa-spin"></i>
+                ) : (
+                  <i className="fas fa-arrow-right"></i>
+                )}
               </button>
-            </div>
+            </form>
           </div>
         </div>
 

@@ -2,32 +2,129 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import {
+  getAdminStats,
+  getAllUsers,
+  updateUserStatus,
+  deleteUser,
+  getAnalytics,
+  getUserGrowthData,
+  getRevenueAnalytics,
+  getUserEngagement,
+  getAnnouncements,
+  createAnnouncement,
+  getSystemSettings,
+  updateSystemSettings,
+  getSystemHealth,
+  createBackup,
+  exportData,
+  sendNotification,
+  toggleMaintenanceMode,
+  generateUserReport,
+  generateAnalyticsReport,
+  generateRevenueReport
+} from '../api';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
-  const [users, setUsers] = useState([
-    { id: 1, name: 'John Doe', email: 'john@example.com', status: 'Active', joinDate: '2024-01-15', plan: 'Premium' },
-    { id: 2, name: 'Jane Smith', email: 'jane@example.com', status: 'Active', joinDate: '2024-02-20', plan: 'Basic' },
-    { id: 3, name: 'Mike Johnson', email: 'mike@example.com', status: 'Inactive', joinDate: '2024-01-08', plan: 'Premium' },
-    { id: 4, name: 'Sarah Wilson', email: 'sarah@example.com', status: 'Active', joinDate: '2024-03-10', plan: 'Enterprise' },
-  ]);
-
-  const [systemStats] = useState({
-    totalUsers: 1247,
-    activeUsers: 892,
-    totalTransactions: 45623,
-    totalRevenue: 125430,
-    monthlyGrowth: 12.5
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [systemStats, setSystemStats] = useState({
+    totalUsers: 0,
+    activeUsers: 0,
+    totalTransactions: 0,
+    totalRevenue: 0,
+    monthlyGrowth: 0
   });
-
-  const [announcements] = useState([
-    { id: 1, title: 'System Maintenance', message: 'Scheduled maintenance on Sunday', date: '2024-07-15', type: 'warning' },
-    { id: 2, title: 'New Feature Release', message: 'Enhanced analytics dashboard', date: '2024-07-10', type: 'success' }
-  ]);
+  const [announcements, setAnnouncements] = useState([]);
+  const [analytics, setAnalytics] = useState(null);
+  const [systemHealth, setSystemHealth] = useState({});
+  const [systemSettings, setSystemSettings] = useState({});
+  const [searchTerm, setSearchTerm] = useState('');
+  const [userPage, setUserPage] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
 
   const chartRef = useRef(null);
   const chartInstance = useRef(null);
+
+  // Load dashboard data
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      try {
+        setLoading(true);
+        
+        // Load system stats
+        const statsResult = await getAdminStats();
+        if (statsResult.success) {
+          setSystemStats(statsResult.data);
+        }
+
+        // Load users
+        const usersResult = await getAllUsers(userPage, 10, searchTerm);
+        if (usersResult.success) {
+          setUsers(usersResult.data.users);
+          setTotalUsers(usersResult.data.total);
+        }
+
+        // Load announcements
+        const announcementsResult = await getAnnouncements();
+        if (announcementsResult.success) {
+          setAnnouncements(announcementsResult.data);
+        }
+
+        // Load analytics data
+        const analyticsResult = await getAnalytics();
+        if (analyticsResult.success) {
+          setAnalytics(analyticsResult.data);
+        }
+
+        // Load system health
+        const healthResult = await getSystemHealth();
+        if (healthResult.success) {
+          setSystemHealth(healthResult.data);
+        }
+
+        // Load system settings
+        const settingsResult = await getSystemSettings();
+        if (settingsResult.success) {
+          setSystemSettings(settingsResult.data);
+        }
+
+      } catch (err) {
+        console.error('Dashboard loading error:', err);
+        setError('Failed to load dashboard data');
+        
+        // Fallback to mock data
+        setSystemStats({
+          totalUsers: 1247,
+          activeUsers: 892,
+          totalTransactions: 45623,
+          totalRevenue: 125430,
+          monthlyGrowth: 12.5
+        });
+        
+        setUsers([
+          { id: 1, name: 'John Doe', email: 'john@example.com', status: 'Active', joinDate: '2024-01-15', plan: 'Premium' },
+          { id: 2, name: 'Jane Smith', email: 'jane@example.com', status: 'Active', joinDate: '2024-02-20', plan: 'Basic' },
+          { id: 3, name: 'Mike Johnson', email: 'mike@example.com', status: 'Inactive', joinDate: '2024-01-08', plan: 'Premium' },
+          { id: 4, name: 'Sarah Wilson', email: 'sarah@example.com', status: 'Active', joinDate: '2024-03-10', plan: 'Enterprise' },
+        ]);
+        
+        setAnnouncements([
+          { id: 1, title: 'System Maintenance', message: 'Scheduled maintenance on Sunday', date: '2024-07-15', type: 'warning' },
+          { id: 2, title: 'New Feature Release', message: 'Enhanced analytics dashboard', date: '2024-07-10', type: 'success' }
+        ]);
+
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboardData();
+  }, [userPage, searchTerm]);
 
   // Initialize chart
   useEffect(() => {
@@ -41,15 +138,15 @@ const AdminDashboard = () => {
             chartInstance.current.destroy();
           }
 
-          if (chartRef.current) {
+          if (chartRef.current && analytics?.userGrowth) {
             const ctx = chartRef.current.getContext('2d');
             chartInstance.current = new Chart(ctx, {
               type: 'line',
               data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+                labels: analytics.userGrowth.labels || ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
                 datasets: [{
                   label: 'Users',
-                  data: [850, 920, 1050, 1100, 1180, 1220, 1247],
+                  data: analytics.userGrowth.data || [850, 920, 1050, 1100, 1180, 1220, 1247],
                   backgroundColor: 'rgba(59,130,246,0.1)',
                   borderColor: 'rgba(59,130,246,1)',
                   borderWidth: 2,
@@ -87,31 +184,197 @@ const AdminDashboard = () => {
       }
     };
 
-    initializeChart();
+    if (analytics) {
+      initializeChart();
+    }
 
     return () => {
       if (chartInstance.current) {
         chartInstance.current.destroy();
       }
     };
-  }, []);
+  }, [analytics]);
 
   const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userInfo');
     navigate('/admin');
   };
 
-  const handleUserStatusToggle = (userId) => {
-    setUsers(users.map(user => 
-      user.id === userId 
-        ? { ...user, status: user.status === 'Active' ? 'Inactive' : 'Active' }
-        : user
-    ));
+  const handleUserStatusToggle = async (userId) => {
+    try {
+      const user = users.find(u => u.id === userId);
+      const newStatus = user.status === 'Active' ? 'Inactive' : 'Active';
+      
+      const result = await updateUserStatus(userId, newStatus);
+      if (result.success) {
+        setUsers(users.map(user => 
+          user.id === userId 
+            ? { ...user, status: newStatus }
+            : user
+        ));
+        setSuccessMessage(`User status updated to ${newStatus}`);
+      } else {
+        setError(result.message || 'Failed to update user status');
+      }
+    } catch (err) {
+      console.error('User status toggle error:', err);
+      setError('Failed to update user status');
+    }
   };
 
-  const deleteUser = (userId) => {
+  const handleDeleteUser = async (userId) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
-      setUsers(users.filter(user => user.id !== userId));
+      try {
+        const result = await deleteUser(userId);
+        if (result.success) {
+          setUsers(users.filter(user => user.id !== userId));
+          setSuccessMessage('User deleted successfully');
+        } else {
+          setError(result.message || 'Failed to delete user');
+        }
+      } catch (err) {
+        console.error('User deletion error:', err);
+        setError('Failed to delete user');
+      }
     }
+  };
+
+  const handleSearchUsers = async (searchValue) => {
+    setSearchTerm(searchValue);
+    setUserPage(1); // Reset to first page when searching
+  };
+
+  const handleExportData = async (dataType) => {
+    try {
+      const result = await exportData(dataType, 'csv');
+      if (result.success) {
+        // Create blob and download
+        const blob = new Blob([result.data], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${dataType}_export.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        setSuccessMessage(`${dataType} data exported successfully`);
+      } else {
+        setError(result.message || 'Failed to export data');
+      }
+    } catch (err) {
+      console.error('Export error:', err);
+      setError('Failed to export data');
+    }
+  };
+
+  const handleSendNotification = async () => {
+    const title = prompt('Enter notification title:');
+    const message = prompt('Enter notification message:');
+    
+    if (title && message) {
+      try {
+        const result = await sendNotification({ title, message, type: 'info' });
+        if (result.success) {
+          setSuccessMessage('Notification sent successfully');
+        } else {
+          setError(result.message || 'Failed to send notification');
+        }
+      } catch (err) {
+        console.error('Notification error:', err);
+        setError('Failed to send notification');
+      }
+    }
+  };
+
+  const handleCreateBackup = async () => {
+    try {
+      const result = await createBackup();
+      if (result.success) {
+        setSuccessMessage('Backup created successfully');
+      } else {
+        setError(result.message || 'Failed to create backup');
+      }
+    } catch (err) {
+      console.error('Backup error:', err);
+      setError('Failed to create backup');
+    }
+  };
+
+  const handleToggleMaintenance = async () => {
+    try {
+      const result = await toggleMaintenanceMode(!systemSettings.maintenanceMode);
+      if (result.success) {
+        setSystemSettings({
+          ...systemSettings,
+          maintenanceMode: !systemSettings.maintenanceMode
+        });
+        setSuccessMessage(`Maintenance mode ${!systemSettings.maintenanceMode ? 'enabled' : 'disabled'}`);
+      } else {
+        setError(result.message || 'Failed to toggle maintenance mode');
+      }
+    } catch (err) {
+      console.error('Maintenance toggle error:', err);
+      setError('Failed to toggle maintenance mode');
+    }
+  };
+
+  const handleGenerateReport = async (reportType) => {
+    try {
+      let result;
+      switch (reportType) {
+        case 'users':
+          result = await generateUserReport('csv');
+          break;
+        case 'analytics':
+          result = await generateAnalyticsReport('pdf');
+          break;
+        case 'revenue':
+          result = await generateRevenueReport('excel');
+          break;
+        default:
+          throw new Error('Invalid report type');
+      }
+
+      if (result.success) {
+        // Handle file download
+        const blob = new Blob([result.data], { 
+          type: reportType === 'analytics' ? 'application/pdf' : 
+                reportType === 'revenue' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 
+                'text/csv' 
+        });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${reportType}_report.${reportType === 'analytics' ? 'pdf' : reportType === 'revenue' ? 'xlsx' : 'csv'}`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        setSuccessMessage(`${reportType} report generated successfully`);
+      } else {
+        setError(result.message || 'Failed to generate report');
+      }
+    } catch (err) {
+      console.error('Report generation error:', err);
+      setError('Failed to generate report');
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    try {
+      const result = await updateSystemSettings(systemSettings);
+      if (result.success) {
+        setSuccessMessage('Settings saved successfully');
+      } else {
+        setError(result.message || 'Failed to save settings');
+      }
+    } catch (err) {
+      console.error('Settings save error:', err);
+      setError('Failed to save settings');
+    }
+  };
+
+  const clearMessages = () => {
+    setError('');
+    setSuccessMessage('');
   };
 
   const StatCard = ({ title, value, icon, change, color = 'blue' }) => (
@@ -218,6 +481,45 @@ const AdminDashboard = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Loading State */}
+        {loading && (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <span className="ml-3 text-slate-600">Loading dashboard data...</span>
+          </div>
+        )}
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <i className="fas fa-exclamation-circle text-red-600 mr-2"></i>
+              <span className="text-red-800">{error}</span>
+              <button 
+                onClick={clearMessages}
+                className="ml-auto text-red-600 hover:text-red-800"
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Success Message */}
+        {successMessage && (
+          <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <i className="fas fa-check-circle text-green-600 mr-2"></i>
+              <span className="text-green-800">{successMessage}</span>
+              <button 
+                onClick={clearMessages}
+                className="ml-auto text-green-600 hover:text-green-800"
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+        )}
         {/* Overview Tab */}
         {activeTab === 'overview' && (
           <div className="space-y-8">
@@ -289,17 +591,28 @@ const AdminDashboard = () => {
                   <i className="fas fa-user-plus text-blue-600 text-xl mb-2"></i>
                   <span className="text-sm text-blue-600 font-medium">Add User</span>
                 </button>
-                <button className="flex flex-col items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
+                <button 
+                  onClick={() => handleExportData('users')}
+                  className="flex flex-col items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
+                >
                   <i className="fas fa-download text-green-600 text-xl mb-2"></i>
                   <span className="text-sm text-green-600 font-medium">Export Data</span>
                 </button>
-                <button className="flex flex-col items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
+                <button 
+                  onClick={handleSendNotification}
+                  className="flex flex-col items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
+                >
                   <i className="fas fa-bullhorn text-purple-600 text-xl mb-2"></i>
                   <span className="text-sm text-purple-600 font-medium">Send Notice</span>
                 </button>
-                <button className="flex flex-col items-center p-4 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
+                <button 
+                  onClick={handleToggleMaintenance}
+                  className="flex flex-col items-center p-4 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                >
                   <i className="fas fa-tools text-red-600 text-xl mb-2"></i>
-                  <span className="text-sm text-red-600 font-medium">Maintenance</span>
+                  <span className="text-sm text-red-600 font-medium">
+                    {systemSettings.maintenanceMode ? 'Disable' : 'Enable'} Maintenance
+                  </span>
                 </button>
               </div>
             </div>
@@ -326,6 +639,8 @@ const AdminDashboard = () => {
                     <input
                       type="text"
                       placeholder="Search users..."
+                      value={searchTerm}
+                      onChange={(e) => handleSearchUsers(e.target.value)}
                       className="px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <button className="p-2 text-slate-400 hover:text-slate-600">
@@ -381,7 +696,7 @@ const AdminDashboard = () => {
                           </button>
                           <button className="text-green-600 hover:text-green-900">Edit</button>
                           <button
-                            onClick={() => deleteUser(user.id)}
+                            onClick={() => handleDeleteUser(user.id)}
                             className="text-red-600 hover:text-red-900"
                           >
                             Delete
@@ -445,17 +760,26 @@ const AdminDashboard = () => {
             <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
               <h3 className="text-lg font-semibold text-slate-900 mb-4">Generate Reports</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <button className="p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+                <button 
+                  onClick={() => handleGenerateReport('users')}
+                  className="p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+                >
                   <i className="fas fa-file-excel text-green-600 text-2xl mb-2"></i>
                   <div className="text-sm font-medium">User Report</div>
                   <div className="text-xs text-slate-500">Export user data</div>
                 </button>
-                <button className="p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+                <button 
+                  onClick={() => handleGenerateReport('analytics')}
+                  className="p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+                >
                   <i className="fas fa-chart-bar text-blue-600 text-2xl mb-2"></i>
                   <div className="text-sm font-medium">Analytics Report</div>
                   <div className="text-xs text-slate-500">Usage analytics</div>
                 </button>
-                <button className="p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+                <button 
+                  onClick={() => handleGenerateReport('revenue')}
+                  className="p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+                >
                   <i className="fas fa-money-bill text-yellow-600 text-2xl mb-2"></i>
                   <div className="text-sm font-medium">Revenue Report</div>
                   <div className="text-xs text-slate-500">Financial overview</div>
@@ -479,7 +803,8 @@ const AdminDashboard = () => {
                     <label className="block text-sm font-medium text-slate-700 mb-2">Site Name</label>
                     <input
                       type="text"
-                      defaultValue="FinTrackAI"
+                      value={systemSettings.siteName || "FinTrackAI"}
+                      onChange={(e) => setSystemSettings({...systemSettings, siteName: e.target.value})}
                       className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
@@ -487,12 +812,19 @@ const AdminDashboard = () => {
                     <label className="block text-sm font-medium text-slate-700 mb-2">Admin Email</label>
                     <input
                       type="email"
-                      defaultValue="admin@fintrackai.com"
+                      value={systemSettings.adminEmail || "admin@fintrackai.com"}
+                      onChange={(e) => setSystemSettings({...systemSettings, adminEmail: e.target.value})}
                       className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   <div className="flex items-center">
-                    <input type="checkbox" id="maintenance" className="mr-2" />
+                    <input 
+                      type="checkbox" 
+                      id="maintenance" 
+                      checked={systemSettings.maintenanceMode || false}
+                      onChange={(e) => setSystemSettings({...systemSettings, maintenanceMode: e.target.checked})}
+                      className="mr-2" 
+                    />
                     <label htmlFor="maintenance" className="text-sm text-slate-700">Maintenance Mode</label>
                   </div>
                 </div>
@@ -503,18 +835,31 @@ const AdminDashboard = () => {
                 <h3 className="text-lg font-semibold text-slate-900 mb-4">Security Settings</h3>
                 <div className="space-y-4">
                   <div className="flex items-center">
-                    <input type="checkbox" id="twofa" className="mr-2" defaultChecked />
+                    <input 
+                      type="checkbox" 
+                      id="twofa" 
+                      checked={systemSettings.twoFactorAuth || true}
+                      onChange={(e) => setSystemSettings({...systemSettings, twoFactorAuth: e.target.checked})}
+                      className="mr-2" 
+                    />
                     <label htmlFor="twofa" className="text-sm text-slate-700">Two-Factor Authentication</label>
                   </div>
                   <div className="flex items-center">
-                    <input type="checkbox" id="ssl" className="mr-2" defaultChecked />
+                    <input 
+                      type="checkbox" 
+                      id="ssl" 
+                      checked={systemSettings.forceSSL || true}
+                      onChange={(e) => setSystemSettings({...systemSettings, forceSSL: e.target.checked})}
+                      className="mr-2" 
+                    />
                     <label htmlFor="ssl" className="text-sm text-slate-700">Force SSL</label>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">Session Timeout (minutes)</label>
                     <input
                       type="number"
-                      defaultValue="30"
+                      value={systemSettings.sessionTimeout || 30}
+                      onChange={(e) => setSystemSettings({...systemSettings, sessionTimeout: parseInt(e.target.value)})}
                       className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
@@ -529,7 +874,10 @@ const AdminDashboard = () => {
                     <span className="text-slate-700">Last Backup</span>
                     <span className="text-green-600 text-sm">2 hours ago</span>
                   </div>
-                  <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors">
+                  <button 
+                    onClick={handleCreateBackup}
+                    className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors"
+                  >
                     Create Backup Now
                   </button>
                   <div className="flex items-center">
@@ -563,7 +911,10 @@ const AdminDashboard = () => {
               <button className="px-4 py-2 border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50">
                 Cancel
               </button>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+              <button 
+                onClick={handleSaveSettings}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
                 Save Settings
               </button>
             </div>

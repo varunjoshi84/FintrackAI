@@ -2,23 +2,15 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../Dashboard/Header';
 import Footer from '../components/Footer';
+import { getUserProfile, updateUserProfile, deleteUserAccount, verifyUserAccount, uploadProfileImage } from '../api';
 
 const UserDashboard = () => {
-  const [users, setUsers] = useState([
-    {
-      id: 1,
-      name: "John Doe",
-      email: "john.doe@example.com",
-      phone: "+1-555-0123",
-      dob: null,
-      location: "New York, USA",
-      verified: false,
-      image: null,
-    },
-  ]);
-  const [currentUserId, setCurrentUserId] = useState(1);
+  const [users, setUsers] = useState([]);
+  const [currentUserId, setCurrentUserId] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [userData, setUserData] = useState(users[0]);
+  const [userData, setUserData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [modalData, setModalData] = useState({
     name: '',
     email: '',
@@ -27,7 +19,72 @@ const UserDashboard = () => {
     location: '',
   });
 
+  // Load user profile data from API
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      try {
+        setLoading(true);
+        const result = await getUserProfile();
+        
+        if (result.success) {
+          setUserData(result.data);
+          setCurrentUserId(result.data.id);
+        } else {
+          setError(result.message || 'Failed to load user profile');
+          // Fallback to default user data
+          setUserData({
+            id: 1,
+            name: "John Doe",
+            email: "john.doe@example.com",
+            phone: "+1-555-0123",
+            dob: null,
+            location: "New York, USA",
+            verified: false,
+            image: null,
+          });
+          setCurrentUserId(1);
+        }
+      } catch (err) {
+        console.error('User profile loading error:', err);
+        setError(err.message || 'Failed to load user profile');
+        // Fallback to default user data
+        setUserData({
+          id: 1,
+          name: "John Doe",
+          email: "john.doe@example.com",
+          phone: "+1-555-0123",
+          dob: null,
+          location: "New York, USA",
+          verified: false,
+          image: null,
+        });
+        setCurrentUserId(1);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUserProfile();
+  }, []);
+
   const updateDisplay = useCallback(() => {
+    // Animation setup
+    const elements = document.querySelectorAll('[data-animation]');
+    elements.forEach((element, index) => {
+      setTimeout(() => {
+        element.classList.remove('opacity-0');
+        element.classList.add(element.dataset.animation);
+      }, index * 200);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (userData) {
+      updateDisplay();
+    }
+  }, [userData, updateDisplay]);
+
+  const updateDisplay_OLD = useCallback(() => {
     const user = users.find((u) => u.id === currentUserId);
     if (user) {
       setUserData(user);

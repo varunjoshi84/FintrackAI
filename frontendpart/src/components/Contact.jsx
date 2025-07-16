@@ -4,6 +4,7 @@ import Footer from './Footer';
 import gsap from 'gsap';
 import ScrollTrigger from 'gsap/ScrollTrigger';
 import peopleChatImage from '../assets/images/people chat.png';
+import { sendContactMessage } from '../api';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -14,6 +15,9 @@ const Contact = () => {
     message: '',
     agreeTerms: false,
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   // Refs for animations
   const heroRef = useRef(null);
@@ -56,21 +60,45 @@ const Contact = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setSuccess('');
+
     if (!formData.agreeTerms) {
-      alert('Please agree to the terms and policy.');
+      setError('Please agree to the terms and policy.');
       return;
     }
-    alert('Message sent! We will get back to you shortly.');
-    setFormData({
-      firstName: '',
-      lastName: '',
-      email: '',
-      department: '',
-      message: '',
-      agreeTerms: false,
-    });
+
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.message) {
+      setError('Please fill in all required fields.');
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      const result = await sendContactMessage(formData);
+      
+      if (result.success) {
+        setSuccess('Message sent successfully! We will get back to you shortly.');
+        setFormData({
+          firstName: '',
+          lastName: '',
+          email: '',
+          department: '',
+          message: '',
+          agreeTerms: false,
+        });
+      } else {
+        setError(result.message || 'Failed to send message. Please try again.');
+      }
+    } catch (err) {
+      console.error('Contact form error:', err);
+      setError(err.message || 'Failed to send message. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -118,6 +146,18 @@ const Contact = () => {
             onSubmit={handleSubmit}
           >
             <h3 className="text-2xl font-semibold mb-8 text-gray-800 text-center">Send us a Message</h3>
+
+            {error && (
+              <div className="error-message bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+                <strong>Error:</strong> {error}
+              </div>
+            )}
+
+            {success && (
+              <div className="success-message bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6">
+                <strong>Success:</strong> {success}
+              </div>
+            )}
 
             <div
               className="form-row flex flex-col md:flex-row gap-6 mb-6"
@@ -209,9 +249,10 @@ const Contact = () => {
             >
               <button
                 type="submit"
-                className="bg-gradient-to-r from-green-600 to-green-700 text-white px-8 py-3 rounded-full font-semibold shadow-lg hover:from-green-700 hover:to-green-800 hover:transform hover:-translate-y-1 hover:shadow-xl transition-all duration-300"
+                disabled={loading}
+                className="bg-gradient-to-r from-green-600 to-green-700 text-white px-8 py-3 rounded-full font-semibold shadow-lg hover:from-green-700 hover:to-green-800 hover:transform hover:-translate-y-1 hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Send Message
+                {loading ? 'Sending...' : 'Send Message'}
               </button>
             </div>
           </form>

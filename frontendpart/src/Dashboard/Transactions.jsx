@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Header from './Header';
 import Footer from '../components/Footer';
+import { getTransactions, addTransaction } from '../api';
 
 const Transactions = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -11,24 +12,46 @@ const Transactions = () => {
   const [date, setDate] = useState('');
   const [category, setCategory] = useState('');
   const [amount, setAmount] = useState('');
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const staticTransactions = [
-    { desc: "Grocery Shopping", date: "2024-06-01", category: "Food & Dining", amount: "1200" },
-    { desc: "Uber Ride", date: "2024-06-02", category: "Transportation", amount: "350" },
-    { desc: "Salary", date: "2024-06-03", category: "Income", amount: "50000" },
-    { desc: "Electricity Bill", date: "2024-06-04", category: "Utilities", amount: "1800" },
-    { desc: "Movie Night", date: "2024-06-05", category: "Entertainment", amount: "600" },
-    { desc: "Rent Payment", date: "2024-06-06", category: "Housing", amount: "15000" },
-    { desc: "Online Shopping", date: "2024-06-07", category: "Shopping", amount: "2500" },
-    { desc: "Coffee", date: "2024-06-08", category: "Food & Dining", amount: "150" },
-    { desc: "Metro Card Recharge", date: "2024-06-09", category: "Transportation", amount: "500" },
-    { desc: "Freelance Project", date: "2024-06-10", category: "Income", amount: "12000" },
-    { desc: "Water Bill", date: "2024-06-11", category: "Utilities", amount: "400" },
-    { desc: "Concert Ticket", date: "2024-06-12", category: "Entertainment", amount: "2000" },
-    { desc: "Furniture Purchase", date: "2024-06-13", category: "Housing", amount: "7000" },
-    { desc: "Clothing", date: "2024-06-14", category: "Shopping", amount: "3200" },
-    { desc: "Dinner Out", date: "2024-06-15", category: "Food & Dining", amount: "900" },
-  ];
+  // Load transactions from API
+  useEffect(() => {
+    const loadTransactions = async () => {
+      try {
+        setLoading(true);
+        const result = await getTransactions();
+        
+        if (result.success) {
+          setTransactions(result.data);
+        } else {
+          setError(result.message || 'Failed to load transactions');
+          // Fallback to static data if API fails
+          setTransactions([
+            { desc: "Grocery Shopping", date: "2024-06-01", category: "Food & Dining", amount: "1200" },
+            { desc: "Uber Ride", date: "2024-06-02", category: "Transportation", amount: "350" },
+            { desc: "Salary", date: "2024-06-03", category: "Income", amount: "50000" },
+            { desc: "Electricity Bill", date: "2024-06-04", category: "Utilities", amount: "1800" },
+            { desc: "Movie Night", date: "2024-06-05", category: "Entertainment", amount: "600" },
+          ]);
+        }
+      } catch (err) {
+        console.error('Transactions loading error:', err);
+        setError(err.message || 'Failed to load transactions');
+        // Fallback to static data
+        setTransactions([
+          { desc: "Grocery Shopping", date: "2024-06-01", category: "Food & Dining", amount: "1200" },
+          { desc: "Uber Ride", date: "2024-06-02", category: "Transportation", amount: "350" },
+          { desc: "Salary", date: "2024-06-03", category: "Income", amount: "50000" },
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTransactions();
+  }, []);
 
   const categoryColors = {
     "Food & Dining": "bg-green-100 text-green-800",
@@ -60,7 +83,7 @@ const Transactions = () => {
     setAmount('');
   };
 
-  const filteredTransactions = staticTransactions.filter(tx =>
+  const filteredTransactions = transactions.filter(tx =>
     tx.desc.toLowerCase().includes(searchTerm.toLowerCase()) &&
     (categoryFilter === "All Categories" || tx.category === categoryFilter)
   );

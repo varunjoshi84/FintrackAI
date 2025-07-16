@@ -1,9 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import Header from './Header';
 import Footer from '../components/Footer';
+import { getDashboardData } from '../api';
 
 const Dashboard = () => {
   const [transactionCount, setTransactionCount] = useState(10);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   
   const spendingChartRef = useRef(null);
   const categoryChartRef = useRef(null);
@@ -12,6 +16,30 @@ const Dashboard = () => {
   const transactionListRef = useRef(null);
 
   const categories = ['Food', 'Travel', 'Entertainment', 'Bills', 'Shopping', 'Other'];
+
+  // Load dashboard data
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      try {
+        setLoading(true);
+        const result = await getDashboardData();
+        
+        if (result.success) {
+          setDashboardData(result.data);
+          setTransactionCount(result.data.transactionCount || 10);
+        } else {
+          setError(result.message || 'Failed to load dashboard data');
+        }
+      } catch (err) {
+        console.error('Dashboard data loading error:', err);
+        setError(err.message || 'Failed to load dashboard data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboardData();
+  }, []);
 
   // Initialize charts
   useEffect(() => {
