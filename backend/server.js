@@ -1,0 +1,47 @@
+// Main Server - Clean & Organized Structure
+// This file connects everything together!
+
+const express = require('express');
+const cors = require('cors');
+
+// Import database connection
+const connectDB = require('./database');
+
+// Import authentication functions from the authentication folder
+const signup = require('./authentication/signup');
+const login = require('./authentication/login');
+const adminLogin = require('./authentication/adminLogin');
+const createAdmin = require('./authentication/createAdmin');
+
+// Create Express app
+const app = express();
+
+// Basic middleware (what our app needs to work)
+app.use(express.json()); // To read JSON data
+app.use(cors());         // To allow frontend to connect
+
+// Connect to database
+connectDB();
+
+
+// Health check - test if server is working
+app.get('/', (req, res) => {
+  res.json({ message: 'Server is running!' });
+});
+
+// Authentication Routes
+app.post('/api/auth/register', signup);     // User signup
+app.post('/api/auth/login', login);         // User login  
+app.post('/api/auth/admin/login', adminLogin); // Admin login
+
+// Admin Management
+app.post('/api/create-admin', createAdmin); // Create admin (run once)
+
+// Start server
+const PORT = 8000;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+
+});
+
+
