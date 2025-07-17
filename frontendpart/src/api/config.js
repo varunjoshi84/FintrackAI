@@ -82,6 +82,21 @@ export const apiRequest = async (endpoint, options = {}) => {
     const response = await fetch(url, defaultOptions);
     
     if (!response.ok) {
+      // Try to get error message from response body first
+      let errorMessage = `HTTP error! status: ${response.status}`;
+      let errorData = null;
+      
+      try {
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        }
+      } catch (parseError) {
+        // If we can't parse the error, use default message
+        console.warn('Could not parse error response:', parseError);
+      }
+      
       // Handle different HTTP status codes
       if (response.status === 401) {
         // Unauthorized - clear token and redirect to login
@@ -102,7 +117,17 @@ export const apiRequest = async (endpoint, options = {}) => {
         throw new Error('Server error occurred');
       }
       
-      throw new Error(`HTTP error! status: ${response.status}`);
+      // For client errors (400-499), return structured error instead of throwing
+      if (response.status >= 400 && response.status < 500) {
+        return {
+          success: false,
+          message: errorMessage,
+          status: response.status,
+          error: errorData
+        };
+      }
+      
+      throw new Error(errorMessage);
     }
 
     // Handle different content types

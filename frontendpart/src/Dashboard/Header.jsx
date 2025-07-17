@@ -1,10 +1,103 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { getUserProfile } from '../api';
 
 const Header = () => {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileDropdownOpen, setIsMobileDropdownOpen] = useState(false);
+  const [userData, setUserData] = useState(() => {
+    // Try to get user data from localStorage first for immediate display
+    const storedUserInfo = localStorage.getItem('userInfo');
+    if (storedUserInfo) {
+      try {
+        const parsed = JSON.parse(storedUserInfo);
+        return {
+          name: parsed.name || 'User',
+          email: parsed.email || 'user@fintrackai.com'
+        };
+      } catch {
+        // Fall back to defaults if JSON parsing fails
+      }
+    }
+    return {
+      name: 'User',
+      email: 'user@fintrackai.com'
+    };
+  });
+
+  // Load user data
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+          // No token, reset to defaults
+          setUserData({
+            name: 'User',
+            email: 'user@fintrackai.com'
+          });
+          return;
+        }
+
+        const result = await getUserProfile();
+        if (result.success && result.data) {
+          const newUserData = {
+            name: result.data.name || 'User',
+            email: result.data.email || 'user@fintrackai.com'
+          };
+          setUserData(newUserData);
+          
+          // Update localStorage for immediate access next time
+          localStorage.setItem('userInfo', JSON.stringify(newUserData));
+        }
+      } catch (error) {
+        console.error('Failed to load user data:', error);
+        // Keep default values if API fails
+      }
+    };
+
+    loadUserData();
+
+    // Listen for storage changes (when user logs in/out)
+    const handleStorageChange = (e) => {
+      if (e.key === 'authToken') {
+        if (e.newValue) {
+          // User logged in, reload data immediately
+          setTimeout(loadUserData, 200);
+        } else {
+          // User logged out, reset to defaults
+          setUserData({
+            name: 'User',
+            email: 'user@fintrackai.com'
+          });
+        }
+      }
+    };
+
+    // Listen for custom events from login/signup
+    const handleUserLogin = () => {
+      setTimeout(loadUserData, 300); // Increased delay to ensure token and data are ready
+    };
+
+    // Listen for focus events (when user comes back to tab)
+    const handleWindowFocus = () => {
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        loadUserData();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('userLogin', handleUserLogin);
+    window.addEventListener('focus', handleWindowFocus);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('userLogin', handleUserLogin);
+      window.removeEventListener('focus', handleWindowFocus);
+    };
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -17,7 +110,7 @@ const Header = () => {
     };
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
-  }, []);
+  }, [userData]); // Add userData as dependency
 
   const currentPath = window.location.pathname;
 
@@ -68,8 +161,8 @@ const Header = () => {
                 isDropdownOpen ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'
               }`}
             >
-              <a href="#" className="block px-4 py-2 text-gray-300 hover:bg-gray-700 rounded-full w-48 text-center">John Doe</a>
-              <a href="#" className="block px-4 py-2 text-gray-300 hover:bg-gray-700 rounded-full w-48 text-center">name@fintrackai.com</a>
+              <span className="block px-4 py-2 text-gray-300 rounded-full w-48 text-center font-semibold">{userData.name}</span>
+              <span className="block px-4 py-2 text-gray-400 rounded-full w-48 text-center text-sm">{userData.email}</span>
               <Link to="/userdashboard" className={`block px-4 py-2 ${currentPath.includes('userdashboard') ? 'text-blue-400 font-semibold' : 'text-gray-300'} hover:bg-gray-700 rounded-full w-48 text-center`}>My profile</Link>
               <Link to="/" className="block px-4 py-2 text-red-400 hover:bg-gray-700 rounded-full w-48 text-center">Sign out</Link>
             </div>
@@ -105,8 +198,8 @@ const Header = () => {
                 isMobileDropdownOpen ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'
               }`}
             >
-              <a href="#" className="block px-4 py-2 text-gray-300 hover:bg-gray-700 rounded-full w-48 text-center">John Doe</a>
-              <a href="#" className="block px-4 py-2 text-gray-300 hover:bg-gray-700 rounded-full w-48 text-center">name@fintrackai.com</a>
+              <span className="block px-4 py-2 text-gray-300 rounded-full w-48 text-center font-semibold">{userData.name}</span>
+              <span className="block px-4 py-2 text-gray-400 rounded-full w-48 text-center text-sm">{userData.email}</span>
               <Link to="/userdashboard" className={`block px-4 py-2 ${currentPath.includes('userdashboard') ? 'text-blue-400 font-semibold' : 'text-gray-300'} hover:bg-gray-700 rounded-full w-48 text-center`}>My profile</Link>
               <Link to="/" className="block px-4 py-2 text-red-400 hover:bg-gray-700 rounded-full w-48 text-center">Sign out</Link>
             </div>

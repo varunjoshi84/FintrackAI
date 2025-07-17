@@ -3,9 +3,14 @@ import { API_BASE_URL, API_ENDPOINTS, getDefaultHeaders } from './config.js';
 // Get dashboard statistics
 export const getDashboardStats = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.DASHBOARD_STATS}`, {
+    const token = localStorage.getItem('authToken');
+    
+    const response = await fetch(`${API_BASE_URL}/dashboard`, {
       method: 'GET',
-      headers: getDefaultHeaders(),
+      headers: {
+        ...getDefaultHeaders(),
+        'Authorization': `Bearer ${token}`
+      },
     });
 
     if (!response.ok) {
@@ -16,7 +21,7 @@ export const getDashboardStats = async () => {
     const result = await response.json();
     return {
       success: true,
-      data: result,
+      data: result.data,
       message: 'Dashboard stats fetched successfully'
     };
   } catch (error) {
@@ -25,6 +30,42 @@ export const getDashboardStats = async () => {
       success: false,
       error: error.message,
       message: 'Failed to fetch dashboard stats'
+    };
+  }
+};
+
+// Update user profile (dashboard version)
+export const updateDashboardProfile = async (profileData) => {
+  try {
+    const token = localStorage.getItem('authToken');
+    
+    const response = await fetch(`${API_BASE_URL}/dashboard/profile`, {
+      method: 'PUT',
+      headers: {
+        ...getDefaultHeaders(),
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(profileData)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to update profile');
+    }
+
+    const result = await response.json();
+    return {
+      success: true,
+      data: result.user,
+      message: result.message || 'Profile updated successfully'
+    };
+  } catch (error) {
+    console.error('Update profile error:', error);
+    return {
+      success: false,
+      error: error.message,
+      message: 'Failed to update profile'
     };
   }
 };

@@ -11,7 +11,10 @@ export const uploadFile = async (file, onProgress = null) => {
 
     const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.UPLOAD_FILE}`, {
       method: 'POST',
-      headers: getFileUploadHeaders(),
+      headers: {
+        ...getFileUploadHeaders(),
+        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+      },
       body: formData,
     });
 
@@ -42,7 +45,11 @@ export const processFile = async (fileId) => {
   try {
     const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.PROCESS_FILE}`, {
       method: 'POST',
-      headers: getDefaultHeaders(),
+      headers: {
+        ...getDefaultHeaders(),
+        'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({ fileId }),
     });
 

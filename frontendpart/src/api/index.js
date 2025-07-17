@@ -2,9 +2,29 @@
 export * from './config.js';
 export * from './auth.js';
 export * from './upload.js';
-export * from './dashboard.js';
 export * from './admin.js';
+
+// Import dashboard functions with specific names to avoid conflicts
+export { 
+  getDashboardStats, 
+  getDashboardData,
+  getTransactions,
+  addTransaction,  // Add back to prevent white screen
+  getInsights,
+  getCategories,
+  getDashboardAdminStats,
+  getDashboardAllUsers,
+  updateDashboardUserStatus,
+  deleteUserFromDashboard,
+  getDashboardSystemHealth,
+  updateDashboardProfile  // This is the dashboard version
+} from './dashboard.js';
+
+// Import user functions (these are the ones used by UserDashboard)
 export * from './user.js';
+
+// Location functions
+export { searchCities, getPopularCities } from './location.js';
 
 // Error handling utility
 export const handleApiError = (error) => {

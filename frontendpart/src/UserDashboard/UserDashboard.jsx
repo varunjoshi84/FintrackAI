@@ -1,16 +1,13 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../Dashboard/Header';
 import Footer from '../components/Footer';
-import { getUserProfile, updateUserProfile, deleteUserAccount, verifyUserAccount, uploadProfileImage } from '../api';
+import LocationInput from '../components/LocationInput';
+import { getUserProfile, deleteUserAccount, updateUserProfile } from '../api';
 
 const UserDashboard = () => {
-  const [users, setUsers] = useState([]);
-  const [currentUserId, setCurrentUserId] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [userData, setUserData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [modalData, setModalData] = useState({
     name: '',
     email: '',
@@ -23,14 +20,12 @@ const UserDashboard = () => {
   useEffect(() => {
     const loadUserProfile = async () => {
       try {
-        setLoading(true);
         const result = await getUserProfile();
         
         if (result.success) {
           setUserData(result.data);
-          setCurrentUserId(result.data.id);
         } else {
-          setError(result.message || 'Failed to load user profile');
+          console.error('Failed to load user profile:', result.message);
           // Fallback to default user data
           setUserData({
             id: 1,
@@ -42,11 +37,9 @@ const UserDashboard = () => {
             verified: false,
             image: null,
           });
-          setCurrentUserId(1);
         }
       } catch (err) {
         console.error('User profile loading error:', err);
-        setError(err.message || 'Failed to load user profile');
         // Fallback to default user data
         setUserData({
           id: 1,
@@ -58,83 +51,24 @@ const UserDashboard = () => {
           verified: false,
           image: null,
         });
-        setCurrentUserId(1);
-      } finally {
-        setLoading(false);
       }
     };
 
     loadUserProfile();
   }, []);
 
-  const updateDisplay = useCallback(() => {
-    // Animation setup
-    const elements = document.querySelectorAll('[data-animation]');
-    elements.forEach((element, index) => {
-      setTimeout(() => {
-        element.classList.remove('opacity-0');
-        element.classList.add(element.dataset.animation);
-      }, index * 200);
-    });
-  }, []);
 
-  useEffect(() => {
-    if (userData) {
-      updateDisplay();
-    }
-  }, [userData, updateDisplay]);
-
-  const updateDisplay_OLD = useCallback(() => {
-    const user = users.find((u) => u.id === currentUserId);
-    if (user) {
-      setUserData(user);
-    } else {
-      setUserData({
-        name: 'No User',
-        email: '',
-        phone: '',
-        dob: null,
-        location: '',
-        verified: false,
-        image: null,
-      });
-    }
-  }, [users, currentUserId]);
-
-  useEffect(() => {
-    updateDisplay();
-    
-    // Animation setup
-    const elements = document.querySelectorAll('[data-animation]');
-    elements.forEach((element, index) => {
-      setTimeout(() => {
-        element.classList.remove('opacity-0');
-        element.classList.add(element.dataset.animation);
-      }, index * 200);
-    });
-  }, [updateDisplay]);
 
   const toggleModal = (show) => {
     setModalOpen(show);
-    if (show) {
-      const user = users.find((u) => u.id === currentUserId);
-      if (user) {
-        setModalData({
-          name: user.name || '',
-          email: user.email || '',
-          phone: user.phone || '',
-          dob: user.dob ? user.dob.split('T')[0] : '',
-          location: user.location || '',
-        });
-      } else {
-        setModalData({
-          name: '',
-          email: '',
-          phone: '',
-          dob: '',
-          location: '',
-        });
-      }
+    if (show && userData) {
+      setModalData({
+        name: userData.name || '',
+        email: userData.email || '',
+        phone: userData.phone || '',
+        dob: userData.dob ? userData.dob.split('T')[0] : '',
+        location: userData.location || '',
+      });
     }
   };
 
@@ -142,158 +76,106 @@ const UserDashboard = () => {
     const file = e.target.files[0];
     if (file) {
       const imageUrl = URL.createObjectURL(file);
-      const userIndex = users.findIndex((u) => u.id === currentUserId);
-      if (userIndex !== -1) {
-        const updatedUsers = [...users];
-        updatedUsers[userIndex] = { ...updatedUsers[userIndex], image: imageUrl };
-        setUsers(updatedUsers);
-        updateDisplay();
-      }
+      // Update user data locally for immediate feedback
+      setUserData(prev => ({ ...prev, image: imageUrl }));
+      // TODO: Implement actual image upload to server
+      console.log('Image selected:', file.name);
     }
   };
 
-  const saveProfile = () => {
+  const saveProfile = async () => {
     const { name, email, phone, dob, location } = modalData;
-    const imageInput = document.getElementById('modalImageUpload');
-    const imageFile = imageInput?.files[0];
 
     if (name && email && phone && location) {
-      const userIndex = users.findIndex((u) => u.id === currentUserId);
-      if (userIndex !== -1) {
-        const updatedUsers = [...users];
-        updatedUsers[userIndex] = {
-          ...updatedUsers[userIndex],
-          name,
-          email,
-          phone,
-          dob: dob || updatedUsers[userIndex].dob,
-          location,
-          image: imageFile ? URL.createObjectURL(imageFile) : updatedUsers[userIndex].image,
+      try {
+        // Basic email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          alert('Please enter a valid email address');
+          return;
+        }
+
+        const profileData = {
+          name: name.trim(),
+          email: email.trim().toLowerCase(),
+          phone: phone.trim(),
+          dob: dob || userData?.dob,
+          location: location.trim(),
         };
-        setUsers(updatedUsers);
+
+        const result = await updateUserProfile(profileData);
+        if (result.success) {
+          // Update local user data
+          setUserData(prev => ({ ...prev, ...profileData }));
+          
+          // Notify Header component to refresh user data
+          window.dispatchEvent(new CustomEvent('userLogin'));
+          
+          toggleModal(false);
+          alert('Profile updated successfully!');
+        } else {
+          const errorMessage = result.message || 'Failed to update profile';
+          alert(errorMessage);
+          console.error('Profile update failed:', result);
+        }
+      } catch (error) {
+        console.error('Update profile error:', error);
+        const errorMessage = error.message || 'Failed to update profile. Please try again.';
+        alert(errorMessage);
       }
-      updateDisplay();
-      toggleModal(false);
-      alert('Profile updated successfully!');
     } else {
       alert('Please fill all required fields.');
     }
   };
 
-  const createNewProfile = () => {
-    const { name, email, phone, dob, location } = modalData;
-    const imageInput = document.getElementById('modalImageUpload');
-    const imageFile = imageInput?.files[0];
-
-    if (name && email && phone && location) {
-      const newUser = {
-        id: users.length + 1,
-        name,
-        email,
-        phone,
-        dob: dob || null,
-        location,
-        verified: false,
-        image: imageFile ? URL.createObjectURL(imageFile) : null,
-      };
-      const updatedUsers = [...users, newUser];
-      setUsers(updatedUsers);
-      setCurrentUserId(newUser.id);
-      updateDisplay();
-      toggleModal(false);
-      alert('New profile created successfully!');
-    } else {
-      alert('Please fill all required fields.');
-    }
-  };
-
-  const deleteAccount = () => {
+  const deleteAccount = async () => {
     if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-      const updatedUsers = users.filter((u) => u.id !== currentUserId);
-      setUsers(updatedUsers);
-      if (updatedUsers.length > 0) {
-        setCurrentUserId(updatedUsers[0].id);
-      } else {
-        setCurrentUserId(null);
+      try {
+        const result = await deleteUserAccount();
+        if (result.success) {
+          alert('Account deleted successfully!');
+          // Clear local storage and redirect to home
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('userInfo');
+          window.location.href = '/';
+        } else {
+          alert(result.message || 'Failed to delete account');
+        }
+      } catch (error) {
+        console.error('Delete account error:', error);
+        alert('Failed to delete account. Please try again.');
       }
-      updateDisplay();
-      alert('Account deleted successfully!');
-    }
-  };
-
-  const verifyAccount = () => {
-    const user = users.find((u) => u.id === currentUserId);
-    if (user && !user.verified) {
-      const userIndex = users.findIndex((u) => u.id === currentUserId);
-      const updatedUsers = [...users];
-      updatedUsers[userIndex] = { ...updatedUsers[userIndex], verified: true };
-      setUsers(updatedUsers);
-      updateDisplay();
-      alert('Account verified successfully!');
-    } else if (user?.verified) {
-      alert('Account is already verified.');
-    } else {
-      alert('No user to verify.');
-    }
-  };
-
-  const updateProfile = () => {
-    const email = document.getElementById('editEmail')?.value;
-    const phone = document.getElementById('editPhone')?.value;
-    const dob = document.getElementById('editDOB')?.value;
-    const location = document.getElementById('editLocation')?.value;
-    const imageInput = document.getElementById('imageUpload');
-    const imageFile = imageInput?.files[0];
-
-    if (email && phone && location) {
-      const userIndex = users.findIndex((u) => u.id === currentUserId);
-      if (userIndex !== -1) {
-        const updatedUsers = [...users];
-        updatedUsers[userIndex] = {
-          ...updatedUsers[userIndex],
-          email,
-          phone,
-          dob: dob || updatedUsers[userIndex].dob,
-          location,
-          image: imageFile ? URL.createObjectURL(imageFile) : updatedUsers[userIndex].image,
-        };
-        setUsers(updatedUsers);
-      }
-      updateDisplay();
-      alert('Profile updated successfully!');
-    } else {
-      alert('Please fill all required fields.');
     }
   };
 
   return (
-    <div className="min-h-screen font-inter">
+    <div className="min-h-screen font-inter bg-gray-50">
       <Header />
       
       {/* Main User Dashboard Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="min-h-screen rounded-lg p-6">
+      <main className="flex flex-col items-center justify-center py-20 px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-4xl space-y-12">
           {/* Welcome Header */}
-          <div className="text-center mb-12 opacity-0 fade-in" data-animation="fade-in">
+          <div className="text-center">
             <h1 className="text-4xl font-extrabold text-gray-900 mb-4 drop-shadow-md">
-              Welcome, <span id="userName" className="text-indigo-600">{userData.name}</span>!
+              Welcome, <span id="userName" className="text-indigo-600">{userData?.name || 'User'}</span>!
             </h1>
             <p className="text-lg text-gray-600">Manage your personal details with ease.</p>
           </div>
 
           {/* User Details Card */}
-          <div className="bg-white rounded-2xl shadow-2xl p-8 transform translate-y-10 slide-up" data-animation="slide-up">
-            <div className="flex flex-col md:flex-row items-center mb-8">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 mx-auto max-w-3xl">
+            <div className="flex flex-col md:flex-row items-center justify-center mb-8">
               <div className="relative w-32 h-32 mb-6 md:mb-0 md:mr-8">
                 <div
                   id="profileImage"
-                  className="w-full h-full bg-gray-200 rounded-full flex items-center justify-center overflow-hidden border-4 border-indigo-200 hover:bounce transition-all duration-300"
+                  className="w-full h-full bg-gray-200 rounded-full flex items-center justify-center overflow-hidden border-4 border-indigo-200 hover:border-indigo-300 transition-all duration-300"
                   style={{
-                    backgroundImage: userData.image ? `url(${userData.image})` : 'none',
-                    backgroundSize: userData.image ? 'cover' : 'auto',
+                    backgroundImage: userData?.image ? `url(${userData.image})` : 'none',
+                    backgroundSize: userData?.image ? 'cover' : 'auto',
                   }}
                 >
-                  {!userData.image && <i className="fas fa-user text-gray-400 text-5xl"></i>}
+                  {!userData?.image && <i className="fas fa-user text-gray-400 text-5xl"></i>}
                 </div>
                 <input
                   id="imageUpload"
@@ -303,178 +185,137 @@ const UserDashboard = () => {
                   onChange={handleImageUpload}
                 />
               </div>
-              <div className="text-center md:text-left">
-                <h2 id="userNameDisplay" className="text-3xl font-bold text-gray-800 mb-2">
-                  {userData.name}
+              <div className="text-center md:text-left flex-1">
+                <h2 id="userNameDisplay" className="text-3xl font-bold text-gray-800 mb-4">
+                  {userData?.name || 'User'}
                 </h2>
-                <p id="userEmail" className="text-gray-600 text-lg">
-                  Email: {userData.email}
-                </p>
-                <p id="userDOB" className="text-gray-600 text-lg">
-                  DOB: {userData.dob ? new Date(userData.dob).toLocaleDateString() : 'Not Set'}
-                </p>
-                <p id="userPhone" className="text-gray-600 text-lg">
-                  Phone: {userData.phone}
-                </p>
-                <p id="userLocation" className="text-gray-600 text-lg">
-                  Location: {userData.location}
-                </p>
-                <p id="userVerified" className="text-gray-600 text-lg">
-                  Verified: <span className={userData.verified ? 'text-green-600' : 'text-red-600'}>{userData.verified ? 'Yes' : 'No'}</span>
-                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-600 text-lg">
+                  <p id="userEmail" className="flex flex-col md:flex-row">
+                    <span className="font-semibold text-gray-800 md:w-20">Email:</span> 
+                    <span className="break-all">{userData?.email || 'Not Set'}</span>
+                  </p>
+                  <p id="userDOB" className="flex flex-col md:flex-row">
+                    <span className="font-semibold text-gray-800 md:w-20">DOB:</span> 
+                    <span>{userData?.dob ? new Date(userData.dob).toLocaleDateString() : 'Not Set'}</span>
+                  </p>
+                  <p id="userPhone" className="flex flex-col md:flex-row">
+                    <span className="font-semibold text-gray-800 md:w-20">Phone:</span> 
+                    <span>{userData?.phone || 'Not Set'}</span>
+                  </p>
+                  <p id="userLocation" className="flex flex-col md:flex-row">
+                    <span className="font-semibold text-gray-800 md:w-20">Location:</span> 
+                    <span>{userData?.location || 'Not Set'}</span>
+                  </p>
+                  <p id="userVerified" className="md:col-span-2 flex flex-col md:flex-row">
+                    <span className="font-semibold text-gray-800 md:w-20">Verified:</span> 
+                    <span className={userData?.verified ? 'text-green-600' : 'text-red-600'}>
+                      {userData?.verified ? 'Yes' : 'No'}
+                    </span>
+                  </p>
+                </div>
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <input
-                  id="editEmail"
-                  type="email"
-                  placeholder="Email"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-gray-700 placeholder-gray-400 transition"
-                  defaultValue={userData.email}
-                />
-                <input
-                  id="editPhone"
-                  type="tel"
-                  placeholder="Phone"
-                  className="w-full mt-4 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-gray-700 placeholder-gray-400 transition"
-                  defaultValue={userData.phone}
-                />
-              </div>
-              <div>
-                <input
-                  id="editDOB"
-                  type="date"
-                  placeholder="Date of Birth"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-gray-700 placeholder-gray-400 transition"
-                  defaultValue={userData.dob ? userData.dob.split('T')[0] : ''}
-                />
-                <input
-                  id="editLocation"
-                  type="text"
-                  placeholder="Location"
-                  className="w-full mt-4 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-gray-700 placeholder-gray-400 transition"
-                  defaultValue={userData.location}
-                />
-              </div>
-            </div>
-            <div className="mt-6 flex flex-col sm:flex-row gap-4">
-              <button
-                onClick={updateProfile}
-                className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:pulse transition flex items-center justify-center"
-              >
-                <i className="fas fa-save mr-2"></i> Update Profile
-              </button>
-              <button
-                onClick={verifyAccount}
-                className="bg-green-600 text-white px-6 py-3 rounded-lg hover:pulse transition flex items-center justify-center"
-              >
-                <i className="fas fa-check mr-2"></i> Verify Account
-              </button>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
                 onClick={deleteAccount}
-                className="bg-red-600 text-white px-6 py-3 rounded-lg hover:pulse transition flex items-center justify-center"
+                className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition flex items-center justify-center shadow-lg hover:shadow-xl"
               >
                 <i className="fas fa-trash mr-2"></i> Delete Account
               </button>
               <button
                 onClick={() => toggleModal(true)}
-                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:pulse transition flex items-center justify-center"
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition flex items-center justify-center shadow-lg hover:shadow-xl"
               >
-                <i className="fas fa-edit mr-2"></i> Edit in Modal
+                <i className="fas fa-edit mr-2"></i> Edit Profile
               </button>
             </div>
           </div>
-        </div>
 
-        {/* Edit Profile Modal */}
-        <div
-          id="editProfileModal"
-          className={`fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 ${
-            modalOpen ? '' : 'hidden'
-          }`}
-        >
-          <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl transform translate-y-10 slide-up relative" data-animation="slide-up">
-            <button
-              onClick={() => toggleModal(false)}
-              className="absolute top-4 right-4 text-gray-500 text-2xl hover:text-gray-700"
-            >
-              ×
-            </button>
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Edit Profile</h2>
-            <div className="space-y-5">
-              <input
-                id="modalEditName"
-                type="text"
-                placeholder="Name"
-                className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-gray-700 placeholder-gray-400 transition"
-                value={modalData.name}
-                onChange={(e) => setModalData((prev) => ({ ...prev, name: e.target.value }))}
-              />
-              <input
-                id="modalEditEmail"
-                type="email"
-                placeholder="Email"
-                className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-gray-700 placeholder-gray-400 transition"
-                value={modalData.email}
-                onChange={(e) => setModalData((prev) => ({ ...prev, email: e.target.value }))}
-              />
-              <input
-                id="modalEditPhone"
-                type="tel"
-                placeholder="Phone"
-                className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-gray-700 placeholder-gray-400 transition"
-                value={modalData.phone}
-                onChange={(e) => setModalData((prev) => ({ ...prev, phone: e.target.value }))}
-              />
-              <input
-                id="modalEditDOB"
-                type="date"
-                placeholder="Date of Birth"
-                className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-gray-700 placeholder-gray-400 transition"
-                value={modalData.dob}
-                onChange={(e) => setModalData((prev) => ({ ...prev, dob: e.target.value }))}
-              />
-              <input
-                id="modalEditLocation"
-                type="text"
-                placeholder="Location"
-                className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-gray-700 placeholder-gray-400 transition"
-                value={modalData.location}
-                onChange={(e) => setModalData((prev) => ({ ...prev, location: e.target.value }))}
-              />
-              <input
-                id="modalImageUpload"
-                type="file"
-                accept="image/*"
-                className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-gray-700 cursor-pointer"
-              />
-            </div>
-            <button
-              onClick={saveProfile}
-              className="mt-6 w-full bg-indigo-600 text-white px-6 py-3 rounded-lg hover:pulse transition flex items-center justify-center"
-            >
-              <i className="fas fa-save mr-2"></i> Save
-            </button>
-            <button
-              onClick={createNewProfile}
-              className="mt-4 w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:pulse transition flex items-center justify-center"
-            >
-              <i className="fas fa-plus mr-2"></i> Create New Profile
-            </button>
+          {/* Secure & Private Tagline */}
+          <div className="mt-16 text-center text-lg text-gray-600 font-medium">
+            <p className="flex items-center justify-center">
+              <i className="fas fa-shield-alt text-green-500 mr-2"></i>
+              Your data is secure, encrypted, and never stored without consent.
+            </p>
           </div>
         </div>
-
-        {/* Secure & Private Tagline */}
-        <div className="mt-12 text-center text-lg text-gray-600 font-medium opacity-0 fade-in" data-animation="fade-in">
-          <p>Your data is secure, encrypted, and never stored without consent.</p>
-        </div>
       </main>
+
+      {/* Edit Profile Modal */}
+      <div
+        id="editProfileModal"
+        className={`fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 ${
+          modalOpen ? '' : 'hidden'
+        }`}
+      >
+        <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl relative m-4">
+          <button
+            onClick={() => toggleModal(false)}
+            className="absolute top-4 right-4 text-gray-500 text-2xl hover:text-gray-700 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100"
+          >
+            ×
+          </button>
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Edit Profile</h2>
+          <div className="space-y-4">
+            <input
+              id="modalEditName"
+              type="text"
+              placeholder="Name"
+              className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-700 placeholder-gray-400 transition"
+              value={modalData.name}
+              onChange={(e) => setModalData((prev) => ({ ...prev, name: e.target.value }))}
+            />
+            <input
+              id="modalEditEmail"
+              type="email"
+              placeholder="Email"
+              className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-700 placeholder-gray-400 transition"
+              value={modalData.email}
+              onChange={(e) => setModalData((prev) => ({ ...prev, email: e.target.value }))}
+            />
+            <input
+              id="modalEditPhone"
+              type="tel"
+              placeholder="Phone"
+              className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-700 placeholder-gray-400 transition"
+              value={modalData.phone}
+              onChange={(e) => setModalData((prev) => ({ ...prev, phone: e.target.value }))}
+            />
+            <input
+              id="modalEditDOB"
+              type="date"
+              placeholder="Date of Birth"
+              className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-700 placeholder-gray-400 transition"
+              value={modalData.dob}
+              onChange={(e) => setModalData((prev) => ({ ...prev, dob: e.target.value }))}
+            />
+            <LocationInput
+              id="modalEditLocation"
+              placeholder="Enter your location..."
+              className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-700 placeholder-gray-400 transition"
+              value={modalData.location}
+              onChange={(e) => setModalData((prev) => ({ ...prev, location: e.target.value }))}
+            />
+            <input
+              id="modalImageUpload"
+              type="file"
+              accept="image/*"
+              className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-700 cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+            />
+          </div>
+          <button
+            onClick={saveProfile}
+            className="mt-6 w-full bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition flex items-center justify-center shadow-lg hover:shadow-xl"
+          >
+            <i className="fas fa-save mr-2"></i> Save Changes
+          </button>
+        </div>
+      </div>
       
       <Footer />
       
       <style>{`
-        /* Custom styles with animations */
+        /* Custom styles with hover effects */
         #profileImage {
           transition: all 0.3s ease;
         }
@@ -488,60 +329,36 @@ const UserDashboard = () => {
           cursor: pointer;
         }
 
-        /* Animation Classes */
-        .fade-in {
-          animation: fadeIn 1s ease-in-out forwards;
-        }
-
-        .slide-up {
-          animation: slideUp 0.8s ease-out forwards;
-        }
-
-        .bounce {
-          animation: bounce 0.5s ease-out;
-        }
-
-        .hover\\:pulse:hover {
-          animation: pulse 1.5s infinite;
-        }
-
-        [data-animation] {
-          opacity: 0;
-        }
-
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-
-        @keyframes slideUp {
-          from { transform: translateY(20px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-
-        @keyframes bounce {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.05); }
-        }
-
-        @keyframes pulse {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.05); }
-        }
-
-        @media (max-width: 640px) {
-          .flex-col-md {
-            flex-direction: column;
-          }
-          .w-full-md {
-            width: 100%;
-          }
-          .mt-md-0 {
-            margin-top: 0;
-          }
-          .grid-cols-1-md {
+        /* Responsive improvements */
+        @media (max-width: 768px) {
+          .grid-cols-1 {
             grid-template-columns: 1fr;
           }
+          .text-center {
+            text-align: center;
+          }
+          .md\\:text-left {
+            text-align: center;
+          }
+        }
+
+        /* Focus improvements */
+        input:focus, button:focus {
+          outline: none;
+        }
+
+        /* Better hover effects */
+        button {
+          transition: all 0.3s ease;
+        }
+
+        button:hover {
+          transform: translateY(-1px);
+        }
+
+        /* Modal improvements */
+        .fixed {
+          backdrop-filter: blur(4px);
         }
       `}</style>
     </div>

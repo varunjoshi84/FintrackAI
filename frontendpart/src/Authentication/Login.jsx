@@ -42,6 +42,19 @@ const Login = () => {
         localStorage.setItem('authToken', result.token);
         localStorage.setItem('userEmail', email);
         
+        // Store user info for immediate access
+        if (result.user) {
+          localStorage.setItem('userInfo', JSON.stringify({
+            name: result.user.name,
+            email: result.user.email
+          }));
+        }
+        
+        // Dispatch custom event to notify Header component
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('userLogin'));
+        }, 100);
+        
         // Redirect to dashboard
         navigate('/dashboard');
       } else {
