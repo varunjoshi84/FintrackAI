@@ -25,6 +25,19 @@ const {
   verifyToken: verifyUserToken 
 } = require('./userController');
 
+// Import newsletter functions
+const { 
+  subscribeNewsletter, 
+  unsubscribeNewsletter, 
+  getAllSubscribers 
+} = require('./newsletterController');
+
+// Import contact functions
+const { sendContactMessage } = require('./contactController');
+
+// Import email service for testing
+const { sendWelcomeEmail } = require('./emailService');
+
 // Create Express app
 const app = express();
 
@@ -55,6 +68,36 @@ app.get('/api/user/profile', verifyUserToken, getUserProfile);        // Get use
 app.put('/api/user/profile', verifyUserToken, updateUserProfile);     // Update user profile
 app.delete('/api/user/account', verifyUserToken, deleteUserAccount);  // Delete user account
 app.post('/api/user/verify', verifyUserToken, verifyUserAccount);     // Verify user account
+
+// Newsletter Routes (Public - no authentication required)
+app.post('/api/newsletter/subscribe', subscribeNewsletter);            // Subscribe to newsletter
+app.post('/api/newsletter/unsubscribe', unsubscribeNewsletter);        // Unsubscribe from newsletter
+app.get('/api/newsletter/subscribers', verifyUserToken, getAllSubscribers); // Get all subscribers (admin only)
+
+// Contact Routes (Public - no authentication required)
+app.post('/api/contact/send', sendContactMessage);                     // Send contact form message
+
+// Test email endpoint (remove in production)
+app.post('/api/test-email', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email required' });
+    }
+    
+    console.log('🧪 Testing email send to:', email);
+    const result = await sendWelcomeEmail(email);
+    
+    res.json({
+      success: result.success,
+      message: result.success ? 'Test email sent successfully!' : 'Failed to send email',
+      details: result
+    });
+  } catch (error) {
+    console.error('Test email error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 
 // Start server
 const PORT = process.env.PORT || 8000;
