@@ -1,8 +1,9 @@
-// Main Server - Clean & Organized Structure
+
 // This file connects everything together!
 
 const express = require('express');
 const cors = require('cors');
+require('dotenv').config({ quiet: true });
 
 // Import database connection
 const connectDB = require('./database');
@@ -11,7 +12,6 @@ const connectDB = require('./database');
 const signup = require('./authentication/signup');
 const login = require('./authentication/login');
 const adminLogin = require('./authentication/adminLogin');
-const createAdmin = require('./authentication/createAdmin');
 
 // Create Express app
 const app = express();
@@ -34,14 +34,10 @@ app.post('/api/auth/register', signup);     // User signup
 app.post('/api/auth/login', login);         // User login  
 app.post('/api/auth/admin/login', adminLogin); // Admin login
 
-// Admin Management
-app.post('/api/create-admin', createAdmin); // Create admin (run once)
-
 // Start server
-const PORT = 8000;
+const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
-
 });
 
 

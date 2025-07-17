@@ -1,4 +1,4 @@
-// Signup (Register) - Simple and Clean
+// Signup (Register) 
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('./User');
@@ -47,7 +47,7 @@ const signup = async (req, res) => {
     await user.save();
 
     // Create login token
-    const token = jwt.sign({ userId: user._id }, 'mysecretkey', { expiresIn: '24h' });
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE });
 
     // Send success response
     res.status(201).json({

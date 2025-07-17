@@ -1,4 +1,4 @@
-// Admin Login - Simple and Clean
+// Admin Login 
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('./User');
@@ -36,7 +36,7 @@ const adminLogin = async (req, res) => {
     }
 
     // Create login token
-    const token = jwt.sign({ userId: user._id }, 'mysecretkey', { expiresIn: '24h' });
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE });
 
     // Send success response
     res.json({
