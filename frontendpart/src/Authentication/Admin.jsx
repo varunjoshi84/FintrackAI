@@ -38,8 +38,11 @@ const AdminLogin = () => {
       
       if (result.success) {
         // Store admin auth token
-        localStorage.setItem('adminToken', result.token);
-        localStorage.setItem('adminEmail', email);
+        localStorage.setItem('authToken', result.token);
+        localStorage.setItem('userInfo', JSON.stringify({
+          email: email,
+          role: 'admin'
+        }));
         
         // Redirect to admin dashboard
         navigate('/admin-dashboard');

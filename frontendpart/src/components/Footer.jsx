@@ -10,8 +10,15 @@ const Footer = () => {
   const handleNewsletterSubmit = async (e) => {
     e.preventDefault();
     
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email) {
       setMessage('Please enter your email address.');
+      return;
+    }
+    
+    if (!emailRegex.test(email)) {
+      setMessage('Please enter a valid email address.');
       return;
     }
 
@@ -19,10 +26,10 @@ const Footer = () => {
     setMessage('');
 
     try {
-      const result = await subscribeNewsletter({ email });
+      const result = await subscribeNewsletter({ email: email.trim().toLowerCase() });
       
       if (result.success) {
-        setMessage('Successfully subscribed to newsletter!');
+        setMessage('Successfully subscribed to newsletter! 🎉');
         setEmail('');
       } else {
         setMessage(result.message || 'Subscription failed. Please try again.');
@@ -34,8 +41,8 @@ const Footer = () => {
       setLoading(false);
     }
 
-    // Clear message after 3 seconds
-    setTimeout(() => setMessage(''), 3000);
+    // Clear message after 5 seconds
+    setTimeout(() => setMessage(''), 5000);
   };
 
   return (
@@ -117,7 +124,11 @@ const Footer = () => {
               Get the latest updates on new features and financial insights.
             </p>
             {message && (
-              <div className={`text-sm mb-2 ${message.includes('Success') ? 'text-green-400' : 'text-red-400'}`}>
+              <div className={`text-sm mb-3 p-2 rounded-lg transition-all duration-300 ${
+                message.includes('Success') || message.includes('🎉') 
+                  ? 'text-green-400 bg-green-400/10 border border-green-400/20' 
+                  : 'text-red-400 bg-red-400/10 border border-red-400/20'
+              }`}>
                 {message}
               </div>
             )}
@@ -127,12 +138,13 @@ const Footer = () => {
                 placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="flex-1 px-4 py-2 bg-slate-800 border border-slate-700 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled={loading}
+                className="flex-1 px-4 py-2 bg-slate-800 border border-slate-700 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
               />
               <button 
                 type="submit"
-                disabled={loading}
-                className="bg-blue-600 text-white px-4 py-2 rounded-r-lg hover:bg-blue-700 disabled:opacity-50"
+                disabled={loading || !email}
+                className="bg-blue-600 text-white px-4 py-2 rounded-r-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center min-w-[50px]"
               >
                 {loading ? (
                   <i className="fas fa-spinner fa-spin"></i>

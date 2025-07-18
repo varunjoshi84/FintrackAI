@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -7,22 +7,10 @@ import {
   getAllUsers,
   updateUserStatus,
   deleteUser,
-  getAnalytics,
+  createUser,
   getUserGrowthData,
-  getRevenueAnalytics,
-  getUserEngagement,
-  getAnnouncements,
-  createAnnouncement,
-  getSystemSettings,
-  updateSystemSettings,
-  getSystemHealth,
-  createBackup,
-  exportData,
   sendNotification,
-  toggleMaintenanceMode,
-  generateUserReport,
-  generateAnalyticsReport,
-  generateRevenueReport
+  toggleMaintenanceMode
 } from '../api';
 
 const AdminDashboard = () => {
@@ -39,13 +27,21 @@ const AdminDashboard = () => {
     totalRevenue: 0,
     monthlyGrowth: 0
   });
-  const [announcements, setAnnouncements] = useState([]);
-  const [analytics, setAnalytics] = useState(null);
-  const [systemHealth, setSystemHealth] = useState({});
-  const [systemSettings, setSystemSettings] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
   const [userPage, setUserPage] = useState(1);
-  const [totalUsers, setTotalUsers] = useState(0);
+  const [chartLoading, setChartLoading] = useState(true);
+  const [chartError, setChartError] = useState('');
+  const [chartPeriod, setChartPeriod] = useState('monthly');
+  const [userGrowthData, setUserGrowthData] = useState(null);
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [newUserData, setNewUserData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    phone: '',
+    location: ''
+  });
 
   const chartRef = useRef(null);
   const chartInstance = useRef(null);
@@ -66,59 +62,12 @@ const AdminDashboard = () => {
         const usersResult = await getAllUsers(userPage, 10, searchTerm);
         if (usersResult.success) {
           setUsers(usersResult.data.users);
-          setTotalUsers(usersResult.data.total);
         }
 
-        // Load announcements
-        const announcementsResult = await getAnnouncements();
-        if (announcementsResult.success) {
-          setAnnouncements(announcementsResult.data);
-        }
+        // Load analytics data - removed
+        // Analytics functionality has been removed
 
-        // Load analytics data
-        const analyticsResult = await getAnalytics();
-        if (analyticsResult.success) {
-          setAnalytics(analyticsResult.data);
-        }
-
-        // Load system health
-        const healthResult = await getSystemHealth();
-        if (healthResult.success) {
-          setSystemHealth(healthResult.data);
-        }
-
-        // Load system settings
-        const settingsResult = await getSystemSettings();
-        if (settingsResult.success) {
-          setSystemSettings(settingsResult.data);
-        }
-
-      } catch (err) {
-        console.error('Dashboard loading error:', err);
-        setError('Failed to load dashboard data');
-        
-        // Fallback to mock data
-        setSystemStats({
-          totalUsers: 1247,
-          activeUsers: 892,
-          totalTransactions: 45623,
-          totalRevenue: 125430,
-          monthlyGrowth: 12.5
-        });
-        
-        setUsers([
-          { id: 1, name: 'John Doe', email: 'john@example.com', status: 'Active', joinDate: '2024-01-15', plan: 'Premium' },
-          { id: 2, name: 'Jane Smith', email: 'jane@example.com', status: 'Active', joinDate: '2024-02-20', plan: 'Basic' },
-          { id: 3, name: 'Mike Johnson', email: 'mike@example.com', status: 'Inactive', joinDate: '2024-01-08', plan: 'Premium' },
-          { id: 4, name: 'Sarah Wilson', email: 'sarah@example.com', status: 'Active', joinDate: '2024-03-10', plan: 'Enterprise' },
-        ]);
-        
-        setAnnouncements([
-          { id: 1, title: 'System Maintenance', message: 'Scheduled maintenance on Sunday', date: '2024-07-15', type: 'warning' },
-          { id: 2, title: 'New Feature Release', message: 'Enhanced analytics dashboard', date: '2024-07-10', type: 'success' }
-        ]);
-
-      } finally {
+      }  finally {
         setLoading(false);
       }
     };
@@ -126,10 +75,34 @@ const AdminDashboard = () => {
     loadDashboardData();
   }, [userPage, searchTerm]);
 
+  // Load user growth data
+  const loadUserGrowthData = useCallback(async (period = 'monthly') => {
+    try {
+      const result = await getUserGrowthData(period);
+      if (result.success) {
+        setUserGrowthData(result.data);
+      } else {
+        console.warn('Failed to load user growth data:', result.message);
+        setUserGrowthData(null);
+      }
+    } catch (error) {
+      console.warn('Error loading user growth data:', error.message);
+      setUserGrowthData(null);
+    }
+  }, []);
+
+  // Load user growth data when component mounts or period changes
+  useEffect(() => {
+    loadUserGrowthData(chartPeriod);
+  }, [chartPeriod, loadUserGrowthData]);
+
   // Initialize chart
   useEffect(() => {
     const initializeChart = async () => {
       try {
+        setChartLoading(true);
+        setChartError('');
+        
         const { Chart, registerables } = await import('chart.js');
         Chart.register(...registerables);
 
@@ -138,62 +111,108 @@ const AdminDashboard = () => {
             chartInstance.current.destroy();
           }
 
-          if (chartRef.current && analytics?.userGrowth) {
+          if (chartRef.current) {
             const ctx = chartRef.current.getContext('2d');
+            
+            // Use user growth data if available, otherwise show empty chart
+            const chartData = userGrowthData || {
+              labels: ['No Data'],
+              data: [0]
+            };
+
             chartInstance.current = new Chart(ctx, {
               type: 'line',
               data: {
-                labels: analytics.userGrowth.labels || ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+                labels: chartData.labels,
                 datasets: [{
                   label: 'Users',
-                  data: analytics.userGrowth.data || [850, 920, 1050, 1100, 1180, 1220, 1247],
+                  data: chartData.data,
                   backgroundColor: 'rgba(59,130,246,0.1)',
                   borderColor: 'rgba(59,130,246,1)',
-                  borderWidth: 2,
+                  borderWidth: 3,
                   fill: true,
-                  tension: 0.4
+                  tension: 0.4,
+                  pointBackgroundColor: 'rgba(59,130,246,1)',
+                  pointBorderColor: '#ffffff',
+                  pointBorderWidth: 2,
+                  pointRadius: 6,
+                  pointHoverRadius: 8
                 }]
               },
               options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                interaction: {
+                  intersect: false,
+                  mode: 'index'
+                },
                 scales: {
                   y: {
                     beginAtZero: true,
                     grid: {
-                      color: 'rgba(148,163,184,0.1)'
+                      color: 'rgba(148,163,184,0.1)',
+                      drawBorder: false
+                    },
+                    ticks: {
+                      color: 'rgba(71,85,105,0.8)',
+                      font: {
+                        size: 12
+                      }
                     }
                   },
                   x: {
                     grid: {
-                      color: 'rgba(148,163,184,0.1)'
+                      color: 'rgba(148,163,184,0.1)',
+                      drawBorder: false
+                    },
+                    ticks: {
+                      color: 'rgba(71,85,105,0.8)',
+                      font: {
+                        size: 12
+                      }
                     }
                   }
                 },
                 plugins: {
                   legend: {
                     display: false
+                  },
+                  tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: 'rgba(59,130,246,1)',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    displayColors: false
                   }
+                },
+                animation: {
+                  duration: 1000,
+                  easing: 'easeInOutQuart'
                 }
               }
             });
+            
+            setChartLoading(false);
           }
         }, 100);
       } catch (error) {
         console.error('Error loading Chart.js:', error);
+        setChartError('Failed to load chart');
+        setChartLoading(false);
       }
     };
 
-    if (analytics) {
-      initializeChart();
-    }
+    // Always initialize chart, with or without user growth data
+    initializeChart();
 
     return () => {
       if (chartInstance.current) {
         chartInstance.current.destroy();
       }
     };
-  }, [analytics]);
+  }, [userGrowthData]);
 
   const handleLogout = () => {
     localStorage.removeItem('authToken');
@@ -245,130 +264,103 @@ const AdminDashboard = () => {
     setUserPage(1); // Reset to first page when searching
   };
 
-  const handleExportData = async (dataType) => {
+  const handleAddUser = async () => {
     try {
-      const result = await exportData(dataType, 'csv');
+      if (!newUserData.name || !newUserData.email || !newUserData.password) {
+        setError('Name, email, and password are required');
+        return;
+      }
+
+      const result = await createUser(newUserData);
       if (result.success) {
-        // Create blob and download
-        const blob = new Blob([result.data], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${dataType}_export.csv`;
-        a.click();
-        window.URL.revokeObjectURL(url);
-        setSuccessMessage(`${dataType} data exported successfully`);
+        // Add new user to the list
+        setUsers([result.data, ...users]);
+        setSuccessMessage('User created successfully');
+        setShowAddUserModal(false);
+        setNewUserData({ name: '', email: '', password: '', phone: '', location: '' });
+        
+        // Reload users to get fresh data from database
+        setTimeout(async () => {
+          try {
+            const usersResult = await getAllUsers(userPage, 10, searchTerm);
+            if (usersResult.success) {
+              setUsers(usersResult.data.users);
+            }
+          } catch (err) {
+            console.error('Error reloading users:', err);
+          }
+        }, 500);
       } else {
-        setError(result.message || 'Failed to export data');
+        setError(result.message || 'Failed to create user');
       }
     } catch (err) {
-      console.error('Export error:', err);
-      setError('Failed to export data');
+      console.error('User creation error:', err);
+      setError('Failed to create user');
     }
+  };
+
+  const handleModalInputChange = (field, value) => {
+    setNewUserData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSendNotification = async () => {
     const title = prompt('Enter notification title:');
-    const message = prompt('Enter notification message:');
-    
-    if (title && message) {
-      try {
-        const result = await sendNotification({ title, message, type: 'info' });
-        if (result.success) {
-          setSuccessMessage('Notification sent successfully');
-        } else {
-          setError(result.message || 'Failed to send notification');
-        }
-      } catch (err) {
-        console.error('Notification error:', err);
-        setError('Failed to send notification');
-      }
+    if (!title || title.trim() === '') {
+      setError('Notification title is required');
+      return;
     }
-  };
-
-  const handleCreateBackup = async () => {
+    
+    const message = prompt('Enter notification message:');
+    if (!message || message.trim() === '') {
+      setError('Notification message is required');
+      return;
+    }
+    
     try {
-      const result = await createBackup();
+      const result = await sendNotification({ 
+        title: title.trim(), 
+        message: message.trim(), 
+        type: 'info' 
+      });
+      
       if (result.success) {
-        setSuccessMessage('Backup created successfully');
+        setSuccessMessage('Notification sent successfully to all users');
       } else {
-        setError(result.message || 'Failed to create backup');
+        setError(result.message || 'Failed to send notification');
       }
     } catch (err) {
-      console.error('Backup error:', err);
-      setError('Failed to create backup');
+      console.error('Notification error:', err);
+      setError('Failed to send notification. Please try again.');
     }
   };
 
   const handleToggleMaintenance = async () => {
+    const currentMode = maintenanceMode;
+    const action = currentMode ? 'disable' : 'enable';
+    
+    const confirmed = window.confirm(
+      `Are you sure you want to ${action} maintenance mode? ${
+        !currentMode 
+          ? 'This will make the site unavailable to regular users.' 
+          : 'This will make the site available to all users again.'
+      }`
+    );
+    
+    if (!confirmed) return;
+    
     try {
-      const result = await toggleMaintenanceMode(!systemSettings.maintenanceMode);
+      const result = await toggleMaintenanceMode(!currentMode);
       if (result.success) {
-        setSystemSettings({
-          ...systemSettings,
-          maintenanceMode: !systemSettings.maintenanceMode
-        });
-        setSuccessMessage(`Maintenance mode ${!systemSettings.maintenanceMode ? 'enabled' : 'disabled'}`);
+        setMaintenanceMode(!currentMode);
+        setSuccessMessage(
+          `Maintenance mode ${!currentMode ? 'enabled' : 'disabled'} successfully`
+        );
       } else {
         setError(result.message || 'Failed to toggle maintenance mode');
       }
     } catch (err) {
       console.error('Maintenance toggle error:', err);
-      setError('Failed to toggle maintenance mode');
-    }
-  };
-
-  const handleGenerateReport = async (reportType) => {
-    try {
-      let result;
-      switch (reportType) {
-        case 'users':
-          result = await generateUserReport('csv');
-          break;
-        case 'analytics':
-          result = await generateAnalyticsReport('pdf');
-          break;
-        case 'revenue':
-          result = await generateRevenueReport('excel');
-          break;
-        default:
-          throw new Error('Invalid report type');
-      }
-
-      if (result.success) {
-        // Handle file download
-        const blob = new Blob([result.data], { 
-          type: reportType === 'analytics' ? 'application/pdf' : 
-                reportType === 'revenue' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 
-                'text/csv' 
-        });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${reportType}_report.${reportType === 'analytics' ? 'pdf' : reportType === 'revenue' ? 'xlsx' : 'csv'}`;
-        a.click();
-        window.URL.revokeObjectURL(url);
-        setSuccessMessage(`${reportType} report generated successfully`);
-      } else {
-        setError(result.message || 'Failed to generate report');
-      }
-    } catch (err) {
-      console.error('Report generation error:', err);
-      setError('Failed to generate report');
-    }
-  };
-
-  const handleSaveSettings = async () => {
-    try {
-      const result = await updateSystemSettings(systemSettings);
-      if (result.success) {
-        setSuccessMessage('Settings saved successfully');
-      } else {
-        setError(result.message || 'Failed to save settings');
-      }
-    } catch (err) {
-      console.error('Settings save error:', err);
-      setError('Failed to save settings');
+      setError('Failed to toggle maintenance mode. Please try again.');
     }
   };
 
@@ -453,28 +445,6 @@ const AdminDashboard = () => {
               <i className="fas fa-users mr-2"></i>
               User Management
             </button>
-            <button
-              onClick={() => setActiveTab('analytics')}
-              className={`py-4 px-2 border-b-2 font-medium text-sm ${
-                activeTab === 'analytics'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-              }`}
-            >
-              <i className="fas fa-chart-line mr-2"></i>
-              Analytics
-            </button>
-            <button
-              onClick={() => setActiveTab('settings')}
-              className={`py-4 px-2 border-b-2 font-medium text-sm ${
-                activeTab === 'settings'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-              }`}
-            >
-              <i className="fas fa-cog mr-2"></i>
-              System Settings
-            </button>
           </div>
         </div>
       </div>
@@ -524,7 +494,7 @@ const AdminDashboard = () => {
         {activeTab === 'overview' && (
           <div className="space-y-8">
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <StatCard
                 title="Total Users"
                 value={systemStats.totalUsers.toLocaleString()}
@@ -546,57 +516,93 @@ const AdminDashboard = () => {
                 change={15.3}
                 color="purple"
               />
-              <StatCard
-                title="Revenue"
-                value={`₹${systemStats.totalRevenue.toLocaleString()}`}
-                icon="fa-rupee-sign"
-                change={22.1}
-                color="yellow"
-              />
             </div>
 
-            {/* Charts and Recent Activity */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* User Growth Chart */}
-              <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">User Growth</h3>
-                <div className="h-64">
-                  <canvas ref={chartRef}></canvas>
+            {/* User Growth Chart - Full Width and Centered */}
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+              <div className="flex flex-col items-center">
+                <div className="flex items-center justify-between w-full mb-6">
+                  <h3 className="text-xl font-semibold text-slate-900">User Growth Analytics</h3>
+                  <div className="flex items-center space-x-2">
+                    <label className="text-sm font-medium text-gray-700">Period:</label>
+                    <select
+                      value={chartPeriod}
+                      onChange={(e) => setChartPeriod(e.target.value)}
+                      className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="daily">Last 30 Days</option>
+                      <option value="weekly">Last 12 Weeks</option>
+                      <option value="monthly">Last 12 Months</option>
+                    </select>
+                  </div>
                 </div>
-              </div>
-
-              {/* Recent Announcements */}
-              <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">Recent Announcements</h3>
-                <div className="space-y-3">
-                  {announcements.map(announcement => (
-                    <div key={announcement.id} className="border-l-4 border-blue-500 pl-4 py-2">
-                      <h4 className="font-medium text-slate-900 text-sm">{announcement.title}</h4>
-                      <p className="text-slate-600 text-xs">{announcement.message}</p>
-                      <p className="text-slate-400 text-xs mt-1">{announcement.date}</p>
+                <div className="w-full max-w-4xl mx-auto">
+                  <div className="h-80 flex items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50 rounded-lg p-4 relative border border-gray-200">
+                    {chartLoading && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-white/90 rounded-lg z-10">
+                        <div className="text-center">
+                          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                          <p className="text-gray-600 font-medium">Loading chart...</p>
+                        </div>
+                      </div>
+                    )}
+                    {chartError && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-white/90 rounded-lg z-10">
+                        <div className="text-center">
+                          <div className="text-red-500 text-4xl mb-4">📊</div>
+                          <p className="text-gray-600 font-medium">{chartError}</p>
+                          <p className="text-gray-500 text-sm mt-2">Please refresh the page</p>
+                        </div>
+                      </div>
+                    )}
+                    <canvas ref={chartRef} className="w-full h-full"></canvas>
+                  </div>
+                  
+                  {/* Chart Stats */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-200">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {userGrowthData?.data?.length > 0 ? userGrowthData.data[userGrowthData.data.length - 1] : 0}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {chartPeriod === 'daily' ? 'Yesterday' : 
+                         chartPeriod === 'weekly' ? 'Last Week' : 
+                         'Last Month'}
+                      </div>
                     </div>
-                  ))}
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-600">
+                        {userGrowthData?.data?.length > 1 ? 
+                          (() => {
+                            const current = userGrowthData.data[userGrowthData.data.length - 1];
+                            const previous = userGrowthData.data[userGrowthData.data.length - 2];
+                            const growth = previous > 0 ? ((current - previous) / previous * 100) : 0;
+                            return `${growth > 0 ? '+' : ''}${growth.toFixed(1)}%`;
+                          })() : 
+                          '0%'
+                        }
+                      </div>
+                      <div className="text-sm text-gray-600">Growth Rate</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-purple-600">{systemStats.totalUsers}</div>
+                      <div className="text-sm text-gray-600">Total Users</div>
+                    </div>
+                  </div>
                 </div>
-                <button className="mt-4 text-blue-600 text-sm hover:underline">
-                  Create New Announcement
-                </button>
               </div>
             </div>
 
             {/* Quick Actions */}
             <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
               <h3 className="text-lg font-semibold text-slate-900 mb-4">Quick Actions</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <button className="flex flex-col items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <button 
+                  onClick={() => setShowAddUserModal(true)}
+                  className="flex flex-col items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                >
                   <i className="fas fa-user-plus text-blue-600 text-xl mb-2"></i>
                   <span className="text-sm text-blue-600 font-medium">Add User</span>
-                </button>
-                <button 
-                  onClick={() => handleExportData('users')}
-                  className="flex flex-col items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
-                >
-                  <i className="fas fa-download text-green-600 text-xl mb-2"></i>
-                  <span className="text-sm text-green-600 font-medium">Export Data</span>
                 </button>
                 <button 
                   onClick={handleSendNotification}
@@ -611,7 +617,7 @@ const AdminDashboard = () => {
                 >
                   <i className="fas fa-tools text-red-600 text-xl mb-2"></i>
                   <span className="text-sm text-red-600 font-medium">
-                    {systemSettings.maintenanceMode ? 'Disable' : 'Enable'} Maintenance
+                    {maintenanceMode ? 'Disable' : 'Enable'} Maintenance
                   </span>
                 </button>
               </div>
@@ -622,9 +628,39 @@ const AdminDashboard = () => {
         {/* Users Tab */}
         {activeTab === 'users' && (
           <div className="space-y-6">
+            {/* Success/Error Messages */}
+            {successMessage && (
+              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
+                <span className="block sm:inline">{successMessage}</span>
+                <button
+                  onClick={() => setSuccessMessage('')}
+                  className="absolute top-0 bottom-0 right-0 px-4 py-3"
+                >
+                  <span className="sr-only">Close</span>
+                  <span className="text-green-500">&times;</span>
+                </button>
+              </div>
+            )}
+            
+            {error && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+                <span className="block sm:inline">{error}</span>
+                <button
+                  onClick={() => setError('')}
+                  className="absolute top-0 bottom-0 right-0 px-4 py-3"
+                >
+                  <span className="sr-only">Close</span>
+                  <span className="text-red-500">&times;</span>
+                </button>
+              </div>
+            )}
+
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-slate-900">User Management</h2>
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+              <button 
+                onClick={() => setShowAddUserModal(true)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
                 <i className="fas fa-plus mr-2"></i>
                 Add New User
               </button>
@@ -655,7 +691,9 @@ const AdminDashboard = () => {
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">User</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Role</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Plan</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Location</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Join Date</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
                     </tr>
@@ -685,7 +723,27 @@ const AdminDashboard = () => {
                             {user.status}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">{user.plan}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            user.role === 'admin' 
+                              ? 'bg-purple-100 text-purple-800' 
+                              : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {user.role}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            user.plan === 'Enterprise' 
+                              ? 'bg-yellow-100 text-yellow-800' 
+                              : user.plan === 'Premium'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {user.plan || 'Basic'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">{user.location}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.joinDate}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                           <button
@@ -710,217 +768,88 @@ const AdminDashboard = () => {
             </div>
           </div>
         )}
+      </div>
 
-        {/* Analytics Tab */}
-        {activeTab === 'analytics' && (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-slate-900">Analytics & Reports</h2>
+      {/* Add User Modal */}
+      {showAddUserModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Add New User</h3>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">Revenue Analytics</h3>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center p-3 bg-blue-50 rounded">
-                    <span className="text-slate-700">Monthly Revenue</span>
-                    <span className="font-semibold text-blue-600">₹45,230</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-green-50 rounded">
-                    <span className="text-slate-700">Annual Revenue</span>
-                    <span className="font-semibold text-green-600">₹542,760</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-purple-50 rounded">
-                    <span className="text-slate-700">Average per User</span>
-                    <span className="font-semibold text-purple-600">₹435</span>
-                  </div>
-                </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                <input
+                  type="text"
+                  value={newUserData.name}
+                  onChange={(e) => handleModalInputChange('name', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter full name"
+                />
               </div>
-
-              <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">User Engagement</h3>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-700">Daily Active Users</span>
-                    <span className="font-semibold">74%</span>
-                  </div>
-                  <div className="w-full bg-slate-200 rounded-full h-2">
-                    <div className="bg-blue-600 h-2 rounded-full" style={{width: '74%'}}></div>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-700">Feature Usage</span>
-                    <span className="font-semibold">86%</span>
-                  </div>
-                  <div className="w-full bg-slate-200 rounded-full h-2">
-                    <div className="bg-green-600 h-2 rounded-full" style={{width: '86%'}}></div>
-                  </div>
-                </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                <input
+                  type="email"
+                  value={newUserData.email}
+                  onChange={(e) => handleModalInputChange('email', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter email address"
+                />
               </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">Generate Reports</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <button 
-                  onClick={() => handleGenerateReport('users')}
-                  className="p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
-                >
-                  <i className="fas fa-file-excel text-green-600 text-2xl mb-2"></i>
-                  <div className="text-sm font-medium">User Report</div>
-                  <div className="text-xs text-slate-500">Export user data</div>
-                </button>
-                <button 
-                  onClick={() => handleGenerateReport('analytics')}
-                  className="p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
-                >
-                  <i className="fas fa-chart-bar text-blue-600 text-2xl mb-2"></i>
-                  <div className="text-sm font-medium">Analytics Report</div>
-                  <div className="text-xs text-slate-500">Usage analytics</div>
-                </button>
-                <button 
-                  onClick={() => handleGenerateReport('revenue')}
-                  className="p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
-                >
-                  <i className="fas fa-money-bill text-yellow-600 text-2xl mb-2"></i>
-                  <div className="text-sm font-medium">Revenue Report</div>
-                  <div className="text-xs text-slate-500">Financial overview</div>
-                </button>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label>
+                <input
+                  type="password"
+                  value={newUserData.password}
+                  onChange={(e) => handleModalInputChange('password', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter password"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <input
+                  type="tel"
+                  value={newUserData.phone}
+                  onChange={(e) => handleModalInputChange('phone', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter phone number"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                <input
+                  type="text"
+                  value={newUserData.location}
+                  onChange={(e) => handleModalInputChange('location', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter location"
+                />
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Settings Tab */}
-        {activeTab === 'settings' && (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-slate-900">System Settings</h2>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* General Settings */}
-              <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">General Settings</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Site Name</label>
-                    <input
-                      type="text"
-                      value={systemSettings.siteName || "FinTrackAI"}
-                      onChange={(e) => setSystemSettings({...systemSettings, siteName: e.target.value})}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Admin Email</label>
-                    <input
-                      type="email"
-                      value={systemSettings.adminEmail || "admin@fintrackai.com"}
-                      onChange={(e) => setSystemSettings({...systemSettings, adminEmail: e.target.value})}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div className="flex items-center">
-                    <input 
-                      type="checkbox" 
-                      id="maintenance" 
-                      checked={systemSettings.maintenanceMode || false}
-                      onChange={(e) => setSystemSettings({...systemSettings, maintenanceMode: e.target.checked})}
-                      className="mr-2" 
-                    />
-                    <label htmlFor="maintenance" className="text-sm text-slate-700">Maintenance Mode</label>
-                  </div>
-                </div>
-              </div>
-
-              {/* Security Settings */}
-              <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">Security Settings</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center">
-                    <input 
-                      type="checkbox" 
-                      id="twofa" 
-                      checked={systemSettings.twoFactorAuth || true}
-                      onChange={(e) => setSystemSettings({...systemSettings, twoFactorAuth: e.target.checked})}
-                      className="mr-2" 
-                    />
-                    <label htmlFor="twofa" className="text-sm text-slate-700">Two-Factor Authentication</label>
-                  </div>
-                  <div className="flex items-center">
-                    <input 
-                      type="checkbox" 
-                      id="ssl" 
-                      checked={systemSettings.forceSSL || true}
-                      onChange={(e) => setSystemSettings({...systemSettings, forceSSL: e.target.checked})}
-                      className="mr-2" 
-                    />
-                    <label htmlFor="ssl" className="text-sm text-slate-700">Force SSL</label>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Session Timeout (minutes)</label>
-                    <input
-                      type="number"
-                      value={systemSettings.sessionTimeout || 30}
-                      onChange={(e) => setSystemSettings({...systemSettings, sessionTimeout: parseInt(e.target.value)})}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Backup Settings */}
-              <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">Backup & Recovery</h3>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center p-3 bg-green-50 rounded">
-                    <span className="text-slate-700">Last Backup</span>
-                    <span className="text-green-600 text-sm">2 hours ago</span>
-                  </div>
-                  <button 
-                    onClick={handleCreateBackup}
-                    className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors"
-                  >
-                    Create Backup Now
-                  </button>
-                  <div className="flex items-center">
-                    <input type="checkbox" id="autobackup" className="mr-2" defaultChecked />
-                    <label htmlFor="autobackup" className="text-sm text-slate-700">Auto Daily Backup</label>
-                  </div>
-                </div>
-              </div>
-
-              {/* System Health */}
-              <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">System Health</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-700">Database</span>
-                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded">Healthy</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-700">Server Load</span>
-                    <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">Medium</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-700">Storage</span>
-                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded">85% Free</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end space-x-4">
-              <button className="px-4 py-2 border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50">
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => setShowAddUserModal(false)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+              >
                 Cancel
               </button>
-              <button 
-                onClick={handleSaveSettings}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              <button
+                onClick={handleAddUser}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
               >
-                Save Settings
+                Add User
               </button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       <Footer />
     </div>

@@ -10,8 +10,12 @@ const UserSchema = new mongoose.Schema({
   phone: { type: String, default: '' },
   dob: { type: Date, default: null },
   location: { type: String, default: '' },
-  verified: { type: Boolean, default: false },
+  isVerified: { type: Boolean, default: false },
+  status: { type: String, enum: ['Active', 'Inactive'], default: 'Active' },
+  plan: { type: String, enum: ['Basic', 'Premium', 'Enterprise'], default: 'Basic' },
   profileImage: { type: String, default: null }
+}, {
+  timestamps: true // Adds createdAt and updatedAt automatically
 });
 
 // Export the User model

@@ -25,6 +25,21 @@ const {
   verifyToken: verifyUserToken 
 } = require('./userController');
 
+// Import admin functions
+const {
+  getAdminStats,
+  getAllUsers,
+  getUserById,
+  updateUserStatus,
+  deleteUser,
+  createUser,
+  updateUser,
+  getAnalytics,
+  getUserGrowthData,
+  sendNotification,
+  toggleMaintenanceMode
+} = require('./adminController');
+
 // Import newsletter functions
 const { 
   subscribeNewsletter, 
@@ -63,6 +78,19 @@ app.post('/api/auth/admin/login', adminLogin); // Admin login
 app.get('/api/dashboard', verifyToken, getDashboardData);    // Get user dashboard data
 app.put('/api/dashboard/profile', verifyToken, updateProfile); // Update user profile
 
+// Admin Routes (Protected - require admin authentication)
+app.get('/api/admin/stats', verifyUserToken, getAdminStats);           // Get admin dashboard stats
+app.get('/api/admin/users', verifyUserToken, getAllUsers);             // Get all users with pagination
+app.get('/api/admin/users/:userId', verifyUserToken, getUserById);     // Get single user
+app.patch('/api/admin/users/:userId/status', verifyUserToken, updateUserStatus); // Update user status
+app.delete('/api/admin/users/:userId', verifyUserToken, deleteUser);   // Delete user
+app.post('/api/admin/users', verifyUserToken, createUser);             // Create new user
+app.put('/api/admin/users/:userId', verifyUserToken, updateUser);      // Update user
+app.get('/api/admin/analytics', verifyUserToken, getAnalytics);        // Get analytics data
+app.get('/api/admin/analytics/user-growth', verifyUserToken, getUserGrowthData); // Get user growth data
+app.post('/api/admin/notification', verifyUserToken, sendNotification); // Send notification to users
+app.post('/api/admin/maintenance', verifyUserToken, toggleMaintenanceMode); // Toggle maintenance mode
+
 // User Routes (Protected - require authentication)
 app.get('/api/user/profile', verifyUserToken, getUserProfile);        // Get user profile
 app.put('/api/user/profile', verifyUserToken, updateUserProfile);     // Update user profile
@@ -85,7 +113,6 @@ app.post('/api/test-email', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Email required' });
     }
     
-    console.log('🧪 Testing email send to:', email);
     const result = await sendWelcomeEmail(email);
     
     res.json({

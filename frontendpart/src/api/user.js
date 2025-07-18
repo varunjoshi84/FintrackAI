@@ -86,18 +86,31 @@ export const getUserActivity = async (limit = 10) => {
 };
 
 // Newsletter subscription
-export const subscribeNewsletter = async (email) => {
+export const subscribeNewsletter = async (emailData) => {
   return apiRequest('/newsletter/subscribe', {
     method: 'POST',
-    body: JSON.stringify({ email })
+    body: JSON.stringify(emailData)
   });
 };
 
 // Unsubscribe from newsletter
-export const unsubscribeNewsletter = async (email) => {
+export const unsubscribeNewsletter = async (emailData) => {
   return apiRequest('/newsletter/unsubscribe', {
     method: 'POST',
-    body: JSON.stringify({ email })
+    body: JSON.stringify(emailData)
+  });
+};
+
+// Get newsletter subscribers (admin only)
+export const getNewsletterSubscribers = async (page = 1, limit = 10, active = true) => {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+    active: active.toString()
+  });
+  
+  return apiRequest(`/newsletter/subscribers?${params}`, {
+    method: 'GET'
   });
 };
 

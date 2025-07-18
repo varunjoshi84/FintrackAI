@@ -2,12 +2,6 @@ const nodemailer = require('nodemailer');
 
 // Create transporter with Gmail configuration from environment variables
 const createTransporter = () => {
-  // Debug: Check if environment variables are loaded
-  console.log('📧 Email config:', {
-    user: process.env.EMAIL_USER ? 'Loaded' : 'Missing',
-    pass: process.env.EMAIL_PASS ? 'Loaded' : 'Missing'
-  });
-
   return nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -87,11 +81,10 @@ const sendWelcomeEmail = async (email) => {
     };
 
     const result = await transporter.sendMail(mailOptions);
-    console.log('✅ Welcome email sent successfully to:', email);
     return { success: true, messageId: result.messageId };
     
   } catch (error) {
-    console.error('❌ Error sending welcome email:', error);
+    console.error('Error sending welcome email:', error);
     return { success: false, error: error.message };
   }
 };
@@ -137,11 +130,10 @@ const sendContactNotification = async (contactData) => {
     };
 
     const result = await transporter.sendMail(mailOptions);
-    console.log('✅ Contact notification sent successfully');
     return { success: true, messageId: result.messageId };
     
   } catch (error) {
-    console.error('❌ Error sending contact notification:', error);
+    console.error('Error sending contact notification:', error);
     return { success: false, error: error.message };
   }
 };
@@ -193,11 +185,10 @@ const sendContactConfirmation = async (email, name) => {
     };
 
     const result = await transporter.sendMail(mailOptions);
-    console.log('✅ Contact confirmation sent successfully to:', email);
     return { success: true, messageId: result.messageId };
     
   } catch (error) {
-    console.error('❌ Error sending contact confirmation:', error);
+    console.error('Error sending contact confirmation:', error);
     return { success: false, error: error.message };
   }
 };

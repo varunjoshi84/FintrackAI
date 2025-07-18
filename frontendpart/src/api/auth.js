@@ -88,8 +88,11 @@ export const adminLogin = async (email, password) => {
 
     const result = await response.json();
     if (result.token) {
-      localStorage.setItem('adminToken', result.token);
-      localStorage.setItem('adminInfo', JSON.stringify(result.admin));
+      localStorage.setItem('authToken', result.token);
+      localStorage.setItem('userInfo', JSON.stringify({
+        ...result.user,
+        role: 'admin'
+      }));
     }
 
     return {

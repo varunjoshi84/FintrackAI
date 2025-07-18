@@ -124,39 +124,7 @@ export const deleteAnnouncement = async (announcementId) => {
   });
 };
 
-// System Settings
-export const getSystemSettings = async () => {
-  return apiRequest('/admin/settings', {
-    method: 'GET'
-  });
-};
 
-export const updateSystemSettings = async (settings) => {
-  return apiRequest('/admin/settings', {
-    method: 'PUT',
-    body: JSON.stringify(settings)
-  });
-};
-
-// System Health
-export const getSystemHealth = async () => {
-  return apiRequest('/admin/system/health', {
-    method: 'GET'
-  });
-};
-
-// Backup
-export const createBackup = async () => {
-  return apiRequest('/admin/system/backup', {
-    method: 'POST'
-  });
-};
-
-export const getBackupStatus = async () => {
-  return apiRequest('/admin/system/backup/status', {
-    method: 'GET'
-  });
-};
 
 // Quick Actions
 export const exportData = async (dataType, format = 'csv') => {
@@ -166,15 +134,34 @@ export const exportData = async (dataType, format = 'csv') => {
 };
 
 export const sendNotification = async (notificationData) => {
-  return apiRequest('/admin/notifications/send', {
+  return apiRequest('/admin/notification', {
     method: 'POST',
     body: JSON.stringify(notificationData)
   });
 };
 
 export const toggleMaintenanceMode = async (enabled) => {
-  return apiRequest('/admin/system/maintenance', {
-    method: 'PATCH',
+  return apiRequest('/admin/maintenance', {
+    method: 'POST',
     body: JSON.stringify({ enabled })
+  });
+};
+
+// Newsletter Management
+export const getNewsletterSubscribers = async (page = 1, limit = 10, active = true) => {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+    active: active.toString()
+  });
+  
+  return apiRequest(`/newsletter/subscribers?${params}`, {
+    method: 'GET'
+  });
+};
+
+export const exportNewsletterSubscribers = async (format = 'csv') => {
+  return apiRequest(`/admin/newsletter/export?format=${format}`, {
+    method: 'GET'
   });
 };

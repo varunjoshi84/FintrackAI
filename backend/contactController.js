@@ -22,9 +22,6 @@ const sendContactMessage = async (req, res) => {
       });
     }
 
-    // Log the contact form submission
-    console.log(`📧 Contact form received from ${name} (${email}): ${subject}`);
-
     // Send notification email to admin
     try {
       await sendContactNotification({ name, email, subject, message });

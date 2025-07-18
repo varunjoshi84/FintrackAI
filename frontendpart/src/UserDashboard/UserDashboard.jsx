@@ -25,7 +25,6 @@ const UserDashboard = () => {
         if (result.success) {
           setUserData(result.data);
         } else {
-          console.error('Failed to load user profile:', result.message);
           // Fallback to default user data
           setUserData({
             id: 1,
@@ -38,8 +37,7 @@ const UserDashboard = () => {
             image: null,
           });
         }
-      } catch (err) {
-        console.error('User profile loading error:', err);
+      } catch {
         // Fallback to default user data
         setUserData({
           id: 1,
@@ -79,7 +77,6 @@ const UserDashboard = () => {
       // Update user data locally for immediate feedback
       setUserData(prev => ({ ...prev, image: imageUrl }));
       // TODO: Implement actual image upload to server
-      console.log('Image selected:', file.name);
     }
   };
 
@@ -116,10 +113,8 @@ const UserDashboard = () => {
         } else {
           const errorMessage = result.message || 'Failed to update profile';
           alert(errorMessage);
-          console.error('Profile update failed:', result);
         }
       } catch (error) {
-        console.error('Update profile error:', error);
         const errorMessage = error.message || 'Failed to update profile. Please try again.';
         alert(errorMessage);
       }
@@ -141,8 +136,7 @@ const UserDashboard = () => {
         } else {
           alert(result.message || 'Failed to delete account');
         }
-      } catch (error) {
-        console.error('Delete account error:', error);
+      } catch {
         alert('Failed to delete account. Please try again.');
       }
     }
