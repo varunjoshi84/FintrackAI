@@ -48,7 +48,14 @@ const {
 } = require('./newsletterController');
 
 // Import contact functions
-const { sendContactMessage } = require('./contactController');
+const { 
+  sendContactMessage, 
+  getContactMessages, 
+  getContactStats, 
+  updateContactMessage, 
+  sendEmailResponse, 
+  deleteContactMessage 
+} = require('./contactController');
 
 // Import email service for testing
 const { sendWelcomeEmail } = require('./emailService');
@@ -104,6 +111,13 @@ app.get('/api/newsletter/subscribers', verifyUserToken, getAllSubscribers); // G
 
 // Contact Routes (Public - no authentication required)
 app.post('/api/contact/send', sendContactMessage);                     // Send contact form message
+
+// Admin Contact Management Routes (Requires authentication)
+app.get('/api/admin/contacts', verifyUserToken, getContactMessages);           // Get all contact messages
+app.get('/api/admin/contacts/stats', verifyUserToken, getContactStats);        // Get contact statistics
+app.put('/api/admin/contacts/:id', verifyUserToken, updateContactMessage);     // Update contact status/response
+app.post('/api/admin/contacts/:id/respond', verifyUserToken, sendEmailResponse); // Send email response
+app.delete('/api/admin/contacts/:id', verifyUserToken, deleteContactMessage);  // Delete contact message
 
 // Test email endpoint (remove in production)
 app.post('/api/test-email', async (req, res) => {

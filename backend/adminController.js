@@ -15,8 +15,8 @@ const getAdminStats = async (req, res) => {
       data: {
         totalUsers,
         activeUsers,
-        totalTransactions: 45, // Mock data - replace with actual transaction count
-        totalRevenue: 125000, // Mock data - replace with actual revenue
+        totalTransactions: 45, 
+        totalRevenue: 125000, 
         monthlyGrowth: ((newUsersThisMonth / totalUsers) * 100).toFixed(1)
       }
     });
@@ -438,7 +438,7 @@ const sendNotification = async (req, res) => {
     // - Save to database
     // - Send emails to users
     // - Push notifications
-    // For now, we'll just simulate success
+    
 
     console.log(`Admin Notification: ${title} - ${message}`);
 

@@ -3,6 +3,7 @@ export * from './config.js';
 export * from './auth.js';
 export * from './upload.js';
 export * from './admin.js';
+export * from './contact.js';
 
 // Import dashboard functions with specific names to avoid conflicts
 export { 

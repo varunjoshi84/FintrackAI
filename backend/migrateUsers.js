@@ -28,7 +28,7 @@ const migrateUserStatus = async () => {
       await user.save();
     }
     
-    console.log(`✅ Migrated ${users.length} users successfully!`);
+    console.log(`Migrated ${users.length} users successfully!`);
     console.log('Users now have proper status fields:');
     
     const updatedUsers = await User.find({}).select('name email status isVerified');
@@ -37,7 +37,7 @@ const migrateUserStatus = async () => {
     });
     
   } catch (error) {
-    console.error('❌ Error migrating users:', error);
+    console.error('Error migrating users:', error);
   } finally {
     mongoose.disconnect();
     process.exit(0);

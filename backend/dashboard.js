@@ -31,7 +31,7 @@ const getDashboardData = async (req, res) => {
     }
 
     // For now, we'll send basic user data and some sample dashboard stats
-    // You can expand this later with real data from transactions, etc.
+  
     const dashboardData = {
       user: {
         id: user._id,
@@ -40,13 +40,13 @@ const getDashboardData = async (req, res) => {
         role: user.role
       },
       stats: {
-        totalTransactions: 0, // Will be dynamic later
-        totalBalance: 0,      // Will be dynamic later
-        monthlySpending: 0,   // Will be dynamic later
-        savingsGoal: 0        // Will be dynamic later
+        totalTransactions: 0, 
+        totalBalance: 0,      
+        monthlySpending: 0,   
+        savingsGoal: 0        
       },
       recentActivity: [
-        // Sample data - replace with real transactions later
+        
         {
           id: 1,
           type: 'income',

@@ -70,14 +70,14 @@ const createTestUsers = async () => {
     // Insert test users
     await User.insertMany(testUsers);
     
-    console.log('✅ Test users created successfully!');
+    console.log('Test users created successfully!');
     console.log(`Created ${testUsers.length} test users:`);
     testUsers.forEach((user, index) => {
       console.log(`${index + 1}. ${user.name} (${user.email}) - ${user.status}`);
     });
     
   } catch (error) {
-    console.error('❌ Error creating test users:', error);
+    console.error('Error creating test users:', error);
   } finally {
     mongoose.disconnect();
     process.exit(0);

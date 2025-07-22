@@ -114,8 +114,8 @@ export const getNewsletterSubscribers = async (page = 1, limit = 10, active = tr
   });
 };
 
-// Send contact message
-export const sendContactMessage = async (messageData) => {
+// Send contact message (legacy function - use sendContactMessage from contact.js instead)
+export const sendUserContactMessage = async (messageData) => {
   return apiRequest('/contact/send', {
     method: 'POST',
     body: JSON.stringify(messageData)

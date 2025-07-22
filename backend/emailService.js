@@ -193,8 +193,65 @@ const sendContactConfirmation = async (email, name) => {
   }
 };
 
+// Send response email to contact form submitter
+const sendContactResponse = async (email, name, responseMessage) => {
+  try {
+    const transporter = createTransporter();
+    
+    const mailOptions = {
+      from: {
+        name: 'FinTrackAI Support',
+        address: process.env.EMAIL_USER
+      },
+      to: email,
+      subject: '📧 Response from FinTrackAI Support Team',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px;">
+          <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #3b82f6; margin: 0; font-size: 28px;">📧 FinTrackAI</h1>
+              <p style="color: #6b7280; margin: 5px 0 0 0;">Support Team Response</p>
+            </div>
+            
+            <h2 style="color: #1f2937; margin-bottom: 20px;">Hello ${name}! 👋</h2>
+            
+            <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6; margin: 20px 0;">
+              <h3 style="color: #3b82f6; margin-bottom: 15px;">📝 Our Response:</h3>
+              <p style="color: #1f2937; line-height: 1.6; margin: 0; white-space: pre-wrap;">${responseMessage}</p>
+            </div>
+            
+            <div style="background-color: #ecfdf5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <p style="color: #059669; margin: 0; font-weight: 500;">
+                💚 Thank you for reaching out to us! If you have any more questions, feel free to contact us again.
+              </p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+              <p style="color: #6b7280; margin: 0; font-size: 14px;">
+                Best regards,<br>
+                <strong style="color: #3b82f6;">FinTrackAI Support Team</strong>
+              </p>
+              <p style="color: #9ca3af; margin: 10px 0 0 0; font-size: 12px;">
+                📧 support@fintrackai.com | 🌐 www.fintrackai.com
+              </p>
+            </div>
+          </div>
+        </div>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log('Contact response email sent successfully to:', email);
+    return { success: true };
+  } catch (error) {
+    console.error('Error sending contact response:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 module.exports = {
   sendWelcomeEmail,
   sendContactNotification,
-  sendContactConfirmation
+  sendContactConfirmation,
+  sendContactResponse
 };

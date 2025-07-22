@@ -15,7 +15,7 @@ const UserSchema = new mongoose.Schema({
   plan: { type: String, enum: ['Basic', 'Premium', 'Enterprise'], default: 'Basic' },
   profileImage: { type: String, default: null }
 }, {
-  timestamps: true // Adds createdAt and updatedAt automatically
+  timestamps: true 
 });
 
 // Export the User model

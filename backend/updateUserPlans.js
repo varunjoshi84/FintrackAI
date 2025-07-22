@@ -16,7 +16,7 @@ const updateUserPlans = async () => {
       { $set: { plan: 'Basic' } }    // Set default plan to Basic
     );
     
-    console.log(`✅ Updated ${result.modifiedCount} users with Basic plan!`);
+    console.log(`Updated ${result.modifiedCount} users with Basic plan!`);
     
     // Show all users with their plans
     const users = await User.find({}).select('name email plan status createdAt');
@@ -26,7 +26,7 @@ const updateUserPlans = async () => {
     });
     
   } catch (error) {
-    console.error('❌ Error updating user plans:', error);
+    console.error(' Error updating user plans:', error);
   } finally {
     mongoose.disconnect();
     process.exit(0);
