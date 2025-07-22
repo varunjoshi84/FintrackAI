@@ -16,6 +16,9 @@ const adminLogin = require('./authentication/adminLogin');
 // Import dashboard functions
 const { verifyToken, getDashboardData, updateProfile } = require('./dashboard');
 
+// Import upload functions
+const { upload, uploadTransactions } = require('./uploadController');
+
 // Import user functions
 const { 
   getUserProfile, 
@@ -76,6 +79,9 @@ app.get('/', (req, res) => {
   res.json({ message: 'Server is running!' });
 });
 
+// Upload Transactions Endpoint
+app.post('/api/upload/transactions', upload.single('file'), uploadTransactions);
+
 // Authentication Routes
 app.post('/api/auth/register', signup);     // User signup
 app.post('/api/auth/login', login);         // User login  
@@ -119,7 +125,7 @@ app.put('/api/admin/contacts/:id', verifyUserToken, updateContactMessage);     /
 app.post('/api/admin/contacts/:id/respond', verifyUserToken, sendEmailResponse); // Send email response
 app.delete('/api/admin/contacts/:id', verifyUserToken, deleteContactMessage);  // Delete contact message
 
-// Test email endpoint (remove in production)
+// Test email endpoint 
 app.post('/api/test-email', async (req, res) => {
   try {
     const { email } = req.body;
