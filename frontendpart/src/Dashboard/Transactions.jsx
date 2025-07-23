@@ -16,24 +16,61 @@ const Transactions = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Function to determine category based on description
+  const getCategoryFromDescription = (description) => {
+    const desc = description.toLowerCase();
+    
+    if (desc.includes('salary')) return "Income";
+    if (desc.includes('deposit') || desc.includes('transfer from') || desc.includes('cheque')) return "Income";
+    if (desc.includes('atm') || desc.includes('withdrawal')) return "Cash";
+    if (desc.includes('rent') || desc.includes('housing')) return "Housing";
+    if (desc.includes('bazaar') || desc.includes('grocery')) return "Food & Dining";
+    if (desc.includes('zomato') || desc.includes('swiggy')) return "Food & Dining";
+    if (desc.includes('jio') || desc.includes('recharge')) return "Utilities";
+    if (desc.includes('power') || desc.includes('bill')) return "Utilities";
+    if (desc.includes('card payment')) return "Credit Card";
+    if (desc.includes('upi') || desc.includes('amazon')) return "Shopping";
+    
+    return "Other";
+  };
+
   // Load transactions from API
   useEffect(() => {
     const loadTransactions = async () => {
       try {
         setLoading(true);
-        const result = await getTransactions();
         
-        if (result.success) {
-          setTransactions(result.data);
+        // Fetch transactions from the reports endpoint
+        const token = localStorage.getItem('authToken');
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/reports/generate`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.report && data.report.length > 0) {
+          // Transform the data to match the expected format
+          const formattedTransactions = data.report.map(tx => ({
+            desc: tx.description,
+            date: new Date(tx.date).toLocaleDateString(),
+            category: getCategoryFromDescription(tx.description),
+            amount: tx.amount,
+            type: tx.type // 'debit' or 'credit'
+          }));
+          
+          setTransactions(formattedTransactions);
         } else {
-          setError(result.message || 'Failed to load transactions');
+          setError(data.message || 'Failed to load transactions');
           // Fallback to static data if API fails
           setTransactions([
-            { desc: "Grocery Shopping", date: "2024-06-01", category: "Food & Dining", amount: "1200" },
-            { desc: "Uber Ride", date: "2024-06-02", category: "Transportation", amount: "350" },
-            { desc: "Salary", date: "2024-06-03", category: "Income", amount: "50000" },
-            { desc: "Electricity Bill", date: "2024-06-04", category: "Utilities", amount: "1800" },
-            { desc: "Movie Night", date: "2024-06-05", category: "Entertainment", amount: "600" },
+            { desc: "Grocery Shopping", date: "2024-06-01", category: "Food & Dining", amount: "1200", type: "debit" },
+            { desc: "Uber Ride", date: "2024-06-02", category: "Transportation", amount: "350", type: "debit" },
+            { desc: "Salary", date: "2024-06-03", category: "Income", amount: "50000", type: "credit" },
+            { desc: "Electricity Bill", date: "2024-06-04", category: "Utilities", amount: "1800", type: "debit" },
+            { desc: "Movie Night", date: "2024-06-05", category: "Entertainment", amount: "600", type: "debit" },
           ]);
         }
       } catch (err) {
@@ -41,9 +78,9 @@ const Transactions = () => {
         setError(err.message || 'Failed to load transactions');
         // Fallback to static data
         setTransactions([
-          { desc: "Grocery Shopping", date: "2024-06-01", category: "Food & Dining", amount: "1200" },
-          { desc: "Uber Ride", date: "2024-06-02", category: "Transportation", amount: "350" },
-          { desc: "Salary", date: "2024-06-03", category: "Income", amount: "50000" },
+          { desc: "Grocery Shopping", date: "2024-06-01", category: "Food & Dining", amount: "1200", type: "debit" },
+          { desc: "Uber Ride", date: "2024-06-02", category: "Transportation", amount: "350", type: "debit" },
+          { desc: "Salary", date: "2024-06-03", category: "Income", amount: "50000", type: "credit" },
         ]);
       } finally {
         setLoading(false);
@@ -61,6 +98,9 @@ const Transactions = () => {
     "Utilities": "bg-yellow-100 text-yellow-800",
     "Housing": "bg-pink-100 text-pink-800",
     "Shopping": "bg-blue-100 text-blue-800",
+    "Cash": "bg-gray-100 text-gray-800",
+    "Credit Card": "bg-red-100 text-red-800",
+    "Other": "bg-gray-100 text-gray-800",
   };
 
   const getIndicatorColor = (category) => {
@@ -70,10 +110,11 @@ const Transactions = () => {
            colorClass.includes("purple") ? "bg-purple-500" :
            colorClass.includes("yellow") ? "bg-yellow-500" :
            colorClass.includes("pink") ? "bg-pink-500" :
+           colorClass.includes("red") ? "bg-red-500" :
            "bg-gray-500";
   };
 
-  const addTransaction = () => {
+  const handleAddTransaction = () => {
     // Simulate adding transaction (e.g., to state or API)
     console.log({ description, date, category, amount });
     setIsModalOpen(false);
@@ -127,39 +168,52 @@ const Transactions = () => {
               <option>Utilities</option>
               <option>Housing</option>
               <option>Shopping</option>
+              <option>Cash</option>
+              <option>Credit Card</option>
+              <option>Other</option>
             </select>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredTransactions.map((tx, index) => (
-                  <tr key={index} className="border-b">
-                    <td className="px-4 py-2 text-sm">{tx.date}</td>
-                    <td className="px-4 py-2 text-sm flex items-center">
-                      <span className={`w-2 h-2 ${getIndicatorColor(tx.category)} rounded-full mr-2`}></span>
-                      {tx.desc}
-                    </td>
-                    <td className="px-4 py-2 text-sm">
-                      <span className={`px-2 py-1 ${categoryColors[tx.category] || "bg-gray-100 text-gray-800"} rounded`}>{tx.category}</span>
-                    </td>
-                    <td className="px-4 py-2 text-sm text-red-500">₹{tx.amount}</td>
+          {loading ? (
+            <div className="text-center py-8">Loading transactions...</div>
+          ) : error ? (
+            <div className="text-center text-red-600 py-8">{error}</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredTransactions.map((tx, index) => (
+                    <tr key={index} className="border-b">
+                      <td className="px-4 py-2 text-sm">{tx.date}</td>
+                      <td className="px-4 py-2 text-sm flex items-center">
+                        <span className={`w-2 h-2 ${getIndicatorColor(tx.category)} rounded-full mr-2`}></span>
+                        {tx.desc}
+                      </td>
+                      <td className="px-4 py-2 text-sm">
+                        <span className={`px-2 py-1 ${categoryColors[tx.category] || "bg-gray-100 text-gray-800"} rounded`}>{tx.category}</span>
+                      </td>
+                      <td className="px-4 py-2 text-sm">
+                        <span className={tx.type === 'credit' ? 'text-green-600' : 'text-red-600'}>
+                          {tx.type === 'credit' ? '+' : '-'}₹{Number(tx.amount).toFixed(2)}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-6 gap-4">
-            <div className="text-sm text-gray-600">Showing 1-10 of {filteredTransactions.length} transactions</div>
+            <div className="text-sm text-gray-600">Showing 1-{Math.min(filteredTransactions.length, 10)} of {filteredTransactions.length} transactions</div>
             <div className="flex gap-2">
               <button className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">Previous</button>
               <button className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">Next</button>
@@ -215,7 +269,7 @@ const Transactions = () => {
             </div>
             <button
               className="mt-6 w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 transition-colors"
-              onClick={addTransaction}
+              onClick={handleAddTransaction}
             >
               Add Transaction
             </button>
