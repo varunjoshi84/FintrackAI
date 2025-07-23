@@ -1,7 +1,7 @@
 {
-  "name": "fintackaibackend",
+  "name": "fintackai-backend",
   "version": "1.0.0",
-  "description": "FinTrack AI Backend",
+  "description": "Backend for Fintack AI",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -11,15 +11,17 @@
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "csv-parser": "^3.2.0",
-    "debug": "^4.4.1",
-    "dependencies": "^0.0.1",
-    "dotenv": "^17.2.0",
-    "express": "^4.21.2",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-session": "^1.18.2",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^7.5.0",
-    "multer": "^2.0.2",
-    "nodemailer": "^7.0.5",
-    "pdf-parse": "^1.1.1"
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^6.9.4",
+    "passport": "^0.6.0",
+    "passport-google-oauth20": "^2.0.0",
+    "pdf-parse": "^1.1.1",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

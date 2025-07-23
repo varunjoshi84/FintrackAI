@@ -13,6 +13,10 @@ const signup = require('./authentication/signup');
 const login = require('./authentication/login');
 const adminLogin = require('./authentication/adminLogin');
 
+// Import Google authentication
+const passport = require('./googleAuth');
+const authRoutes = require('./routes/authRoutes');
+
 // Import dashboard functions
 const { verifyToken, getDashboardData, updateProfile } = require('./dashboard');
 
@@ -68,7 +72,32 @@ const app = express();
 
 // Basic middleware (what our app needs to work)
 app.use(express.json()); // To read JSON data
-app.use(cors());         // To allow frontend to connect
+app.use(cors({           // To allow frontend to connect
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true
+}));
+
+// Session middleware for passport
+let session;
+try {
+  session = require('express-session');
+} catch (error) {
+  console.error('Error loading express-session:', error);
+  console.log('Installing express-session...');
+  require('child_process').execSync('npm install express-session --save');
+  session = require('express-session');
+}
+
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-session-secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: process.env.NODE_ENV === 'production' }
+}));
+
+// Initialize Passport
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Connect to database
 connectDB();
@@ -92,6 +121,9 @@ app.post('/api/reports/generate', verifyUserToken, generateReport);
 app.post('/api/auth/register', signup);     // User signup
 app.post('/api/auth/login', login);         // User login  
 app.post('/api/auth/admin/login', adminLogin); // Admin login
+
+// Google Authentication Routes
+app.use('/api/auth', authRoutes);
 
 // Dashboard Routes (Protected - require authentication)
 app.get('/api/dashboard', verifyToken, getDashboardData);    // Get user dashboard data
