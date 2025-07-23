@@ -1,16 +1,137 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Header from './Header';
 import Footer from '../components/Footer';
+import { generateInsights } from '../api/insights';
 
 const Insights = () => {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [insights, setInsights] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [transactions, setTransactions] = useState([]);
+  
+  // Fetch transactions and generate insights
+  useEffect(() => {
+    fetchInsights();
+  }, []);
+  
+  const fetchInsights = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch transactions from the reports endpoint
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/reports/generate`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (data.success && data.report && data.report.length > 0) {
+        // Process transactions
+        const txs = data.report.map(tx => ({
+          id: tx._id,
+          description: tx.description,
+          date: new Date(tx.date),
+          amount: tx.amount,
+          type: tx.type,
+          balance: tx.balance,
+          category: getCategoryFromDescription(tx.description)
+        }));
+        
+        setTransactions(txs);
+        
+        // Generate insights
+        const insightsResult = await generateInsights(txs);
+        
+        if (insightsResult.success) {
+          setInsights(insightsResult.insights);
+        } else {
+          setError(insightsResult.error || 'Failed to generate insights');
+          setInsights(insightsResult.insights || []); // Use fallback insights
+        }
+      } else {
+        // Default insights for new users
+        setInsights([
+          {
+            title: "Start Tracking Expenses",
+            description: "Begin by recording all your expenses to understand your spending patterns.",
+            category: "Budgeting",
+            savingPotential: 5000
+          },
+          {
+            title: "Create a Budget Plan",
+            description: "Set monthly spending limits for different categories to control expenses.",
+            category: "Planning",
+            savingPotential: 3000
+          },
+          {
+            title: "Build Emergency Fund",
+            description: "Save 3-6 months of expenses for unexpected situations.",
+            category: "Savings",
+            savingPotential: 10000
+          }
+        ]);
+      }
+    } catch (err) {
+      console.error('Error:', err);
+      setError(err.message || 'An error occurred');
+      // Fallback insights
+      setInsights([
+        {
+          title: "Reduce Food Expenses",
+          description: "Try meal planning and cooking at home to save on food costs.",
+          category: "Food & Dining",
+          savingPotential: 2000
+        },
+        {
+          title: "Review Subscriptions",
+          description: "Cancel unused subscriptions and services to save monthly.",
+          category: "Entertainment",
+          savingPotential: 1500
+        },
+        {
+          title: "Use Public Transport",
+          description: "Consider using public transportation to save on fuel and parking costs.",
+          category: "Transportation",
+          savingPotential: 3000
+        }
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Function to determine category based on description
+  const getCategoryFromDescription = (description) => {
+    const desc = description.toLowerCase();
+    
+    if (desc.includes('salary')) return "Income";
+    if (desc.includes('deposit') || desc.includes('transfer from') || desc.includes('cheque')) return "Income";
+    if (desc.includes('atm') || desc.includes('withdrawal')) return "Cash";
+    if (desc.includes('rent') || desc.includes('housing')) return "Housing";
+    if (desc.includes('bazaar') || desc.includes('grocery')) return "Food & Dining";
+    if (desc.includes('zomato') || desc.includes('swiggy')) return "Food & Dining";
+    if (desc.includes('jio') || desc.includes('recharge')) return "Utilities";
+    if (desc.includes('power') || desc.includes('bill')) return "Utilities";
+    if (desc.includes('card payment')) return "Credit Card";
+    if (desc.includes('upi') || desc.includes('amazon')) return "Shopping";
+    
+    return "Other";
+  };
 
-  const handleGenerateInsights = () => {
+  const handleGenerateInsights = async () => {
     setIsGenerating(true);
-    alert('Generating new insights...');
+    await fetchInsights();
     setIsGenerating(false);
   };
+
+  // Calculate total savings potential
+  const totalSavings = insights.reduce((sum, insight) => sum + insight.savingPotential, 0);
 
   return (
     <div className="bg-gray-50 font-inter">
@@ -28,131 +149,115 @@ const Insights = () => {
                 id="generateBtn"
                 className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-semibold px-4 py-2 rounded-md shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 mt-3 md:mt-0"
                 onClick={handleGenerateInsights}
-                disabled={isGenerating}
+                disabled={isGenerating || loading}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 8v4l3 3m6 0a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                Generate New Insights
+                {isGenerating || loading ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 8v4l3 3m6 0a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    Generate New Insights
+                  </>
+                )}
               </button>
             </header>
-
-            {/* Insight Cards */}
-            <article className="bg-white rounded-lg shadow p-5 border border-transparent hover:border-red-300 transition-colors">
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center gap-2">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6 text-red-600"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M18.364 5.636l-12.728 12.728M5.636 5.636l12.728 12.728"
-                    />
-                  </svg>
-                  <h2 className="font-semibold text-slate-900 text-sm">High Spending Alert</h2>
-                  <span className="text-xs bg-red-100 text-red-700 rounded-md px-2 py-0.5 font-semibold uppercase tracking-wide select-none">Warning</span>
-                  <span className="text-xs bg-slate-200 text-slate-700 rounded-md px-2 py-0.5 font-semibold">AI Generated</span>
-                </div>
+            
+            {loading && !isGenerating ? (
+              <div className="bg-white rounded-lg shadow p-8 text-center">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+                <p className="text-gray-600">Loading AI insights...</p>
               </div>
-              <p className="text-slate-700 mt-3 text-sm leading-snug max-w-xl">Your dining expenses are 23% higher than last month</p>
-              <div className="mt-4 text-slate-600 text-xs flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
-                <div className="space-x-1">
-                  <span className="font-semibold text-slate-900">Category:</span>
-                  <span>Food & Dining</span>
-                </div>
-                <div className="text-green-700 font-semibold">₹186.92</div>
-                <div>08/12/2024</div>
+            ) : error ? (
+              <div className="bg-white rounded-lg shadow p-5 border border-red-300">
+                <p className="text-red-600">Error: {error}</p>
               </div>
-            </article>
-
-            <article className="bg-white rounded-lg shadow p-5 border border-transparent hover:border-green-300 transition-colors">
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center gap-2">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6 text-green-600"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M9 12l2 2 4-4m0 6a6 6 0 11-12 0 6 6 0 0112 0z"
-                    />
-                  </svg>
-                  <h2 className="font-semibold text-slate-900 text-sm">Savings Opportunity</h2>
-                  <span className="text-xs bg-amber-100 text-amber-700 rounded-md px-2 py-0.5 font-semibold uppercase tracking-wide select-none">Suggestion</span>
-                  <span className="text-xs bg-slate-200 text-slate-700 rounded-md px-2 py-0.5 font-semibold">AI Generated</span>
-                </div>
-              </div>
-              <p className="text-slate-700 mt-3 text-sm leading-snug max-w-xl">Consider switching to a cheaper subscription plan</p>
-              <div className="mt-4 text-slate-600 text-xs flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
-                <div className="space-x-1">
-                  <span className="font-semibold text-slate-900">Category:</span>
-                  <span>Entertainment</span>
-                </div>
-                <div className="text-green-700 font-semibold">₹39.99</div>
-                <div>07/12/2024</div>
-              </div>
-            </article>
-
-            <article className="bg-white rounded-lg shadow p-5 border border-transparent hover:border-blue-300 transition-colors">
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center gap-2">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6 text-blue-600"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M9 12l2 2 4-4m-2 6a6 6 0 11-12 0 6 6 0 0112 0z"
-                    />
-                  </svg>
-                  <h2 className="font-semibold text-slate-900 text-sm">Budget Achievement</h2>
-                  <span className="text-xs bg-green-100 text-green-700 rounded-md px-2 py-0.5 font-semibold uppercase tracking-wide select-none">Success</span>
-                  <span className="text-xs bg-slate-200 text-slate-700 rounded-md px-2 py-0.5 font-semibold">AI Generated</span>
-                </div>
-              </div>
-              <p className="text-slate-700 mt-3 text-sm leading-snug max-w-xl">You stayed within your transportation budget this month</p>
-              <div className="mt-4 text-slate-600 text-xs flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
-                <div className="space-x-1">
-                  <span className="font-semibold text-slate-900">Category:</span>
-                  <span>Transportation</span>
-                </div>
-                <div className="text-green-700 font-semibold">₹89.99</div>
-                <div>06/12/2024</div>
-              </div>
-            </article>
+            ) : (
+              insights.map((insight, index) => {
+                // Determine card style based on insight type
+                let cardStyle = "border-blue-300";
+                let iconColor = "text-blue-600";
+                let iconPath = "M9 12l2 2 4-4m6 0a9 9 0 11-18 0 9 9 0 0118 0z";
+                let badgeStyle = "bg-blue-100 text-blue-700";
+                let badgeText = "Insight";
+                
+                if (insight.title.toLowerCase().includes("reduce") || 
+                    insight.title.toLowerCase().includes("high") || 
+                    insight.title.toLowerCase().includes("alert")) {
+                  cardStyle = "border-red-300";
+                  iconColor = "text-red-600";
+                  iconPath = "M18.364 5.636l-12.728 12.728M5.636 5.636l12.728 12.728";
+                  badgeStyle = "bg-red-100 text-red-700";
+                  badgeText = "Warning";
+                } else if (insight.title.toLowerCase().includes("save") || 
+                           insight.title.toLowerCase().includes("opportunity")) {
+                  cardStyle = "border-green-300";
+                  iconColor = "text-green-600";
+                  iconPath = "M9 12l2 2 4-4m0 6a6 6 0 11-12 0 6 6 0 0112 0z";
+                  badgeStyle = "bg-amber-100 text-amber-700";
+                  badgeText = "Suggestion";
+                }
+                
+                return (
+                  <article key={index} className={`bg-white rounded-lg shadow p-5 border border-transparent hover:${cardStyle} transition-colors`}>
+                    <div className="flex items-center space-x-3">
+                      <div className="flex items-center gap-2">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className={`h-6 w-6 ${iconColor}`}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          aria-hidden="true"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d={iconPath}
+                          />
+                        </svg>
+                        <h2 className="font-semibold text-slate-900 text-sm">{insight.title}</h2>
+                        <span className={`text-xs ${badgeStyle} rounded-md px-2 py-0.5 font-semibold uppercase tracking-wide select-none`}>
+                          {badgeText}
+                        </span>
+                        <span className="text-xs bg-slate-200 text-slate-700 rounded-md px-2 py-0.5 font-semibold">AI Generated</span>
+                      </div>
+                    </div>
+                    <p className="text-slate-700 mt-3 text-sm leading-snug max-w-xl">{insight.description}</p>
+                    <div className="mt-4 text-slate-600 text-xs flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+                      <div className="space-x-1">
+                        <span className="font-semibold text-slate-900">Category:</span>
+                        <span>{insight.category}</span>
+                      </div>
+                      <div className="text-green-700 font-semibold">₹{insight.savingPotential.toFixed(2)}</div>
+                      <div>{new Date().toLocaleDateString()}</div>
+                    </div>
+                  </article>
+                );
+              })
+            )}
           </section>
-
+          
           {/* Right section: Stats and Tips */}
           <aside className="flex flex-col gap-6">
             <section className="bg-white rounded-lg shadow p-5">
@@ -177,19 +282,18 @@ const Insights = () => {
               <ul className="text-sm text-slate-700 space-y-2">
                 <li className="flex justify-between">
                   <span>Total Insights</span>
-                  <span className="font-semibold">3</span>
+                  <span className="font-semibold">{insights.length}</span>
                 </li>
                 <li className="flex justify-between">
-                  <span>This Month</span>
-                  <span className="font-semibold text-green-600">₹2,650</span>
+                  <span>Potential Savings</span>
+                  <span className="font-semibold text-green-600">₹{totalSavings.toFixed(2)}</span>
                 </li>
                 <li className="flex justify-between">
                   <span>Savings Goal</span>
-                  <span className="font-semibold text-blue-600">₹5,000</span>
+                  <span className="font-semibold text-blue-600">₹{(totalSavings * 1.5).toFixed(2)}</span>
                 </li>
               </ul>
             </section>
-
             <section className="bg-white rounded-lg shadow p-5">
               <header className="flex items-center gap-2 mb-3">
                 <svg
@@ -220,6 +324,9 @@ const Insights = () => {
                   Review your subscriptions monthly to eliminate unnecessary expenses.
                 </li>
               </ul>
+              <div className="mt-4 text-xs text-gray-500 text-right italic">
+                Powered by Gemini AI
+              </div>
             </section>
           </aside>
         </div>

@@ -379,13 +379,20 @@ const Dashboard = () => {
               </ul>
             )}
           </div>
-          <button 
-            id="addTransactionBtn" 
-            onClick={() => window.location.href = '/transactions'}
-            className="mt-4 sm:mt-6 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 sm:px-6 py-2 rounded-full shadow-md hover:opacity-90 transition duration-300 text-sm sm:text-base"
-          >
-            View All Transactions
-          </button>
+          <div className="flex flex-wrap gap-4 mt-4 sm:mt-6">
+            <button 
+              onClick={() => window.location.href = '/transactions'}
+              className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 sm:px-6 py-2 rounded-full shadow-md hover:opacity-90 transition duration-300 text-sm sm:text-base"
+            >
+              View All Transactions
+            </button>
+            <button 
+              onClick={() => window.location.href = '/insights'}
+              className="bg-gradient-to-r from-purple-500 to-pink-600 text-white px-4 sm:px-6 py-2 rounded-full shadow-md hover:opacity-90 transition duration-300 text-sm sm:text-base"
+            >
+              AI Financial Insights
+            </button>
+          </div>
         </section>
       </main>
 
