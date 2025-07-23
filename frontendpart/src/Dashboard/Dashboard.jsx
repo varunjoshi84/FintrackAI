@@ -15,35 +15,95 @@ const Dashboard = () => {
   const categoryChartInstance = useRef(null);
   const transactionListRef = useRef(null);
 
-  const categories = ['Food', 'Travel', 'Entertainment', 'Bills', 'Shopping', 'Other'];
-
-  // Load dashboard data
+  // Fetch transaction data from backend
+  const [transactions, setTransactions] = useState([]);
+  const [totalSpending, setTotalSpending] = useState(0);
+  const [totalIncome, setTotalIncome] = useState(0);
+  const [categoryData, setCategoryData] = useState({});
+  
   useEffect(() => {
-    const loadDashboardData = async () => {
+    const fetchTransactions = async () => {
       try {
-        setLoading(true);
-        const result = await getDashboardData();
+        // Fetch transactions from the reports endpoint
+        const token = localStorage.getItem('authToken');
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/reports/generate`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
         
-        if (result.success) {
-          setDashboardData(result.data);
-          setTransactionCount(result.data.transactionCount || 10);
-        } else {
-          setError(result.message || 'Failed to load dashboard data');
+        const data = await response.json();
+        
+        if (data.success && data.report && data.report.length > 0) {
+          // Process transactions
+          const txs = data.report.map(tx => ({
+            id: tx._id,
+            description: tx.description,
+            date: new Date(tx.date),
+            amount: tx.amount,
+            type: tx.type, // 'debit' or 'credit'
+            balance: tx.balance,
+            category: getCategoryFromDescription(tx.description)
+          }));
+          
+          setTransactions(txs);
+          
+          // Calculate totals
+          const spending = txs.filter(t => t.type === 'debit').reduce((sum, t) => sum + t.amount, 0);
+          const income = txs.filter(t => t.type === 'credit').reduce((sum, t) => sum + t.amount, 0);
+          setTotalSpending(spending);
+          setTotalIncome(income);
+          
+          // Calculate category data
+          const categories = {};
+          txs.forEach(tx => {
+            if (!categories[tx.category]) {
+              categories[tx.category] = 0;
+            }
+            if (tx.type === 'debit') {
+              categories[tx.category] += tx.amount;
+            }
+          });
+          setCategoryData(categories);
+          
+          // Set transaction count
+          setTransactionCount(txs.length);
         }
       } catch (err) {
-        console.error('Dashboard data loading error:', err);
-        setError(err.message || 'Failed to load dashboard data');
+        console.error('Transactions loading error:', err);
+        setError(err.message || 'Failed to load transactions');
       } finally {
         setLoading(false);
       }
     };
-
-    loadDashboardData();
+    
+    fetchTransactions();
   }, []);
+  
+  // Function to determine category based on description
+  const getCategoryFromDescription = (description) => {
+    const desc = description.toLowerCase();
+    
+    if (desc.includes('salary')) return "Income";
+    if (desc.includes('deposit') || desc.includes('transfer from') || desc.includes('cheque')) return "Income";
+    if (desc.includes('atm') || desc.includes('withdrawal')) return "Cash";
+    if (desc.includes('rent') || desc.includes('housing')) return "Housing";
+    if (desc.includes('bazaar') || desc.includes('grocery')) return "Food & Dining";
+    if (desc.includes('zomato') || desc.includes('swiggy')) return "Food & Dining";
+    if (desc.includes('jio') || desc.includes('recharge')) return "Utilities";
+    if (desc.includes('power') || desc.includes('bill')) return "Utilities";
+    if (desc.includes('card payment')) return "Credit Card";
+    if (desc.includes('upi') || desc.includes('amazon')) return "Shopping";
+    
+    return "Other";
+  };
 
   // Initialize charts
   useEffect(() => {
     const initializeCharts = async () => {
+      if (!transactions.length) return;
+      
       try {
         // Import Chart.js dynamically
         const { Chart, registerables } = await import('chart.js');
@@ -59,16 +119,27 @@ const Dashboard = () => {
             categoryChartInstance.current.destroy();
           }
 
+          // Prepare data for spending trend chart
+          const dates = [...new Set(transactions.map(t => t.date.toLocaleDateString()))];
+          dates.sort((a, b) => new Date(a) - new Date(b));
+          
+          const dailySpending = {};
+          dates.forEach(date => {
+            dailySpending[date] = transactions
+              .filter(t => t.date.toLocaleDateString() === date && t.type === 'debit')
+              .reduce((sum, t) => sum + t.amount, 0);
+          });
+          
           // Spending Trend Chart
           if (spendingChartRef.current) {
             const ctx = spendingChartRef.current.getContext('2d');
             spendingChartInstance.current = new Chart(ctx, {
               type: 'line',
               data: {
-                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                labels: dates,
                 datasets: [{
                   label: '₹ Spent',
-                  data: [500, 300, 200, 800, 600, 450, 700],
+                  data: Object.values(dailySpending),
                   backgroundColor: 'rgba(59,130,246,0.2)',
                   borderColor: 'rgba(59,130,246,1)',
                   borderWidth: 2,
@@ -130,22 +201,29 @@ const Dashboard = () => {
             });
           }
 
+          // Prepare data for category chart
+          const categoryLabels = Object.keys(categoryData).filter(cat => cat !== 'Income');
+          const categoryValues = categoryLabels.map(cat => categoryData[cat]);
+
           // Category Breakdown Chart
           if (categoryChartRef.current) {
             const ctx = categoryChartRef.current.getContext('2d');
             categoryChartInstance.current = new Chart(ctx, {
               type: 'pie',
               data: {
-                labels: ['Food & Dining', 'Transport', 'Utilities', 'Entertainment', 'Others'],
+                labels: categoryLabels,
                 datasets: [{
                   label: 'Spending by Category',
-                  data: [300, 150, 100, 200, 120],
+                  data: categoryValues,
                   backgroundColor: [
                     '#3b82f6', // blue
                     '#f97316', // orange
                     '#10b981', // green
                     '#facc15', // yellow
-                    '#a855f7'  // purple
+                    '#a855f7', // purple
+                    '#ec4899', // pink
+                    '#8b5cf6', // indigo
+                    '#6b7280'  // gray
                   ],
                   borderWidth: 1
                 }]
@@ -178,7 +256,7 @@ const Dashboard = () => {
                       label: function (context) {
                         const label = context.label || '';
                         const value = context.raw || 0;
-                        return `${label}: ₹${value}`;
+                        return `${label}: ₹${value.toFixed(2)}`;
                       }
                     }
                   }
@@ -213,30 +291,7 @@ const Dashboard = () => {
         categoryChartInstance.current = null;
       }
     };
-  }, []); // Empty dependency array to run only once
-
-  // Random transaction generator with category
-  const randomTransaction = () => {
-    const amount = (Math.random() * 200 - 100).toFixed(2); // -100 to +100
-    const today = new Date().toLocaleDateString("en-GB");
-    const category = categories[Math.floor(Math.random() * categories.length)];
-
-    return `
-      <li class="flex justify-between items-center py-2 border-b border-gray-100 transaction-item">
-        <span class="text-xs sm:text-sm text-gray-600">${today}</span>
-        <span class="text-xs sm:text-sm font-medium ${amount >= 0 ? 'text-green-600' : 'text-red-600'}">₹${amount}</span>
-        <span class="text-xs text-gray-500">(${category})</span>
-      </li>
-    `;
-  };
-
-  // Handle Add Transaction
-  const addTransaction = () => {
-    if (transactionListRef.current) {
-      transactionListRef.current.insertAdjacentHTML("afterbegin", randomTransaction());
-      setTransactionCount(prev => prev + 1);
-    }
-  };
+  }, [transactions, categoryData]); // Run when transactions or categoryData changes
 
   // Apply saved theme on load
   useEffect(() => {
@@ -263,15 +318,20 @@ const Dashboard = () => {
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 animate-fade-in-up">
           <div className="bg-white rounded-lg p-4 sm:p-6 shadow-sm transform transition-transform duration-300 hover:scale-105">
             <h3 className="text-xs sm:text-sm font-medium text-gray-500 mb-2">Total Spending</h3>
-            <p id="totalSpending" className="text-xl sm:text-2xl font-bold text-gray-900">₹671.1</p>
+            <p id="totalSpending" className="text-xl sm:text-2xl font-bold text-gray-900">₹{totalSpending.toFixed(2)}</p>
           </div>
           <div className="bg-white rounded-lg p-4 sm:p-6 shadow-sm transform transition-transform duration-300 hover:scale-105">
-            <h3 className="text-xs sm:text-sm font-medium text-gray-500 mb-2">Total Savings</h3>
-            <p id="totalSavings" className="text-xl sm:text-2xl font-bold text-gray-900">₹12,340</p>
+            <h3 className="text-xs sm:text-sm font-medium text-gray-500 mb-2">Total Income</h3>
+            <p id="totalIncome" className="text-xl sm:text-2xl font-bold text-green-600">₹{totalIncome.toFixed(2)}</p>
           </div>
           <div className="bg-white rounded-lg p-4 sm:p-6 shadow-sm transform transition-transform duration-300 hover:scale-105">
             <h3 className="text-xs sm:text-sm font-medium text-gray-500 mb-2">Top Category</h3>
-            <p id="topCategory" className="text-xl sm:text-2xl font-bold text-gray-900">Food & Dining</p>
+            <p id="topCategory" className="text-xl sm:text-2xl font-bold text-gray-900">
+              {Object.entries(categoryData)
+                .sort((a, b) => b[1] - a[1])
+                .filter(([cat]) => cat !== 'Income')
+                .map(([cat]) => cat)[0] || 'N/A'}
+            </p>
           </div>
           <div className="bg-white rounded-lg p-4 sm:p-6 shadow-sm transform transition-transform duration-300 hover:scale-105">
             <h3 className="text-xs sm:text-sm font-medium text-gray-500 mb-2">This Month</h3>
@@ -298,40 +358,33 @@ const Dashboard = () => {
         <section className="bg-white rounded-lg p-4 sm:p-6 shadow-sm animate-fade-in-up delay-150">
           <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Recent Transactions</h3>
           <div className="overflow-x-auto transactions-container">
-            <ul ref={transactionListRef} id="transactionList" className="space-y-2 sm:space-y-3 transaction-list">
-              <li className="flex justify-between items-center py-2 border-b border-gray-100 transaction-item">
-                <span className="text-xs sm:text-sm text-gray-600">01/12/2024</span>
-                <span className="text-xs sm:text-sm font-medium text-red-600">₹-45.67</span>
-                <span className="text-xs text-gray-500">(Food)</span>
-              </li>
-              <li className="flex justify-between items-center py-2 border-b border-gray-100 transaction-item">
-                <span className="text-xs sm:text-sm text-gray-600">02/12/2024</span>
-                <span className="text-xs sm:text-sm font-medium text-red-600">₹-89.99</span>
-                <span className="text-xs text-gray-500">(Travel)</span>
-              </li>
-              <li className="flex justify-between items-center py-2 border-b border-gray-100 transaction-item">
-                <span className="text-xs sm:text-sm text-gray-600">03/12/2024</span>
-                <span className="text-xs sm:text-sm font-medium text-green-600">₹2,500</span>
-                <span className="text-xs text-gray-500">(Salary)</span>
-              </li>
-              <li className="flex justify-between items-center py-2 border-b border-gray-100 transaction-item">
-                <span className="text-xs sm:text-sm text-gray-600">04/12/2024</span>
-                <span className="text-xs sm:text-sm font-medium text-red-600">₹-125.5</span>
-                <span className="text-xs text-gray-500">(Bills)</span>
-              </li>
-              <li className="flex justify-between items-center py-2 border-b border-gray-100 transaction-item">
-                <span className="text-xs sm:text-sm text-gray-600">05/12/2024</span>
-                <span className="text-xs sm:text-sm font-medium text-red-600">₹-39.99</span>
-                <span className="text-xs text-gray-500">(Entertainment)</span>
-              </li>
-            </ul>
+            {loading ? (
+              <div className="text-center py-4">Loading transactions...</div>
+            ) : error ? (
+              <div className="text-center text-red-600 py-4">{error}</div>
+            ) : (
+              <ul ref={transactionListRef} id="transactionList" className="space-y-2 sm:space-y-3 transaction-list">
+                {transactions.slice(0, 5).map((tx, index) => (
+                  <li key={index} className="flex justify-between items-center py-2 border-b border-gray-100 transaction-item">
+                    <span className="text-xs sm:text-sm text-gray-600">{tx.date.toLocaleDateString()}</span>
+                    <span className={`text-xs sm:text-sm font-medium ${tx.type === 'credit' ? 'text-green-600' : 'text-red-600'}`}>
+                      {tx.type === 'credit' ? '+' : '-'}₹{tx.amount.toFixed(2)}
+                    </span>
+                    <span className="text-xs text-gray-500">({tx.category})</span>
+                  </li>
+                ))}
+                {transactions.length === 0 && (
+                  <li className="text-center py-4 text-gray-500">No transactions found</li>
+                )}
+              </ul>
+            )}
           </div>
           <button 
             id="addTransactionBtn" 
-            onClick={addTransaction}
+            onClick={() => window.location.href = '/transactions'}
             className="mt-4 sm:mt-6 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 sm:px-6 py-2 rounded-full shadow-md hover:opacity-90 transition duration-300 text-sm sm:text-base"
           >
-            ➕ Add Transaction
+            View All Transactions
           </button>
         </section>
       </main>
