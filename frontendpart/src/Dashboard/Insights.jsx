@@ -130,6 +130,38 @@ const Insights = () => {
     setIsGenerating(false);
   };
 
+  // Financial tips array - will randomly select 3
+  const financialTips = [
+    "Track your spending daily to identify patterns and opportunities for savings.",
+    "Set up automatic transfers to your savings account to build wealth consistently.",
+    "Review your subscriptions monthly to eliminate unnecessary expenses.",
+    "Use the 50/30/20 rule: 50% for needs, 30% for wants, and 20% for savings.",
+    "Pay off high-interest debt first to minimize interest payments.",
+    "Create a separate emergency fund with 3-6 months of living expenses.",
+    "Consider using cash for discretionary spending to be more mindful of purchases.",
+    "Meal prep at home to reduce food delivery and dining out expenses.",
+    "Use price comparison apps when shopping to find the best deals.",
+    "Set specific financial goals with deadlines to stay motivated.",
+    "Automate bill payments to avoid late fees and maintain good credit.",
+    "Invest early and regularly, even small amounts benefit from compound growth.",
+    "Negotiate bills and subscriptions annually to get better rates.",
+    "Use cashback credit cards for regular purchases, but pay off the balance monthly.",
+    "Consider a no-spend challenge for a week each month to reset spending habits."
+  ];
+  
+  // Select 3 random tips
+  const getRandomTips = () => {
+    const shuffled = [...financialTips].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, 3);
+  };
+  
+  const [tips, setTips] = useState(getRandomTips());
+  
+  // Update tips when insights are refreshed
+  useEffect(() => {
+    setTips(getRandomTips());
+  }, [insights]);
+  
   // Calculate total savings potential
   const totalSavings = insights.reduce((sum, insight) => sum + insight.savingPotential, 0);
 
@@ -295,38 +327,47 @@ const Insights = () => {
               </ul>
             </section>
             <section className="bg-white rounded-lg shadow p-5">
-              <header className="flex items-center gap-2 mb-3">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 text-slate-700"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  aria-hidden="true"
+              <header className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 text-slate-700"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M13 16h-1v-4h-1m1-4h.01M12 12h.01"
+                    />
+                  </svg>
+                  <h3 className="font-semibold text-slate-900 text-base">Financial Tips</h3>
+                </div>
+                <button 
+                  onClick={() => setTips(getRandomTips())}
+                  className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M13 16h-1v-4h-1m1-4h.01M12 12h.01"
-                  />
-                </svg>
-                <h3 className="font-semibold text-slate-900 text-base">Financial Tips</h3>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Refresh
+                </button>
               </header>
               <ul className="space-y-3 text-sm text-slate-700">
                 <li className="bg-blue-100 rounded-md px-3 py-2 leading-tight">
-                  Track your spending daily to identify patterns and opportunities for savings.
+                  {tips[0]}
                 </li>
                 <li className="bg-green-100 rounded-md px-3 py-2 leading-tight">
-                  Set up automatic transfers to your savings account to build wealth consistently.
+                  {tips[1]}
                 </li>
                 <li className="bg-amber-100 rounded-md px-3 py-2 leading-tight">
-                  Review your subscriptions monthly to eliminate unnecessary expenses.
+                  {tips[2]}
                 </li>
               </ul>
-              <div className="mt-4 text-xs text-gray-500 text-right italic">
-                Powered by Gemini AI
-              </div>
+              
             </section>
           </aside>
         </div>

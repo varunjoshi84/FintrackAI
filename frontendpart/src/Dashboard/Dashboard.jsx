@@ -381,7 +381,7 @@ const Dashboard = () => {
           </div>
           <div className="flex flex-wrap gap-4 mt-4 sm:mt-6">
             <button 
-              onClick={() => window.location.href = '/transactions'}
+              onClick={() => window.location.href = '/transaction'}
               className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 sm:px-6 py-2 rounded-full shadow-md hover:opacity-90 transition duration-300 text-sm sm:text-base"
             >
               View All Transactions

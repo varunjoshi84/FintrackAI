@@ -101,13 +101,121 @@ const Reports = () => {
   }, [location.state]);
 
   const exportPDF = () => {
-    alert("PDF report has been generated.");
-    // Simulate PDF export logic
+    if (!filteredData || filteredData.length === 0) {
+      alert("No data to export. Please select a different date range.");
+      return;
+    }
+    
+    // Create a printable version of the report
+    const printWindow = window.open('', '_blank');
+    
+    if (!printWindow) {
+      alert("Please allow pop-ups to download the PDF report.");
+      return;
+    }
+    
+    // Calculate totals
+    const totalDebit = filteredData.filter(t => t.type === 'debit').reduce((sum, t) => sum + Number(t.amount || 0), 0);
+    const totalCredit = filteredData.filter(t => t.type === 'credit').reduce((sum, t) => sum + Number(t.amount || 0), 0);
+    
+    // Generate HTML content
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Financial Report ${startDate} to ${endDate}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          h1 { color: #2563eb; }
+          table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+          th { background-color: #f2f2f2; }
+          .debit { color: #dc2626; }
+          .credit { color: #16a34a; }
+          .summary { margin: 20px 0; padding: 15px; background-color: #f8fafc; border-radius: 5px; }
+          .summary div { margin: 5px 0; }
+          .footer { margin-top: 30px; font-size: 12px; color: #6b7280; text-align: center; }
+        </style>
+      </head>
+      <body>
+        <h1>Financial Report</h1>
+        <p>Period: ${new Date(startDate).toLocaleDateString()} to ${new Date(endDate).toLocaleDateString()}</p>
+        
+        <div class="summary">
+          <div><strong>Total Transactions:</strong> ${filteredData.length}</div>
+          <div><strong>Total Spending:</strong> ₹${totalDebit.toFixed(2)}</div>
+          <div><strong>Total Income:</strong> ₹${totalCredit.toFixed(2)}</div>
+          <div><strong>Net Balance:</strong> ₹${(totalCredit - totalDebit).toFixed(2)}</div>
+        </div>
+        
+        <h2>Transaction Details</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Description</th>
+              <th>Debit (₹)</th>
+              <th>Credit (₹)</th>
+              <th>Balance (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filteredData.map(t => `
+              <tr>
+                <td>${new Date(t.date).toLocaleDateString()}</td>
+                <td>${t.description}</td>
+                <td class="debit">${t.type === 'debit' ? Number(t.amount).toFixed(2) : ''}</td>
+                <td class="credit">${t.type === 'credit' ? Number(t.amount).toFixed(2) : ''}</td>
+                <td>${t.balance !== undefined ? Number(t.balance).toFixed(2) : ''}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        
+        <div class="footer">
+          <p>Generated on ${new Date().toLocaleString()} | Fintack AI</p>
+        </div>
+        
+        <script>
+          window.onload = function() { window.print(); }
+        </script>
+      </body>
+      </html>
+    `);
+    
+    printWindow.document.close();
   };
 
   const exportCSV = () => {
-    alert("CSV data has been exported.");
-    // Simulate CSV export logic
+    if (!filteredData || filteredData.length === 0) {
+      alert("No data to export. Please select a different date range.");
+      return;
+    }
+    
+    // Create CSV content
+    let csvContent = "Date,Description,Category,Type,Amount,Balance\n";
+    
+    filteredData.forEach(t => {
+      const date = new Date(t.date).toLocaleDateString();
+      const description = t.description.replace(/,/g, ' '); // Remove commas to avoid CSV issues
+      const category = t.category || 'Uncategorized';
+      const type = t.type;
+      const amount = Number(t.amount).toFixed(2);
+      const balance = t.balance !== undefined ? Number(t.balance).toFixed(2) : '';
+      
+      csvContent += `${date},"${description}",${category},${type},${amount},${balance}\n`;
+    });
+    
+    // Create download link
+    const encodedUri = encodeURI('data:text/csv;charset=utf-8,' + csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `transactions_${startDate}_to_${endDate}.csv`);
+    document.body.appendChild(link);
+    
+    // Trigger download and clean up
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -195,60 +303,96 @@ const Reports = () => {
                   <div className="mb-4">
                     <h3 className="font-medium text-red-600 mb-2">Expenses</h3>
                     <ul className="text-sm">
-                      {Array.from(new Set(filteredData.filter(t => t.type === 'debit').map(t => {
-                        // Auto-categorize transactions based on description
-                        if (t.description.toLowerCase().includes('atm') || t.description.toLowerCase().includes('withdrawal')) return 'Cash Withdrawal';
-                        if (t.description.toLowerCase().includes('rent')) return 'Housing';
-                        if (t.description.toLowerCase().includes('bazaar') || t.description.toLowerCase().includes('grocery')) return 'Groceries';
-                        if (t.description.toLowerCase().includes('zomato') || t.description.toLowerCase().includes('swiggy')) return 'Food & Dining';
-                        if (t.description.toLowerCase().includes('jio') || t.description.toLowerCase().includes('recharge')) return 'Mobile & Internet';
-                        if (t.description.toLowerCase().includes('power') || t.description.toLowerCase().includes('bill')) return 'Utilities';
-                        if (t.description.toLowerCase().includes('card payment')) return 'Credit Card';
-                        if (t.description.toLowerCase().includes('upi')) return 'Online Shopping';
-                        return t.category || 'Other Expenses';
-                      }))).map(cat => {
-                        const catTrans = filteredData.filter(t => t.type === 'debit' && (
-                          (t.description.toLowerCase().includes(cat.toLowerCase())) ||
-                          (cat === 'Other Expenses' && !t.category)
-                        ));
-                        const total = catTrans.reduce((sum, t) => sum + Number(t.amount || 0), 0);
-                        const allDebitTotal = filteredData.filter(t => t.type === 'debit').reduce((sum, t) => sum + Number(t.amount || 0), 0);
-                        const percent = allDebitTotal > 0 ? ((total / allDebitTotal) * 100).toFixed(1) : '0.0';
-                        return (
-                          <li key={cat} className="flex justify-between mb-1">
-                            {cat} <span className="text-gray-900">₹{total.toFixed(2)} ({percent}%)</span>
-                          </li>
-                        );
-                      })}
+                      {(() => {
+                        // First, categorize all transactions
+                        const categorizedTransactions = filteredData.filter(t => t.type === 'debit').map(t => {
+                          let category = 'Other Expenses';
+                          const desc = t.description.toLowerCase();
+                          
+                          if (desc.includes('atm') || desc.includes('withdrawal')) category = 'Cash Withdrawal';
+                          else if (desc.includes('rent')) category = 'Housing';
+                          else if (desc.includes('bazaar') || desc.includes('grocery')) category = 'Groceries';
+                          else if (desc.includes('zomato') || desc.includes('swiggy')) category = 'Food & Dining';
+                          else if (desc.includes('jio') || desc.includes('recharge')) category = 'Mobile & Internet';
+                          else if (desc.includes('power') || desc.includes('bill')) category = 'Utilities';
+                          else if (desc.includes('card payment')) category = 'Credit Card';
+                          else if (desc.includes('upi')) category = 'Online Shopping';
+                          else if (t.category) category = t.category;
+                          
+                          return { ...t, expenseCategory: category };
+                        });
+                        
+                        // Group by category and calculate totals
+                        const categories = {};
+                        categorizedTransactions.forEach(t => {
+                          if (!categories[t.expenseCategory]) {
+                            categories[t.expenseCategory] = 0;
+                          }
+                          categories[t.expenseCategory] += Number(t.amount || 0);
+                        });
+                        
+                        // Calculate total expenses
+                        const allDebitTotal = Object.values(categories).reduce((sum, amount) => sum + amount, 0);
+                        
+                        // Sort categories by amount (descending)
+                        return Object.entries(categories)
+                          .sort((a, b) => b[1] - a[1])
+                          .map(([category, total]) => {
+                            const percent = allDebitTotal > 0 ? ((total / allDebitTotal) * 100).toFixed(1) : '0.0';
+                            return (
+                              <li key={category} className="flex justify-between mb-1">
+                                {category} <span className="text-gray-900">₹{total.toFixed(2)} ({percent}%)</span>
+                              </li>
+                            );
+                          });
+                      })()}
                     </ul>
                   </div>
                   
                   <div>
                     <h3 className="font-medium text-green-600 mb-2">Income</h3>
                     <ul className="text-sm">
-                      {Array.from(new Set(filteredData.filter(t => t.type === 'credit').map(t => {
-                        // Auto-categorize income transactions
-                        if (t.description.toLowerCase().includes('salary')) return 'Salary';
-                        if (t.description.toLowerCase().includes('cash deposit')) return 'Cash Deposits';
-                        if (t.description.toLowerCase().includes('cheque')) return 'Cheque Deposits';
-                        if (t.description.toLowerCase().includes('transfer')) return 'Transfers';
-                        if (t.description.toLowerCase().includes('freelance')) return 'Freelance Income';
-                        if (t.description.toLowerCase().includes('deposit')) return 'Other Deposits';
-                        return t.category || 'Other Income';
-                      }))).map(cat => {
-                        const catTrans = filteredData.filter(t => t.type === 'credit' && (
-                          (t.description.toLowerCase().includes(cat.toLowerCase())) ||
-                          (cat === 'Other Income' && !t.category)
-                        ));
-                        const total = catTrans.reduce((sum, t) => sum + Number(t.amount || 0), 0);
-                        const allCreditTotal = filteredData.filter(t => t.type === 'credit').reduce((sum, t) => sum + Number(t.amount || 0), 0);
-                        const percent = allCreditTotal > 0 ? ((total / allCreditTotal) * 100).toFixed(1) : '0.0';
-                        return (
-                          <li key={cat} className="flex justify-between mb-1">
-                            {cat} <span className="text-gray-900">₹{total.toFixed(2)} ({percent}%)</span>
-                          </li>
-                        );
-                      })}
+                      {(() => {
+                        // First, categorize all transactions
+                        const categorizedTransactions = filteredData.filter(t => t.type === 'credit').map(t => {
+                          let category = 'Other Income';
+                          const desc = t.description.toLowerCase();
+                          
+                          if (desc.includes('salary')) category = 'Salary';
+                          else if (desc.includes('cash deposit')) category = 'Cash Deposits';
+                          else if (desc.includes('cheque')) category = 'Cheque Deposits';
+                          else if (desc.includes('transfer')) category = 'Transfers';
+                          else if (desc.includes('freelance')) category = 'Freelance Income';
+                          else if (desc.includes('deposit')) category = 'Other Deposits';
+                          else if (t.category) category = t.category;
+                          
+                          return { ...t, incomeCategory: category };
+                        });
+                        
+                        // Group by category and calculate totals
+                        const categories = {};
+                        categorizedTransactions.forEach(t => {
+                          if (!categories[t.incomeCategory]) {
+                            categories[t.incomeCategory] = 0;
+                          }
+                          categories[t.incomeCategory] += Number(t.amount || 0);
+                        });
+                        
+                        // Calculate total income
+                        const allCreditTotal = Object.values(categories).reduce((sum, amount) => sum + amount, 0);
+                        
+                        // Sort categories by amount (descending)
+                        return Object.entries(categories)
+                          .sort((a, b) => b[1] - a[1])
+                          .map(([category, total]) => {
+                            const percent = allCreditTotal > 0 ? ((total / allCreditTotal) * 100).toFixed(1) : '0.0';
+                            return (
+                              <li key={category} className="flex justify-between mb-1">
+                                {category} <span className="text-gray-900">₹{total.toFixed(2)} ({percent}%)</span>
+                              </li>
+                            );
+                          });
+                      })()}
                     </ul>
                   </div>
                 </div>
