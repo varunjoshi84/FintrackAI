@@ -17,7 +17,7 @@ const adminLogin = require('./authentication/adminLogin');
 const { verifyToken, getDashboardData, updateProfile } = require('./dashboard');
 
 // Import upload functions
-const { upload, uploadTransactions } = require('./uploadController');
+const { upload, uploadTransactions, generateReport } = require('./uploadController');
 
 // Import user functions
 const { 
@@ -80,7 +80,13 @@ app.get('/', (req, res) => {
 });
 
 // Upload Transactions Endpoint
+// Upload File Endpoint (for generic file uploads)
+app.post('/api/upload/file', verifyUserToken, upload.single('file'), uploadTransactions);
+// Existing transactions upload endpoint
 app.post('/api/upload/transactions', upload.single('file'), uploadTransactions);
+// Generate report endpoint (after upload)
+app.get('/api/reports/generate', verifyUserToken, generateReport);
+app.post('/api/reports/generate', verifyUserToken, generateReport);
 
 // Authentication Routes
 app.post('/api/auth/register', signup);     // User signup

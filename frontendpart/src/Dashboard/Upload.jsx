@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import gsap from 'gsap';
 import Header from './Header';
 import Footer from '../components/Footer';
@@ -18,13 +19,12 @@ const Upload = () => {
   const downloadRef = useRef(null);
   const dropZoneRef = useRef(null);
   const fileInputRef = useRef(null);
+  const navigate = useNavigate();
 
   const maxSizeMB = 5;
   const maxSizeBytes = maxSizeMB * 1024 * 1024;
   const allowedTypes = [
     'application/pdf',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'text/csv',
   ];
 
@@ -81,7 +81,7 @@ const Upload = () => {
     }
 
     if (!allowedTypes.includes(file.type)) {
-      alert('Invalid file type. Only PDF, DOC, DOCX, and CSV are allowed.');
+      alert('Invalid file type. Only PDF and CSV are allowed.');
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -134,12 +134,14 @@ const Upload = () => {
     setError('');
     
     try {
+      // Pass uploadedFileId as fileId
       const result = await generateReport(uploadedFileId);
       
       if (result.success) {
         setReportData(result.data);
         setDownloadVisible(true);
-        
+        // Redirect to Reports page with report data and fileId in URL
+        navigate(`/reports?fileId=${uploadedFileId}`, { state: { reportData: result.data } });
         // Animate download section
         if (downloadRef.current) {
           requestAnimationFrame(() => {
@@ -229,8 +231,9 @@ const Upload = () => {
               <input 
                 type="file" 
                 id="fileInput" 
+                name="file"
                 ref={fileInputRef}
-                accept=".pdf,.doc,.docx,.csv" 
+                accept=".pdf,.csv" 
                 required 
                 onChange={handleFileChange} 
               />
