@@ -161,10 +161,10 @@ const Header = () => {
                 isDropdownOpen ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'
               }`}
             >
-              <span className="block px-4 py-2 text-gray-300 rounded-full w-48 text-center font-semibold">{userData.name}</span>
-              <span className="block px-4 py-2 text-gray-400 rounded-full w-48 text-center text-sm">{userData.email}</span>
-              <Link to="/userdashboard" className={`block px-4 py-2 ${currentPath.includes('userdashboard') ? 'text-blue-400 font-semibold' : 'text-gray-300'} hover:bg-gray-700 rounded-full w-48 text-center`}>My profile</Link>
-              <Link to="/" className="block px-4 py-2 text-red-400 hover:bg-gray-700 rounded-full w-48 text-center">Sign out</Link>
+              <span className="block px-4 py-2 text-gray-300 rounded-full w-full max-w-48 text-center font-semibold truncate">{userData.name}</span>
+              <span className="block px-4 py-2 text-gray-400 rounded-full w-full max-w-48 text-center text-sm truncate">{userData.email}</span>
+              <Link to="/userdashboard" className={`block px-4 py-2 ${currentPath.includes('userdashboard') ? 'text-blue-400 font-semibold' : 'text-gray-300'} hover:bg-gray-700 rounded-full w-full max-w-48 text-center`}>My profile</Link>
+              <Link to="/" className="block px-4 py-2 text-red-400 hover:bg-gray-700 rounded-full w-full max-w-48 text-center">Sign out</Link>
             </div>
           </div>
         </div>
@@ -194,14 +194,14 @@ const Header = () => {
             </div>
             <div
               id="dropdownMenuMobile"
-              className={`w-full bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl transition-all duration-300 z-50 flex flex-col items-center py-4 mt-2 ${
+              className={`w-full max-w-xs mx-auto bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl transition-all duration-300 z-50 flex flex-col items-center py-4 mt-2 ${
                 isMobileDropdownOpen ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'
               }`}
             >
-              <span className="block px-4 py-2 text-gray-300 rounded-full w-48 text-center font-semibold">{userData.name}</span>
-              <span className="block px-4 py-2 text-gray-400 rounded-full w-48 text-center text-sm">{userData.email}</span>
-              <Link to="/userdashboard" className={`block px-4 py-2 ${currentPath.includes('userdashboard') ? 'text-blue-400 font-semibold' : 'text-gray-300'} hover:bg-gray-700 rounded-full w-48 text-center`}>My profile</Link>
-              <Link to="/" className="block px-4 py-2 text-red-400 hover:bg-gray-700 rounded-full w-48 text-center">Sign out</Link>
+              <span className="block px-4 py-2 text-gray-300 rounded-full w-full text-center font-semibold truncate">{userData.name}</span>
+              <span className="block px-4 py-2 text-gray-400 rounded-full w-full text-center text-sm truncate">{userData.email}</span>
+              <Link to="/userdashboard" className={`block px-4 py-2 ${currentPath.includes('userdashboard') ? 'text-blue-400 font-semibold' : 'text-gray-300'} hover:bg-gray-700 rounded-full w-full text-center`}>My profile</Link>
+              <Link to="/" className="block px-4 py-2 text-red-400 hover:bg-gray-700 rounded-full w-full text-center">Sign out</Link>
             </div>
           </div>
         </div>
