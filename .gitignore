@@ -1,4 +1,5 @@
 frontendpart/node_modules/
+frontendpart/.env
 backend/node_modules/
 backend/.env
 backend/logs/

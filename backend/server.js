@@ -13,8 +13,24 @@ const signup = require('./authentication/signup');
 const login = require('./authentication/login');
 const adminLogin = require('./authentication/adminLogin');
 
+// Import Google authentication
+const passport = require('./googleAuth');
+const authRoutes = require('./routes/authRoutes');
+
 // Import dashboard functions
 const { verifyToken, getDashboardData, updateProfile } = require('./dashboard');
+
+// Import upload functions
+const { upload, uploadTransactions, generateReport } = require('./uploadController');
+
+// Import transaction functions
+const { 
+  verifyToken: verifyTransactionToken, 
+  getTransactions, 
+  addTransaction, 
+  updateTransaction, 
+  deleteTransaction 
+} = require('./transactionController');
 
 // Import user functions
 const { 
@@ -65,7 +81,32 @@ const app = express();
 
 // Basic middleware (what our app needs to work)
 app.use(express.json()); // To read JSON data
-app.use(cors());         // To allow frontend to connect
+app.use(cors({           // To allow frontend to connect
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true
+}));
+
+// Session middleware for passport
+let session;
+try {
+  session = require('express-session');
+} catch (error) {
+  console.error('Error loading express-session:', error);
+  console.log('Installing express-session...');
+  require('child_process').execSync('npm install express-session --save');
+  session = require('express-session');
+}
+
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-session-secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: process.env.NODE_ENV === 'production' }
+}));
+
+// Initialize Passport
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Connect to database
 connectDB();
@@ -76,14 +117,32 @@ app.get('/', (req, res) => {
   res.json({ message: 'Server is running!' });
 });
 
+// Upload Transactions Endpoint
+// Upload File Endpoint (for generic file uploads)
+app.post('/api/upload/file', verifyUserToken, upload.single('file'), uploadTransactions);
+// Existing transactions upload endpoint - NOW WITH AUTHENTICATION
+app.post('/api/upload/transactions', verifyUserToken, upload.single('file'), uploadTransactions);
+// Generate report endpoint (after upload)
+app.get('/api/reports/generate', verifyUserToken, generateReport);
+app.post('/api/reports/generate', verifyUserToken, generateReport);
+
 // Authentication Routes
 app.post('/api/auth/register', signup);     // User signup
 app.post('/api/auth/login', login);         // User login  
 app.post('/api/auth/admin/login', adminLogin); // Admin login
 
+// Google Authentication Routes
+app.use('/api/auth', authRoutes);
+
 // Dashboard Routes (Protected - require authentication)
 app.get('/api/dashboard', verifyToken, getDashboardData);    // Get user dashboard data
 app.put('/api/dashboard/profile', verifyToken, updateProfile); // Update user profile
+
+// Transaction Routes (Protected - require authentication)
+app.get('/api/transactions', verifyUserToken, getTransactions);        // Get user transactions
+app.post('/api/transactions', verifyUserToken, addTransaction);        // Add new transaction
+app.put('/api/transactions/:id', verifyUserToken, updateTransaction);  // Update transaction
+app.delete('/api/transactions/:id', verifyUserToken, deleteTransaction); // Delete transaction
 
 // Admin Routes (Protected - require admin authentication)
 app.get('/api/admin/stats', verifyUserToken, getAdminStats);           // Get admin dashboard stats
@@ -119,7 +178,7 @@ app.put('/api/admin/contacts/:id', verifyUserToken, updateContactMessage);     /
 app.post('/api/admin/contacts/:id/respond', verifyUserToken, sendEmailResponse); // Send email response
 app.delete('/api/admin/contacts/:id', verifyUserToken, deleteContactMessage);  // Delete contact message
 
-// Test email endpoint (remove in production)
+// Test email endpoint 
 app.post('/api/test-email', async (req, res) => {
   try {
     const { email } = req.body;

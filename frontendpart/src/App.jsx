@@ -15,6 +15,7 @@ import About from './components/About';
 import Login from './Authentication/Login';
 import Signup from './Authentication/Signup';
 import Admin from './Authentication/Admin';
+import AuthSuccess from './Authentication/AuthSuccess';
 import Dashboard from './Dashboard/Dashboard';
 import AdminDashboard from './Dashboard/AdminDashboard';
 import Transactions from './Dashboard/Transactions';
@@ -59,6 +60,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/auth/success" element={<AuthSuccess />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/transaction" element={<Transactions />} />

@@ -27,7 +27,7 @@ export const uploadFile = async (file, onProgress = null) => {
     return {
       success: true,
       data: result,
-      fileId: result.fileId,
+      fileId: result.uploadId || result.fileId,
       message: result.message || 'File uploaded successfully'
     };
   } catch (error) {
@@ -113,7 +113,7 @@ export const generateReport = async (fileId, reportType = 'comprehensive') => {
       method: 'POST',
       headers: getDefaultHeaders(),
       body: JSON.stringify({ 
-        fileId,
+        fileId, // use fileId as expected by backend
         reportType,
         includeCharts: true,
         includeRecommendations: true
@@ -128,7 +128,7 @@ export const generateReport = async (fileId, reportType = 'comprehensive') => {
     const result = await response.json();
     return {
       success: true,
-      data: result,
+      data: result.report, // use result.report as the report data
       reportId: result.reportId,
       downloadUrls: result.downloadUrls,
       message: result.message || 'Report generated successfully'

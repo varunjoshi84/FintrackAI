@@ -28,7 +28,7 @@ export const API_ENDPOINTS = {
   
   // Dashboard Data
   DASHBOARD_STATS: '/dashboard/stats',
-  TRANSACTIONS: '/dashboard/transactions',
+  TRANSACTIONS: '/transactions',
   INSIGHTS: '/dashboard/insights',
   CATEGORIES: '/dashboard/categories',
   
