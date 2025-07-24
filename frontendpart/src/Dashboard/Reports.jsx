@@ -11,31 +11,8 @@ const Reports = () => {
   const [startDate, setStartDate] = useState('2025-07-01');
   const [endDate, setEndDate] = useState('2025-07-31');
   const [reportData, setReportData] = useState(location.state?.reportData || null);
-  // Filtered transactions based on date range and report type
-  const filteredData = (reportData || []).filter(t => {
-    // Make sure we have a valid date
-    if (!t.date) return false;
-    
-    const txDate = new Date(t.date);
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    
-    // Skip invalid dates
-    if (isNaN(txDate.getTime())) return false;
-    
-    // Filter by date range
-    if (txDate < start || txDate > end) return false;
-    
-    // Filter by report type (example: monthly/weekly)
-    if (reportType === 'Weekly Report') {
-      // Only include transactions from the last 7 days of endDate
-      const diffDays = (end - txDate) / (1000 * 60 * 60 * 24);
-      if (diffDays < 0 || diffDays > 6) return false;
-    }
-    
-    // For monthly, just use date range
-    return true;
-  });
+  // Show all transactions when dates are auto-set from uploaded data
+  const filteredData = reportData || [];
   
   // Log filtered data count
   useEffect(() => {
@@ -55,6 +32,14 @@ const Reports = () => {
         if (location.state?.reportData) {
           console.log('Using report data from navigation state');
           setReportData(location.state.reportData);
+          
+          // Auto-set date range if available from navigation state
+          if (location.state?.dateRange) {
+            setStartDate(location.state.dateRange.startDate);
+            setEndDate(location.state.dateRange.endDate);
+            console.log('Auto-set date range from navigation:', location.state.dateRange);
+          }
+          
           setLoading(false);
           return;
         }
@@ -86,6 +71,13 @@ const Reports = () => {
         if (data.success) {
           console.log(`Setting report data with ${data.report.length} transactions`);
           setReportData(data.report);
+          
+          // Auto-set date range if available
+          if (data.dateRange) {
+            setStartDate(data.dateRange.startDate);
+            setEndDate(data.dateRange.endDate);
+            console.log('Auto-set date range:', data.dateRange);
+          }
         } else {
           setError(data.message || 'Failed to fetch report');
         }

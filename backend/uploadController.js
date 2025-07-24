@@ -138,10 +138,25 @@ const generateReport = async (req, res) => {
     console.log('Transaction query:', query);
     
     // Find transactions for this user only
-    const transactions = await Transaction.find(query);
+    const transactions = await Transaction.find(query).sort({ date: 1 });
     console.log('Found transactions for user:', transactions.length);
     
-    res.json({ success: true, report: transactions });
+    // Calculate date range if transactions exist
+    let dateRange = null;
+    if (transactions.length > 0) {
+      const startDate = new Date(transactions[0].date);
+      const endDate = new Date(transactions[transactions.length - 1].date);
+      dateRange = {
+        startDate: startDate.toISOString().split('T')[0],
+        endDate: endDate.toISOString().split('T')[0]
+      };
+    }
+    
+    res.json({ 
+      success: true, 
+      report: transactions,
+      dateRange: dateRange
+    });
   } catch (error) {
     console.error('Report generation error:', error);
     res.status(500).json({ success: false, message: 'Report generation error', error: error.message });

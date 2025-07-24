@@ -20,9 +20,9 @@ const Pricing = () => {
               <li>• Simple dashboard</li>
               <li>• 7-day data retention</li>
             </ul>
-            <button className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm font-medium">
+            {/* <button className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm font-medium">
               Get Started
-            </button>
+            </button> */}
           </div>
 
           {/* Premium Plan */}
@@ -37,9 +37,9 @@ const Pricing = () => {
               <li>• PDF/Excel exports</li>
               <li>• Priority support</li>
             </ul>
-            <button className="w-full bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800 text-sm font-medium">
+            {/* <button className="w-full bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800 text-sm font-medium">
               Start Premium
-            </button>
+            </button> */}
           </div>
 
           {/* Business Plan */}
@@ -54,9 +54,9 @@ const Pricing = () => {
               <li>• Invoice management</li>
               <li>• Team collaboration</li>
             </ul>
-            <button className="w-full bg-white text-slate-900 px-4 py-2 rounded hover:bg-slate-200 text-sm font-medium">
+            {/* <button className="w-full bg-white text-slate-900 px-4 py-2 rounded hover:bg-slate-200 text-sm font-medium">
               Contact Sales
-            </button>
+            </button> */}
           </div>
         </div>
       </div>

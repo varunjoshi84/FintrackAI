@@ -1,19 +1,67 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from './Header';
 import Footer from './Footer';
 
 const MainPricing = () => {
   const [isMonthly, setIsMonthly] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Load Razorpay script
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  const handleRazorpayPayment = () => {
+    const amount = isMonthly ? 199 : 300;
+    const options = {
+      key: 'rzp_test_1DP5mmOlF5G5ag', // Demo key
+      amount: amount * 100, // Amount in paise
+      currency: 'INR',
+      name: 'Fintack AI',
+      description: `Pro Plan - ${isMonthly ? 'Monthly' : 'Yearly'}`,
+      image: '/logo.png',
+      handler: function (response) {
+        alert(`Payment Successful! Payment ID: ${response.razorpay_payment_id}`);
+        // Here you would typically send the payment details to your backend
+      },
+      prefill: {
+        name: 'Demo User',
+        email: 'demo@example.com',
+        contact: '9999999999'
+      },
+      notes: {
+        plan: 'Pro',
+        billing: isMonthly ? 'monthly' : 'yearly'
+      },
+      theme: {
+        color: '#8B5CF6'
+      }
+    };
+
+    if (window.Razorpay) {
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } else {
+      alert('Razorpay SDK not loaded. Please try again.');
+    }
+  };
 
   const pricingData = {
     monthly: {
-      basic: '$0 per month',
-      pro: '$30 per month',
+      basic: '₹0 per month',
+      pro: '₹199 per month',
       enterprise: 'Custom (Billed monthly)',
     },
     yearly: {
-      basic: '$0 per year',
-      pro: '$300 per year',
+      basic: '₹0 per year',
+      pro: '₹300 per year',
       enterprise: 'Custom (Billed annually)',
     },
   };
@@ -67,15 +115,16 @@ const MainPricing = () => {
                 dangerouslySetInnerHTML={{ __html: pricingData[isMonthly ? 'monthly' : 'yearly'].basic.replace('per', '<span class="text-base font-normal text-gray-500">per</span>') }}
               />
               <ul className="mt-4 space-y-2 text-sm text-gray-700">
-                <li className="flex items-center gap-2"><span className="text-green-500"><i className="fas fa-check"></i></span> Basic task management</li>
-                <li className="flex items-center gap-2"><span className="text-green-500"><i className="fas fa-calendar-alt"></i></span> Personal calendar</li>
-                <li className="flex items-center gap-2"><span className="text-green-500"><i className="fas fa-bell"></i></span> Task reminders</li>
-                <li className="flex items-center gap-2"><span className="text-green-500"><i className="fas fa-users"></i></span> Collaboration with 3 team members</li>
-                <li className="flex items-center gap-2"><span className="text-green-500"><i className="fas fa-hdd"></i></span> Limited file storage (up to 1 GB)</li>
-                <li className="flex items-center gap-2"><span className="text-green-500"><i className="fas fa-desktop"></i></span> Access to mobile and desktop apps</li>
+                <li className="flex items-center gap-2"><span className="text-green-500"><i className="fas fa-upload"></i></span> Upload up to 5 statements/month</li>
+                <li className="flex items-center gap-2"><span className="text-green-500"><i className="fas fa-robot"></i></span> Basic AI categorization</li>
+                <li className="flex items-center gap-2"><span className="text-green-500"><i className="fas fa-tachometer-alt"></i></span> Simple dashboard</li>
+                <li className="flex items-center gap-2"><span className="text-green-500"><i className="fas fa-clock"></i></span> 7-day data retention</li>
               </ul>
             </div>
-            <button className="mt-6 w-full bg-gradient-to-r from-green-500 to-blue-400 text-white font-medium py-2 rounded-md hover:bg-gray-200 transition">
+            <button 
+              onClick={() => navigate('/login')}
+              className="mt-6 w-full bg-gradient-to-r from-green-500 to-blue-400 text-white font-medium py-2 rounded-md hover:opacity-90 transition"
+            >
               Start for free
             </button>
           </div>
@@ -100,15 +149,17 @@ const MainPricing = () => {
                 {isMonthly ? 'Billed monthly' : 'Billed annually'}
               </p>
               <ul className="mt-4 space-y-2 text-sm text-gray-700">
-                <li className="flex items-center gap-2"><span className="text-purple-500"><i className="fas fa-check"></i></span> Advanced task management</li>
-                <li className="flex items-center gap-2"><span className="text-purple-500"><i className="fas fa-calendar-alt"></i></span> Shared team calendar</li>
-                <li className="flex items-center gap-2"><span className="text-purple-500"><i className="fas fa-users"></i></span> Unlimited team collaboration</li>
-                <li className="flex items-center gap-2"><span className="text-purple-500"><i className="fas fa-hdd"></i></span> 50 GB file storage</li>
-                <li className="flex items-center gap-2"><span className="text-purple-500"><i className="fas fa-headset"></i></span> Priority customer support</li>
-                <li className="flex items-center gap-2"><span className="text-purple-500"><i className="fas fa-plug"></i></span> Integrations with popular apps</li>
+                <li className="flex items-center gap-2"><span className="text-purple-500"><i className="fas fa-infinity"></i></span> Unlimited statement uploads</li>
+                <li className="flex items-center gap-2"><span className="text-purple-500"><i className="fas fa-brain"></i></span> Advanced AI insights</li>
+                <li className="flex items-center gap-2"><span className="text-purple-500"><i className="fas fa-chart-pie"></i></span> Budget planning & alerts</li>
+                <li className="flex items-center gap-2"><span className="text-purple-500"><i className="fas fa-file-export"></i></span> PDF/Excel exports</li>
+                <li className="flex items-center gap-2"><span className="text-purple-500"><i className="fas fa-headset"></i></span> Priority support</li>
               </ul>
             </div>
-            <button className="mt-6 w-full text-white font-medium py-2 rounded-md bg-gradient-to-r from-purple-500 to-blue-400 hover:opacity-90 transition">
+            <button 
+              onClick={handleRazorpayPayment}
+              className="mt-6 w-full text-white font-medium py-2 rounded-md bg-gradient-to-r from-purple-500 to-blue-400 hover:opacity-90 transition"
+            >
               Get Pro
             </button>
           </div>
@@ -132,15 +183,17 @@ const MainPricing = () => {
                 {isMonthly ? 'Billed monthly' : 'Billed annually'}
               </p>
               <ul className="mt-4 space-y-2 text-sm text-gray-700">
-                <li className="flex items-center gap-2"><span className="text-blue-500"><i className="fas fa-check"></i></span> Custom solutions</li>
-                <li className="flex items-center gap-2"><span className="text-blue-500"><i className="fas fa-hdd"></i></span> Unlimited file storage</li>
-                <li className="flex items-center gap-2"><span className="text-blue-500"><i className="fas fa-lock"></i></span> Advanced security</li>
-                <li className="flex items-center gap-2"><span className="text-blue-500"><i className="fas fa-chart-line"></i></span> Detailed analytics</li>
-                <li className="flex items-center gap-2"><span className="text-blue-500"><i className="fas fa-user-tie"></i></span> Dedicated account manager</li>
-                <li className="flex items-center gap-2"><span className="text-blue-500"><i className="fas fa-headset"></i></span> 24/7 premium support</li>
+                <li className="flex items-center gap-2"><span className="text-blue-500"><i className="fas fa-star"></i></span> Everything in Premium</li>
+                <li className="flex items-center gap-2"><span className="text-blue-500"><i className="fas fa-receipt"></i></span> GST expense tracking</li>
+                <li className="flex items-center gap-2"><span className="text-blue-500"><i className="fas fa-chart-bar"></i></span> P&L statements</li>
+                <li className="flex items-center gap-2"><span className="text-blue-500"><i className="fas fa-file-invoice"></i></span> Invoice management</li>
+                <li className="flex items-center gap-2"><span className="text-blue-500"><i className="fas fa-users"></i></span> Team collaboration</li>
               </ul>
             </div>
-            <button className="mt-6 w-full bg-gradient-to-br from-pink-500 to-indigo-500 text-white font-medium py-2 rounded-md hover:bg-blue-700 transition">
+            <button 
+              onClick={() => alert('This option will be coming soon. Thank you!')}
+              className="mt-6 w-full bg-gradient-to-br from-pink-500 to-indigo-500 text-white font-medium py-2 rounded-md hover:opacity-90 transition"
+            >
               Get Enterprise
             </button>
           </div>

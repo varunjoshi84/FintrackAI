@@ -141,7 +141,12 @@ const Upload = () => {
         setReportData(result.data);
         setDownloadVisible(true);
         // Redirect to Reports page with report data and fileId in URL
-        navigate(`/reports?fileId=${uploadedFileId}`, { state: { reportData: result.data } });
+        navigate(`/reports?fileId=${uploadedFileId}`, { 
+          state: { 
+            reportData: result.data,
+            dateRange: result.dateRange
+          } 
+        });
         // Animate download section
         if (downloadRef.current) {
           requestAnimationFrame(() => {
