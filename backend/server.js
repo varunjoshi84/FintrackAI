@@ -23,6 +23,15 @@ const { verifyToken, getDashboardData, updateProfile } = require('./dashboard');
 // Import upload functions
 const { upload, uploadTransactions, generateReport } = require('./uploadController');
 
+// Import transaction functions
+const { 
+  verifyToken: verifyTransactionToken, 
+  getTransactions, 
+  addTransaction, 
+  updateTransaction, 
+  deleteTransaction 
+} = require('./transactionController');
+
 // Import user functions
 const { 
   getUserProfile, 
@@ -111,8 +120,8 @@ app.get('/', (req, res) => {
 // Upload Transactions Endpoint
 // Upload File Endpoint (for generic file uploads)
 app.post('/api/upload/file', verifyUserToken, upload.single('file'), uploadTransactions);
-// Existing transactions upload endpoint
-app.post('/api/upload/transactions', upload.single('file'), uploadTransactions);
+// Existing transactions upload endpoint - NOW WITH AUTHENTICATION
+app.post('/api/upload/transactions', verifyUserToken, upload.single('file'), uploadTransactions);
 // Generate report endpoint (after upload)
 app.get('/api/reports/generate', verifyUserToken, generateReport);
 app.post('/api/reports/generate', verifyUserToken, generateReport);
@@ -128,6 +137,12 @@ app.use('/api/auth', authRoutes);
 // Dashboard Routes (Protected - require authentication)
 app.get('/api/dashboard', verifyToken, getDashboardData);    // Get user dashboard data
 app.put('/api/dashboard/profile', verifyToken, updateProfile); // Update user profile
+
+// Transaction Routes (Protected - require authentication)
+app.get('/api/transactions', verifyUserToken, getTransactions);        // Get user transactions
+app.post('/api/transactions', verifyUserToken, addTransaction);        // Add new transaction
+app.put('/api/transactions/:id', verifyUserToken, updateTransaction);  // Update transaction
+app.delete('/api/transactions/:id', verifyUserToken, deleteTransaction); // Delete transaction
 
 // Admin Routes (Protected - require admin authentication)
 app.get('/api/admin/stats', verifyUserToken, getAdminStats);           // Get admin dashboard stats

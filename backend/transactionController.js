@@ -1,30 +1,7 @@
 // Transactions Controller - Handle transaction operations
 const User = require('./authentication/User');
+const Transaction = require('./models/Transaction');
 const jwt = require('jsonwebtoken');
-
-// Simple Transaction Schema (in-memory for now, you can move to MongoDB later)
-let transactions = [
-  {
-    id: 1,
-    userId: null,
-    type: 'income',
-    amount: 2500,
-    description: 'Salary',
-    category: 'Income',
-    date: new Date().toISOString(),
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 2,
-    userId: null,
-    type: 'expense',
-    amount: 150,
-    description: 'Groceries',
-    category: 'Food',
-    date: new Date().toISOString(),
-    createdAt: new Date().toISOString()
-  }
-];
 
 // Middleware to verify JWT token
 const verifyToken = (req, res, next) => {
@@ -46,36 +23,40 @@ const verifyToken = (req, res, next) => {
 // Get user transactions
 const getTransactions = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id || req.user.id;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const category = req.query.category;
     const type = req.query.type;
 
-    // Filter transactions for this user
-    let userTransactions = transactions.filter(t => t.userId === userId || t.userId === null);
+    // Build query for this user only
+    let query = { user: userId };
 
     // Apply filters
     if (category && category !== 'All Categories') {
-      userTransactions = userTransactions.filter(t => t.category === category);
+      query.category = category;
     }
     if (type && type !== 'all') {
-      userTransactions = userTransactions.filter(t => t.type === type);
+      query.type = type;
     }
 
-    // Pagination
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const paginatedTransactions = userTransactions.slice(startIndex, endIndex);
+    // Get total count for pagination
+    const total = await Transaction.countDocuments(query);
+
+    // Get paginated transactions
+    const userTransactions = await Transaction.find(query)
+      .sort({ date: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit);
 
     res.json({
       success: true,
-      transactions: paginatedTransactions,
-      total: userTransactions.length,
+      transactions: userTransactions,
+      total: total,
       pagination: {
         currentPage: page,
-        totalPages: Math.ceil(userTransactions.length / limit),
-        totalItems: userTransactions.length,
+        totalPages: Math.ceil(total / limit),
+        totalItems: total,
         itemsPerPage: limit
       }
     });
@@ -89,7 +70,7 @@ const getTransactions = async (req, res) => {
 // Add new transaction
 const addTransaction = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id || req.user.id;
     const { type, amount, description, category, date } = req.body;
 
     // Validate required fields
@@ -98,22 +79,20 @@ const addTransaction = async (req, res) => {
     }
 
     // Create new transaction
-    const newTransaction = {
-      id: transactions.length + 1,
-      userId: userId,
+    const newTransaction = new Transaction({
+      user: userId,
       type,
       amount: parseFloat(amount),
       description,
       category,
-      date: date || new Date().toISOString(),
-      createdAt: new Date().toISOString()
-    };
+      date: date ? new Date(date) : new Date()
+    });
 
-    transactions.push(newTransaction);
+    const savedTransaction = await newTransaction.save();
 
     res.json({
       success: true,
-      transaction: newTransaction,
+      transaction: savedTransaction,
       message: 'Transaction added successfully'
     });
 
@@ -126,30 +105,30 @@ const addTransaction = async (req, res) => {
 // Update transaction
 const updateTransaction = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const transactionId = parseInt(req.params.id);
+    const userId = req.user._id || req.user.id;
+    const transactionId = req.params.id;
     const { type, amount, description, category, date } = req.body;
 
-    const transactionIndex = transactions.findIndex(t => t.id === transactionId && t.userId === userId);
+    // Find and update transaction for this user only
+    const updatedTransaction = await Transaction.findOneAndUpdate(
+      { _id: transactionId, user: userId },
+      {
+        type: type,
+        amount: amount ? parseFloat(amount) : undefined,
+        description: description,
+        category: category,
+        date: date ? new Date(date) : undefined
+      },
+      { new: true, runValidators: true }
+    );
     
-    if (transactionIndex === -1) {
+    if (!updatedTransaction) {
       return res.status(404).json({ message: 'Transaction not found' });
     }
 
-    // Update transaction
-    transactions[transactionIndex] = {
-      ...transactions[transactionIndex],
-      type: type || transactions[transactionIndex].type,
-      amount: amount ? parseFloat(amount) : transactions[transactionIndex].amount,
-      description: description || transactions[transactionIndex].description,
-      category: category || transactions[transactionIndex].category,
-      date: date || transactions[transactionIndex].date,
-      updatedAt: new Date().toISOString()
-    };
-
     res.json({
       success: true,
-      transaction: transactions[transactionIndex],
+      transaction: updatedTransaction,
       message: 'Transaction updated successfully'
     });
 
@@ -162,16 +141,18 @@ const updateTransaction = async (req, res) => {
 // Delete transaction
 const deleteTransaction = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const transactionId = parseInt(req.params.id);
+    const userId = req.user._id || req.user.id;
+    const transactionId = req.params.id;
 
-    const transactionIndex = transactions.findIndex(t => t.id === transactionId && t.userId === userId);
+    // Find and delete transaction for this user only
+    const deletedTransaction = await Transaction.findOneAndDelete({
+      _id: transactionId,
+      user: userId
+    });
     
-    if (transactionIndex === -1) {
+    if (!deletedTransaction) {
       return res.status(404).json({ message: 'Transaction not found' });
     }
-
-    transactions.splice(transactionIndex, 1);
 
     res.json({
       success: true,

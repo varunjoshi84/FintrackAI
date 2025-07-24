@@ -37,7 +37,13 @@ const uploadTransactions = async (req, res) => {
     const uploadId = uuidv4();
 
     // Get userId from authentication middleware
-    const userId = req.user ? req.user._id : null;
+    const userId = req.user ? (req.user._id || req.user.id) : null;
+    
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'User authentication required' });
+    }
+    
+    console.log('Upload - Authenticated user ID:', userId);
 
     if (isPDF) {
       try {
@@ -109,24 +115,31 @@ const uploadTransactions = async (req, res) => {
 // Generate report endpoint
 const generateReport = async (req, res) => {
   try {
+    // Get userId from authenticated user
+    const userId = req.user ? req.user._id || req.user.id : null;
+    
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'User not authenticated' });
+    }
+    
     // Get fileId from request body or query parameters
     const fileId = req.body?.fileId || req.query?.fileId;
     
-    console.log('Generate Report - File ID:', fileId);
+    console.log('Generate Report - User ID:', userId, 'File ID:', fileId);
     
-    // Build query
-    let query = {};
+    // Build query - always filter by user
+    let query = { user: userId };
     
-    // If we have a fileId, filter by that
+    // If we have a fileId, also filter by that
     if (fileId) {
       query.uploadId = fileId;
     }
     
     console.log('Transaction query:', query);
     
-    // Find transactions
+    // Find transactions for this user only
     const transactions = await Transaction.find(query);
-    console.log('Found transactions:', transactions.length);
+    console.log('Found transactions for user:', transactions.length);
     
     res.json({ success: true, report: transactions });
   } catch (error) {

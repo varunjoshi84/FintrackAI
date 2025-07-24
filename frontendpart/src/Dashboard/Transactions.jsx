@@ -40,9 +40,9 @@ const Transactions = () => {
       try {
         setLoading(true);
         
-        // Fetch transactions from the reports endpoint
+        // Fetch transactions from the transactions endpoint (user-filtered)
         const token = localStorage.getItem('authToken');
-        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/reports/generate`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/transactions`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -51,37 +51,37 @@ const Transactions = () => {
         
         const data = await response.json();
         
-        if (data.success && data.report && data.report.length > 0) {
+        if (data.success && data.transactions && data.transactions.length > 0) {
           // Transform the data to match the expected format
-          const formattedTransactions = data.report.map(tx => ({
+          const formattedTransactions = data.transactions.map(tx => ({
+            id: tx._id,
             desc: tx.description,
             date: new Date(tx.date).toLocaleDateString(),
-            category: getCategoryFromDescription(tx.description),
+            category: tx.category || getCategoryFromDescription(tx.description),
             amount: tx.amount,
             type: tx.type // 'debit' or 'credit'
           }));
           
           setTransactions(formattedTransactions);
+        } else if (data.success && data.transactions && data.transactions.length === 0) {
+          // User has no transactions yet
+          setTransactions([]);
+          setError('No transactions found. Upload a bank statement to get started!');
         } else {
           setError(data.message || 'Failed to load transactions');
-          // Fallback to static data if API fails
-          setTransactions([
-            { desc: "Grocery Shopping", date: "2024-06-01", category: "Food & Dining", amount: "1200", type: "debit" },
-            { desc: "Uber Ride", date: "2024-06-02", category: "Transportation", amount: "350", type: "debit" },
-            { desc: "Salary", date: "2024-06-03", category: "Income", amount: "50000", type: "credit" },
-            { desc: "Electricity Bill", date: "2024-06-04", category: "Utilities", amount: "1800", type: "debit" },
-            { desc: "Movie Night", date: "2024-06-05", category: "Entertainment", amount: "600", type: "debit" },
-          ]);
+          setTransactions([]);
         }
       } catch (err) {
         console.error('Transactions loading error:', err);
-        setError(err.message || 'Failed to load transactions');
-        // Fallback to static data
-        setTransactions([
-          { desc: "Grocery Shopping", date: "2024-06-01", category: "Food & Dining", amount: "1200", type: "debit" },
-          { desc: "Uber Ride", date: "2024-06-02", category: "Transportation", amount: "350", type: "debit" },
-          { desc: "Salary", date: "2024-06-03", category: "Income", amount: "50000", type: "credit" },
-        ]);
+        if (err.message.includes('401') || err.message.includes('Unauthorized')) {
+          setError('Please log in to view your transactions');
+          // Redirect to login if needed
+          localStorage.removeItem('authToken');
+          window.location.href = '/login';
+        } else {
+          setError('Failed to load transactions. Please try again later.');
+        }
+        setTransactions([]);
       } finally {
         setLoading(false);
       }
@@ -114,9 +114,42 @@ const Transactions = () => {
            "bg-gray-500";
   };
 
-  const handleAddTransaction = () => {
-    // Simulate adding transaction (e.g., to state or API)
-    console.log({ description, date, category, amount });
+  const handleAddTransaction = async () => {
+    try {
+      if (!description || !date || !category || !amount) {
+        setError('Please fill in all fields');
+        return;
+      }
+
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/transactions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          description,
+          date,
+          category,
+          amount: parseFloat(amount),
+          type: parseFloat(amount) > 0 ? 'credit' : 'debit'
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        // Reload transactions to show the new one
+        window.location.reload();
+      } else {
+        setError(data.message || 'Failed to add transaction');
+      }
+    } catch (err) {
+      console.error('Add transaction error:', err);
+      setError('Failed to add transaction');
+    }
+    
     setIsModalOpen(false);
     setDescription('');
     setDate('');
@@ -178,6 +211,11 @@ const Transactions = () => {
             <div className="text-center py-8">Loading transactions...</div>
           ) : error ? (
             <div className="text-center text-red-600 py-8">{error}</div>
+          ) : filteredTransactions.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-600 mb-4">No transactions found.</p>
+              <p className="text-sm text-gray-500">Upload a bank statement or add transactions manually to get started.</p>
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
