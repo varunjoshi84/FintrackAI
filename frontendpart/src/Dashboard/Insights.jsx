@@ -294,7 +294,7 @@ const Insights = () => {
           <aside className="flex flex-col gap-6">
             <section className="bg-white rounded-lg shadow p-5">
               <header className="flex items-center gap-2 mb-3">
-                <svg
+                {/* <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-5 w-5 text-slate-700"
                   fill="none"
@@ -308,7 +308,7 @@ const Insights = () => {
                     strokeLinejoin="round"
                     d="M11 17l-5-5m0 0l5-5m-5 5h12"
                   />
-                </svg>
+                </svg> */}
                 <h3 className="font-semibold text-slate-900 text-base">Quick Stats</h3>
               </header>
               <ul className="text-sm text-slate-700 space-y-2">
