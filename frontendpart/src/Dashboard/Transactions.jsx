@@ -15,6 +15,10 @@ const Transactions = () => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalTransactions, setTotalTransactions] = useState(0);
+  const itemsPerPage = 10;
 
   // Function to determine category based on description
   const getCategoryFromDescription = (description) => {
@@ -35,25 +39,30 @@ const Transactions = () => {
   };
 
   // Load transactions from API
-  useEffect(() => {
-    const loadTransactions = async () => {
-      try {
-        setLoading(true);
-        
-        // Fetch transactions from the transactions endpoint (user-filtered)
-        const token = localStorage.getItem('authToken');
-        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/transactions`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
+  const loadTransactions = async (page = 1) => {
+    try {
+      setLoading(true);
+      
+      // Fetch transactions from the transactions endpoint (user-filtered)
+      const token = localStorage.getItem('authToken');
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: itemsPerPage.toString(),
+        ...(categoryFilter !== 'All Categories' && { category: categoryFilter })
+      });
+      
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/transactions?${queryParams}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
         
         const data = await response.json();
         
-        if (data.success && data.transactions && data.transactions.length > 0) {
+        if (data.success) {
           // Transform the data to match the expected format
-          const formattedTransactions = data.transactions.map(tx => ({
+          const formattedTransactions = (data.transactions || []).map(tx => ({
             id: tx._id,
             desc: tx.description,
             date: new Date(tx.date).toLocaleDateString(),
@@ -63,32 +72,37 @@ const Transactions = () => {
           }));
           
           setTransactions(formattedTransactions);
-        } else if (data.success && data.transactions && data.transactions.length === 0) {
-          // User has no transactions yet
-          setTransactions([]);
-          setError('No transactions found. Upload a bank statement to get started!');
+          setTotalTransactions(data.total || 0);
+          setTotalPages(data.pagination?.totalPages || 1);
+          setCurrentPage(data.pagination?.currentPage || 1);
+          
+          if (formattedTransactions.length === 0 && page === 1) {
+            setError('No transactions found. Upload a bank statement to get started!');
+          } else {
+            setError('');
+          }
         } else {
           setError(data.message || 'Failed to load transactions');
           setTransactions([]);
         }
-      } catch (err) {
-        console.error('Transactions loading error:', err);
-        if (err.message.includes('401') || err.message.includes('Unauthorized')) {
-          setError('Please log in to view your transactions');
-          // Redirect to login if needed
-          localStorage.removeItem('authToken');
-          window.location.href = '/login';
-        } else {
-          setError('Failed to load transactions. Please try again later.');
-        }
-        setTransactions([]);
-      } finally {
-        setLoading(false);
+    } catch (err) {
+      console.error('Transactions loading error:', err);
+      if (err.message.includes('401') || err.message.includes('Unauthorized')) {
+        setError('Please log in to view your transactions');
+        localStorage.removeItem('authToken');
+        window.location.href = '/login';
+      } else {
+        setError('Failed to load transactions. Please try again later.');
       }
-    };
+      setTransactions([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    loadTransactions();
-  }, []);
+  useEffect(() => {
+    loadTransactions(currentPage);
+  }, [currentPage, categoryFilter]);
 
   const categoryColors = {
     "Food & Dining": "bg-green-100 text-green-800",
@@ -158,9 +172,20 @@ const Transactions = () => {
   };
 
   const filteredTransactions = transactions.filter(tx =>
-    tx.desc.toLowerCase().includes(searchTerm.toLowerCase()) &&
-    (categoryFilter === "All Categories" || tx.category === categoryFilter)
+    tx.desc.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
 
   return (
     <div className="bg-gray-50 font-inter">
@@ -251,10 +276,35 @@ const Transactions = () => {
           )}
 
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-6 gap-4">
-            <div className="text-sm text-gray-600">Showing 1-{Math.min(filteredTransactions.length, 10)} of {filteredTransactions.length} transactions</div>
+            <div className="text-sm text-gray-600">
+              Showing {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, totalTransactions)} of {totalTransactions} transactions
+            </div>
             <div className="flex gap-2">
-              <button className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">Previous</button>
-              <button className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">Next</button>
+              <button 
+                onClick={handlePrevPage}
+                disabled={currentPage <= 1}
+                className={`px-4 py-2 rounded-md transition-colors ${
+                  currentPage <= 1 
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                Previous
+              </button>
+              <span className="px-4 py-2 text-sm text-gray-600">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button 
+                onClick={handleNextPage}
+                disabled={currentPage >= totalPages}
+                className={`px-4 py-2 rounded-md transition-colors ${
+                  currentPage >= totalPages 
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                Next
+              </button>
             </div>
           </div>
         </div>
