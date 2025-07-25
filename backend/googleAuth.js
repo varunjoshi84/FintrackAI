@@ -4,12 +4,18 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const User = require('./authentication/User');
 
 // Initialize Google Strategy
+const callbackURL = process.env.NODE_ENV === 'production'
+  ? `${process.env.API_BASE_URL || 'https://fintrackai.onrender.com'}/api/auth/google/callback`
+  : "http://localhost:8000/api/auth/google/callback";
+
+console.log('Environment:', process.env.NODE_ENV);
+console.log('API_BASE_URL:', process.env.API_BASE_URL);
+console.log('Google OAuth Callback URL:', callbackURL);
+
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: process.env.NODE_ENV === 'production'
-      ? "https://fintrackai.onrender.com/api/auth/google/callback"
-      : "http://localhost:8000/api/auth/google/callback",
+    callbackURL: callbackURL,
     scope: ['profile', 'email']
   },
   async (accessToken, refreshToken, profile, done) => {
