@@ -172,7 +172,7 @@ const Login = () => {
 
             <div className="flex justify-center">
               <a 
-                href="http://localhost:8000/api/auth/google"
+                href={`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/auth/google`}
                 className="flex items-center justify-center gap-2 w-full bg-white border border-gray-300 rounded-md py-2 px-4 hover:bg-gray-50 transition-colors"
                 onClick={(e) => {
                   // Store the current URL to return to after login

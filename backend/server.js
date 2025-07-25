@@ -100,6 +100,7 @@ const corsOptions = {
   origin: function (origin, callback) {
     const allowedOrigins = [
       process.env.FRONTEND_URL,
+      process.env.CORS_ORIGIN,
       'http://localhost:5173', // Development
       'http://localhost:3000'  // Alternative dev port
     ].filter(Boolean);
@@ -255,7 +256,11 @@ app.post('/api/test-email', async (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error('Error:', err.message);
+  // Log based on LOG_LEVEL
+  if (process.env.LOG_LEVEL !== 'error' || process.env.NODE_ENV !== 'production') {
+    console.error('Error:', err.message);
+  }
+  
   res.status(500).json({
     success: false,
     message: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message
