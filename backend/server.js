@@ -104,8 +104,10 @@ const corsOptions = {
       'https://fintrackai-delta.vercel.app',
       'https://fintrackai-j3ldui64a-varunjoshi84s-projects.vercel.app',
       'https://fintrackai-git-main-varunjoshi84s-projects.vercel.app',
-      'http://localhost:5173', // Development
-      'http://localhost:3000'  // Alternative dev port
+      'http://localhost:5173', // Development (Vite)
+      'http://localhost:3000', // Alternative dev port
+      'http://localhost:8080', // Vue/Webpack dev server
+      'http://localhost:4200'  // Angular dev server
     ].filter(Boolean);
     
     if (!origin || allowedOrigins.includes(origin)) {
