@@ -240,13 +240,15 @@ const createUser = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { name, email, phone, location } = req.body;
+    const { name, email, phone, location, role, plan } = req.body;
 
     const updateData = {};
     if (name) updateData.name = name;
     if (email) updateData.email = email;
     if (phone) updateData.phone = phone;
     if (location) updateData.location = location;
+    if (role) updateData.role = role;
+    if (plan) updateData.plan = plan;
 
     const user = await User.findByIdAndUpdate(
       userId,
@@ -267,7 +269,9 @@ const updateUser = async (req, res) => {
         email: user.email,
         phone: user.phone,
         location: user.location,
-        status: user.verified ? 'Active' : 'Inactive'
+        role: user.role,
+        plan: user.plan,
+        status: user.status || (user.isVerified ? 'Active' : 'Inactive')
       }
     });
   } catch (error) {

@@ -8,6 +8,7 @@ import {
   updateUserStatus,
   deleteUser,
   createUser,
+  updateUser,
   getUserGrowthData,
   sendNotification,
   toggleMaintenanceMode,
@@ -39,6 +40,8 @@ const AdminDashboard = () => {
   const [chartPeriod, setChartPeriod] = useState('monthly');
   const [userGrowthData, setUserGrowthData] = useState(null);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [showEditUserModal, setShowEditUserModal] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [newUserData, setNewUserData] = useState({
     name: '',
@@ -46,6 +49,14 @@ const AdminDashboard = () => {
     password: '',
     phone: '',
     location: ''
+  });
+  const [editUserData, setEditUserData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    location: '',
+    role: '',
+    plan: ''
   });
 
   // Contact management state
@@ -356,6 +367,51 @@ const AdminDashboard = () => {
 
   const handleModalInputChange = (field, value) => {
     setNewUserData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleEditModalInputChange = (field, value) => {
+    setEditUserData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleEditUser = (user) => {
+    setEditingUser(user);
+    setEditUserData({
+      name: user.name || '',
+      email: user.email || '',
+      phone: user.phone || '',
+      location: user.location || '',
+      role: user.role || 'user',
+      plan: user.plan || 'Basic'
+    });
+    setShowEditUserModal(true);
+  };
+
+  const handleUpdateUser = async () => {
+    try {
+      if (!editUserData.name || !editUserData.email) {
+        setError('Name and email are required');
+        return;
+      }
+
+      const result = await updateUser(editingUser.id, editUserData);
+      if (result.success) {
+        // Update user in the list
+        setUsers(users.map(user => 
+          user.id === editingUser.id 
+            ? { ...user, ...editUserData }
+            : user
+        ));
+        setSuccessMessage('User updated successfully');
+        setShowEditUserModal(false);
+        setEditingUser(null);
+        setEditUserData({ name: '', email: '', phone: '', location: '', role: '', plan: '' });
+      } else {
+        setError(result.message || 'Failed to update user');
+      }
+    } catch (err) {
+      console.error('User update error:', err);
+      setError('Failed to update user');
+    }
   };
 
   const handleSendNotification = async () => {
@@ -914,7 +970,12 @@ const AdminDashboard = () => {
                           >
                             {user.status === 'Active' ? 'Deactivate' : 'Activate'}
                           </button>
-                          <button className="text-green-600 hover:text-green-900">Edit</button>
+                          <button 
+                            onClick={() => handleEditUser(user)}
+                            className="text-green-600 hover:text-green-900"
+                          >
+                            Edit
+                          </button>
                           <button
                             onClick={() => handleDeleteUser(user.id)}
                             className="text-red-600 hover:text-red-900"
@@ -1228,6 +1289,105 @@ const AdminDashboard = () => {
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
               >
                 Add User
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Modal */}
+      {showEditUserModal && editingUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Edit User</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                <input
+                  type="text"
+                  value={editUserData.name}
+                  onChange={(e) => handleEditModalInputChange('name', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter full name"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                <input
+                  type="email"
+                  value={editUserData.email}
+                  onChange={(e) => handleEditModalInputChange('email', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter email address"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <input
+                  type="tel"
+                  value={editUserData.phone}
+                  onChange={(e) => handleEditModalInputChange('phone', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter phone number"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                <input
+                  type="text"
+                  value={editUserData.location}
+                  onChange={(e) => handleEditModalInputChange('location', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter location"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <select
+                  value={editUserData.role}
+                  onChange={(e) => handleEditModalInputChange('role', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="user">User</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Plan</label>
+                <select
+                  value={editUserData.plan}
+                  onChange={(e) => handleEditModalInputChange('plan', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="Basic">Basic</option>
+                  <option value="Premium">Premium</option>
+                  <option value="Enterprise">Enterprise</option>
+                </select>
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowEditUserModal(false);
+                  setEditingUser(null);
+                  setEditUserData({ name: '', email: '', phone: '', location: '', role: '', plan: '' });
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdateUser}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+              >
+                Update User
               </button>
             </div>
           </div>
