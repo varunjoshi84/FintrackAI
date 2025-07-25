@@ -53,7 +53,9 @@ const {
   getAnalytics,
   getUserGrowthData,
   sendNotification,
-  toggleMaintenanceMode
+  toggleMaintenanceMode,
+  getMaintenanceStatus,
+  checkMaintenanceMode
 } = require('./adminController');
 
 // Import newsletter functions
@@ -108,6 +110,9 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+// Apply maintenance mode middleware (before other routes)
+app.use(checkMaintenanceMode);
+
 // Connect to database
 connectDB();
 
@@ -156,6 +161,7 @@ app.get('/api/admin/analytics', verifyUserToken, getAnalytics);        // Get an
 app.get('/api/admin/analytics/user-growth', verifyUserToken, getUserGrowthData); // Get user growth data
 app.post('/api/admin/notification', verifyUserToken, sendNotification); // Send notification to users
 app.post('/api/admin/maintenance', verifyUserToken, toggleMaintenanceMode); // Toggle maintenance mode
+app.get('/api/maintenance/status', getMaintenanceStatus); // Get maintenance status (public)
 
 // User Routes (Protected - require authentication)
 app.get('/api/user/profile', verifyUserToken, getUserProfile);        // Get user profile

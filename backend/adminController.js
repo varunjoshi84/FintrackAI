@@ -457,6 +457,9 @@ const sendNotification = async (req, res) => {
   }
 };
 
+// In-memory maintenance mode state (in production, use database or file)
+let maintenanceModeState = false;
+
 // Toggle maintenance mode
 const toggleMaintenanceMode = async (req, res) => {
   try {
@@ -469,12 +472,9 @@ const toggleMaintenanceMode = async (req, res) => {
       });
     }
 
-    // Here you could implement actual maintenance mode logic:
-    // - Update configuration file
-    // - Set environment variables
-    // - Update database settings
-    // For now, we'll just simulate success
-
+    // Update maintenance mode state
+    maintenanceModeState = enabled;
+    
     console.log(`Maintenance mode ${enabled ? 'enabled' : 'disabled'}`);
 
     res.json({
@@ -486,6 +486,37 @@ const toggleMaintenanceMode = async (req, res) => {
     console.error('Toggle maintenance mode error:', error);
     res.status(500).json({ success: false, message: 'Failed to toggle maintenance mode' });
   }
+};
+
+// Get maintenance mode status
+const getMaintenanceStatus = async (req, res) => {
+  try {
+    res.json({
+      success: true,
+      data: { maintenanceMode: maintenanceModeState }
+    });
+  } catch (error) {
+    console.error('Get maintenance status error:', error);
+    res.status(500).json({ success: false, message: 'Failed to get maintenance status' });
+  }
+};
+
+// Middleware to check maintenance mode
+const checkMaintenanceMode = (req, res, next) => {
+  // Skip maintenance check for admin routes and maintenance status endpoint
+  if (req.path.includes('/admin') || req.path.includes('/maintenance/status')) {
+    return next();
+  }
+  
+  if (maintenanceModeState) {
+    return res.status(503).json({
+      success: false,
+      message: 'Site is currently under maintenance. Please try again later.',
+      maintenanceMode: true
+    });
+  }
+  
+  next();
 };
 
 // Get system settings
@@ -546,6 +577,8 @@ module.exports = {
   getUserGrowthData,
   sendNotification,
   toggleMaintenanceMode,
+  getMaintenanceStatus,
+  checkMaintenanceMode,
   getSystemSettings,
   updateSystemSettings
 };

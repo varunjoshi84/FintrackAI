@@ -100,8 +100,16 @@ const AdminDashboard = () => {
           setUsers(usersResult.data.users);
         }
 
-        // Load analytics data - removed
-        // Analytics functionality has been removed
+        // Load maintenance status
+        try {
+          const maintenanceResult = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/maintenance/status`);
+          const maintenanceData = await maintenanceResult.json();
+          if (maintenanceData.success) {
+            setMaintenanceMode(maintenanceData.data.maintenanceMode);
+          }
+        } catch (err) {
+          console.warn('Failed to load maintenance status:', err);
+        }
 
       }  finally {
         setLoading(false);
