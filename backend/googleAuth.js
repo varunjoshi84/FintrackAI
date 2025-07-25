@@ -8,9 +8,7 @@ const callbackURL = process.env.NODE_ENV === 'production'
   ? `${process.env.API_BASE_URL || 'https://fintrackai.onrender.com'}/api/auth/google/callback`
   : "http://localhost:8000/api/auth/google/callback";
 
-console.log('Environment:', process.env.NODE_ENV);
-console.log('API_BASE_URL:', process.env.API_BASE_URL);
-console.log('Google OAuth Callback URL:', callbackURL);
+// Google OAuth configured for production
 
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
