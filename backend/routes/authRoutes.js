@@ -33,7 +33,17 @@ router.get('/google/callback',
     
     console.log('Google auth callback - user info:', userInfo);
     
-    // Redirect to frontend with token
+    // For backend-only deployment, return JSON response instead of redirect
+    if (process.env.NODE_ENV === 'production' && !process.env.FRONTEND_URL) {
+      return res.json({
+        success: true,
+        message: 'Google authentication successful',
+        token,
+        user: userInfo
+      });
+    }
+    
+    // Redirect to frontend with token (if frontend exists)
     res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/success?token=${token}&user=${encodeURIComponent(JSON.stringify(userInfo))}`);
   }
 );
