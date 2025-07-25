@@ -101,6 +101,9 @@ const corsOptions = {
     const allowedOrigins = [
       process.env.FRONTEND_URL,
       process.env.CORS_ORIGIN,
+      'https://fintrackai-delta.vercel.app',
+      'https://fintrackai-j3ldui64a-varunjoshi84s-projects.vercel.app',
+      'https://fintrackai-git-main-varunjoshi84s-projects.vercel.app',
       'http://localhost:5173', // Development
       'http://localhost:3000'  // Alternative dev port
     ].filter(Boolean);
