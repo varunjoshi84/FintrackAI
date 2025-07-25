@@ -14,10 +14,21 @@ const AuthSuccess = () => {
       try {
         const user = JSON.parse(decodeURIComponent(userStr));
         
-        // Store auth token
+        // Store auth token with proper user data
         localStorage.setItem('authToken', token);
         localStorage.setItem('userEmail', user.email);
-        localStorage.setItem('userInfo', JSON.stringify(user));
+        localStorage.setItem('userInfo', JSON.stringify({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role || 'user',
+          plan: user.plan || 'Basic'
+        }));
+        
+        console.log('Google auth success - stored data:', {
+          token: !!token,
+          user: user
+        });
         
         // Dispatch custom event to notify Header component
         window.dispatchEvent(new CustomEvent('userLogin'));

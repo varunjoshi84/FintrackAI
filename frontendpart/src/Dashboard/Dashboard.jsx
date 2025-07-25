@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import Header from './Header';
 import Footer from '../components/Footer';
+import SubscriptionStatus from '../components/SubscriptionStatus';
+import { checkUserStatus, startAuthMonitoring } from '../utils/authCheck';
 import { getDashboardData } from '../api';
 
 const Dashboard = () => {
-  const [transactionCount, setTransactionCount] = useState(10);
+  const [transactionCount, setTransactionCount] = useState(0);
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -293,12 +295,16 @@ const Dashboard = () => {
     };
   }, [transactions, categoryData]); // Run when transactions or categoryData changes
 
-  // Apply saved theme on load
+  // Apply saved theme on load and start auth monitoring
   useEffect(() => {
     const savedTheme = localStorage.getItem("fintrack-theme");
     if (savedTheme === "dark") {
       document.body.classList.add("dark-mode");
     }
+    
+    // Check user status immediately and start monitoring
+    checkUserStatus();
+    startAuthMonitoring();
   }, []);
 
   return (
@@ -307,6 +313,7 @@ const Dashboard = () => {
 
       {/* Main Dashboard Content */}
       <main className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 dashboard-content">
+        <SubscriptionStatus />
         <div className="text-center mb-6 sm:mb-8">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 drop-shadow-lg tracking-wide animate-fade-in-up">
             <i className="fas fa-chart-line mr-2 text-blue-500 animate-pulse"></i>

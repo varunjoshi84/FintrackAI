@@ -127,11 +127,7 @@ const AdminLogin = () => {
               </button>
             </form>
 
-            <div className="text-center mt-4">
-              <Link to="#" className="text-blue-600 text-sm hover:underline">
-                Forgot Password?
-              </Link>
-            </div>
+
 
             <p className="text-sm mt-4 text-center">
               Need user access?{' '}

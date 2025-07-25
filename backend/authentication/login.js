@@ -29,6 +29,14 @@ const login = async (req, res) => {
       return res.status(400).json({ message: 'Invalid email or password' });
     }
 
+    // Check if account is active
+    if (user.status === 'Inactive') {
+      return res.status(403).json({ 
+        success: false,
+        message: 'Your account has been deactivated. Please contact admin@fintrackai.com or support team to reactivate your account.' 
+      });
+    }
+
     // Check if password is correct
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
@@ -46,13 +54,15 @@ const login = async (req, res) => {
 
     // Send success response
     res.json({
+      success: true,
       message: 'Login successful!',
       token,
       user: { 
         id: user._id, 
         name: user.name, 
         email: user.email, 
-        role: user.role 
+        role: user.role,
+        plan: user.plan || 'Basic'
       }
     });
 

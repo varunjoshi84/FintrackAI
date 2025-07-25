@@ -75,6 +75,16 @@ const {
   deleteContactMessage 
 } = require('./contactController');
 
+// Import payment functions
+const {
+  processPayment,
+  getPaymentHistory,
+  getSubscriptionStatus
+} = require('./paymentController');
+
+// Import strict auth middleware
+const strictAuthMiddleware = require('./middleware/strictAuth');
+
 // Import email service for testing
 const { sendWelcomeEmail } = require('./emailService');
 
@@ -82,11 +92,30 @@ const { sendWelcomeEmail } = require('./emailService');
 const app = express();
 
 // Basic middleware (what our app needs to work)
-app.use(express.json()); // To read JSON data
-app.use(cors({           // To allow frontend to connect
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-  credentials: true
-}));
+app.use(express.json({ limit: '10mb' })); // To read JSON data with size limit
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// CORS configuration for production
+const corsOptions = {
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      process.env.FRONTEND_URL,
+      'http://localhost:5173', // Development
+      'http://localhost:3000'  // Alternative dev port
+    ].filter(Boolean);
+    
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
 
 // Session middleware for passport
 let session;
@@ -119,17 +148,31 @@ connectDB();
 
 // Health check - test if server is working
 app.get('/', (req, res) => {
-  res.json({ message: 'Server is running!' });
+  res.json({ 
+    message: 'FinTrackAI Backend is running!',
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    version: '1.0.0'
+  });
 });
 
-// Upload Transactions Endpoint
+// Health check endpoint for deployment
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'healthy',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Upload Transactions Endpoint (Protected - require STRICT authentication)
 // Upload File Endpoint (for generic file uploads)
-app.post('/api/upload/file', verifyUserToken, upload.single('file'), uploadTransactions);
-// Existing transactions upload endpoint - NOW WITH AUTHENTICATION
-app.post('/api/upload/transactions', verifyUserToken, upload.single('file'), uploadTransactions);
+app.post('/api/upload/file', strictAuthMiddleware, upload.single('file'), uploadTransactions);
+// Existing transactions upload endpoint - NOW WITH STRICT AUTHENTICATION
+app.post('/api/upload/transactions', strictAuthMiddleware, upload.single('file'), uploadTransactions);
 // Generate report endpoint (after upload)
-app.get('/api/reports/generate', verifyUserToken, generateReport);
-app.post('/api/reports/generate', verifyUserToken, generateReport);
+app.get('/api/reports/generate', strictAuthMiddleware, generateReport);
+app.post('/api/reports/generate', strictAuthMiddleware, generateReport);
 
 // Authentication Routes
 app.post('/api/auth/register', signup);     // User signup
@@ -139,15 +182,15 @@ app.post('/api/auth/admin/login', adminLogin); // Admin login
 // Google Authentication Routes
 app.use('/api/auth', authRoutes);
 
-// Dashboard Routes (Protected - require authentication)
-app.get('/api/dashboard', verifyToken, getDashboardData);    // Get user dashboard data
-app.put('/api/dashboard/profile', verifyToken, updateProfile); // Update user profile
+// Dashboard Routes (Protected - require STRICT authentication)
+app.get('/api/dashboard', strictAuthMiddleware, getDashboardData);    // Get user dashboard data
+app.put('/api/dashboard/profile', strictAuthMiddleware, updateProfile); // Update user profile
 
-// Transaction Routes (Protected - require authentication)
-app.get('/api/transactions', verifyUserToken, getTransactions);        // Get user transactions
-app.post('/api/transactions', verifyUserToken, addTransaction);        // Add new transaction
-app.put('/api/transactions/:id', verifyUserToken, updateTransaction);  // Update transaction
-app.delete('/api/transactions/:id', verifyUserToken, deleteTransaction); // Delete transaction
+// Transaction Routes (Protected - require STRICT authentication)
+app.get('/api/transactions', strictAuthMiddleware, getTransactions);        // Get user transactions
+app.post('/api/transactions', strictAuthMiddleware, addTransaction);        // Add new transaction
+app.put('/api/transactions/:id', strictAuthMiddleware, updateTransaction);  // Update transaction
+app.delete('/api/transactions/:id', strictAuthMiddleware, deleteTransaction); // Delete transaction
 
 // Admin Routes (Protected - require admin authentication)
 app.get('/api/admin/stats', verifyUserToken, getAdminStats);           // Get admin dashboard stats
@@ -163,11 +206,16 @@ app.post('/api/admin/notification', verifyUserToken, sendNotification); // Send 
 app.post('/api/admin/maintenance', verifyUserToken, toggleMaintenanceMode); // Toggle maintenance mode
 app.get('/api/maintenance/status', getMaintenanceStatus); // Get maintenance status (public)
 
-// User Routes (Protected - require authentication)
-app.get('/api/user/profile', verifyUserToken, getUserProfile);        // Get user profile
-app.put('/api/user/profile', verifyUserToken, updateUserProfile);     // Update user profile
-app.delete('/api/user/account', verifyUserToken, deleteUserAccount);  // Delete user account
-app.post('/api/user/verify', verifyUserToken, verifyUserAccount);     // Verify user account
+// User Routes (Protected - require STRICT authentication)
+app.get('/api/user/profile', strictAuthMiddleware, getUserProfile);        // Get user profile
+app.put('/api/user/profile', strictAuthMiddleware, updateUserProfile);     // Update user profile
+app.delete('/api/user/account', strictAuthMiddleware, deleteUserAccount);  // Delete user account
+app.post('/api/user/verify', strictAuthMiddleware, verifyUserAccount);     // Verify user account
+
+// Payment Routes (Protected - require STRICT authentication)
+app.post('/api/payment/process', strictAuthMiddleware, processPayment);     // Process payment after Razorpay success
+app.get('/api/payment/history', strictAuthMiddleware, getPaymentHistory);   // Get payment history
+app.get('/api/subscription/status', strictAuthMiddleware, getSubscriptionStatus); // Get subscription status
 
 // Newsletter Routes (Public - no authentication required)
 app.post('/api/newsletter/subscribe', subscribeNewsletter);            // Subscribe to newsletter
@@ -205,10 +253,44 @@ app.post('/api/test-email', async (req, res) => {
   }
 });
 
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Error:', err.message);
+  res.status(500).json({
+    success: false,
+    message: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message
+  });
+});
+
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Route not found'
+  });
+});
+
 // Start server
 const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📊 Environment: ${process.env.NODE_ENV}`);
+  console.log(`🌐 CORS enabled for: ${process.env.FRONTEND_URL}`);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    console.log('Process terminated');
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received, shutting down gracefully');
+  server.close(() => {
+    console.log('Process terminated');
+  });
 });
 
 

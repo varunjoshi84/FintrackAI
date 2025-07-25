@@ -13,7 +13,11 @@ const UserSchema = new mongoose.Schema({
   location: { type: String, default: '' },
   isVerified: { type: Boolean, default: false },
   status: { type: String, enum: ['Active', 'Inactive'], default: 'Active' },
-  plan: { type: String, enum: ['Basic', 'Premium', 'Enterprise'], default: 'Basic' },
+  plan: { type: String, enum: ['Basic', 'Pro', 'Enterprise'], default: 'Basic' },
+  planStartDate: { type: Date, default: null },
+  planEndDate: { type: Date, default: null },
+  nextPaymentDate: { type: Date, default: null },
+  subscriptionStatus: { type: String, enum: ['active', 'inactive', 'expired'], default: 'inactive' },
   profileImage: { type: String, default: null }
 }, {
   timestamps: true 

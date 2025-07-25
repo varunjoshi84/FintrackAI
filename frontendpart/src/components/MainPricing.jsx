@@ -5,21 +5,175 @@ import Footer from './Footer';
 
 const MainPricing = () => {
   const [isMonthly, setIsMonthly] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
+  
+  // Clear any stale authentication data on component mount
+  useEffect(() => {
+    const clearStaleData = () => {
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          if (payload.exp * 1000 <= Date.now()) {
+            console.log('Clearing expired token on mount');
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userInfo');
+            localStorage.removeItem('userEmail');
+          }
+        } catch (error) {
+          console.log('Clearing invalid token on mount');
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('userInfo');
+          localStorage.removeItem('userEmail');
+        }
+      }
+    };
+    
+    clearStaleData();
+  }, []);
+  
+  // Check authentication status and clear stale data
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = localStorage.getItem('authToken');
+      const userInfo = localStorage.getItem('userInfo');
+      
+      // Verify token is valid and not expired
+      let isValidToken = false;
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          isValidToken = payload.exp * 1000 > Date.now();
+        } catch (error) {
+          console.log('Invalid token detected');
+        }
+      }
+      
+      // If token is invalid or expired, clear ALL user data
+      if (!isValidToken || !userInfo) {
+        console.log('Clearing stale authentication data');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('userInfo');
+        localStorage.removeItem('userEmail');
+        setIsAuthenticated(false);
+        return;
+      }
+      
+      console.log('Valid authentication found');
+      setIsAuthenticated(true);
+    };
+    
+    checkAuth();
+    
+    // Listen for storage changes
+    window.addEventListener('storage', checkAuth);
+    
+    return () => {
+      window.removeEventListener('storage', checkAuth);
+    };
+  }, []);
 
   useEffect(() => {
-    // Load Razorpay script
+    // Only load Razorpay script if user is authenticated
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      console.log('No authentication token - Razorpay script not loaded');
+      return;
+    }
+    
+    // Load Razorpay script only for authenticated users
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
     script.async = true;
     document.body.appendChild(script);
     return () => {
-      document.body.removeChild(script);
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
     };
   }, []);
 
   const handleRazorpayPayment = () => {
+    // CLEAR ANY STALE DATA FIRST
+    const token = localStorage.getItem('authToken');
+    const userInfoString = localStorage.getItem('userInfo');
+    
+    console.log('Payment attempt - Token:', !!token, 'UserInfo:', !!userInfoString);
+    
+    // Validate token freshness
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.exp * 1000 <= Date.now()) {
+          console.log('Token expired - clearing data');
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('userInfo');
+          localStorage.removeItem('userEmail');
+          alert('❌ SESSION EXPIRED\n\nYour session has expired. Please login again.');
+          navigate('/login?redirect=pricing&plan=pro');
+          return;
+        }
+      } catch (error) {
+        console.log('Invalid token - clearing data');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('userInfo');
+        localStorage.removeItem('userEmail');
+        alert('❌ INVALID SESSION\n\nPlease login again.');
+        navigate('/login?redirect=pricing&plan=pro');
+        return;
+      }
+    }
+    
+    if (!token || !userInfoString) {
+      // Clear any remaining stale data
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('userInfo');
+      localStorage.removeItem('userEmail');
+      alert('❌ AUTHENTICATION REQUIRED\n\nYou must be logged in to upgrade your plan.\nPlease login first.');
+      navigate('/login?redirect=pricing&plan=pro');
+      return;
+    }
+    
+    // Block if window.Razorpay doesn't exist (script not loaded)
+    if (!window.Razorpay) {
+      alert('❌ PAYMENT SYSTEM UNAVAILABLE\n\nPlease login first to access payment features.');
+      navigate('/login?redirect=pricing&plan=pro');
+      return;
+    }
+    
+    // Verify token is not expired
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (payload.exp * 1000 < Date.now()) {
+        alert('Your session has expired. Please login again.');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('userInfo');
+        navigate('/login?redirect=pricing&plan=pro');
+        return;
+      }
+    } catch (error) {
+      alert('Invalid session. Please login again.');
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('userInfo');
+      navigate('/login?redirect=pricing&plan=pro');
+      return;
+    }
+
     const amount = isMonthly ? 199 : 300;
+    
+    let userInfo;
+    try {
+      userInfo = JSON.parse(userInfoString || '{}');
+      if (!userInfo.email || !userInfo.name) {
+        throw new Error('Invalid user data');
+      }
+    } catch (error) {
+      alert('Invalid user session. Please login again.');
+      navigate('/login?redirect=pricing&plan=pro');
+      return;
+    }
+    
     const options = {
       key: 'rzp_test_1DP5mmOlF5G5ag', // Demo key
       amount: amount * 100, // Amount in paise
@@ -27,29 +181,80 @@ const MainPricing = () => {
       name: 'Fintack AI',
       description: `Pro Plan - ${isMonthly ? 'Monthly' : 'Yearly'}`,
       image: '/logo.png',
-      handler: function (response) {
-        alert(`Payment Successful! Payment ID: ${response.razorpay_payment_id}`);
-        // Here you would typically send the payment details to your backend
+      handler: async function (response) {
+        try {
+          console.log('Razorpay response:', response);
+          
+          // Double-check authentication before processing
+          const currentToken = localStorage.getItem('authToken');
+          if (!currentToken) {
+            alert('Authentication lost. Please login again.');
+            navigate('/login');
+            return;
+          }
+          
+          // Process payment in backend
+          const paymentResult = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/payment/process`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${currentToken}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id || 'demo_order_' + Date.now(),
+              amount: amount * 100,
+              plan: 'Pro',
+              billing: isMonthly ? 'monthly' : 'yearly'
+            })
+          });
+
+          const paymentData = await paymentResult.json();
+          console.log('Payment result:', paymentData);
+          
+          if (paymentData.success) {
+            alert(`🎉 Payment Successful! Welcome to Pro Plan!\n\nPlan: ${paymentData.data.plan}\nValid until: ${new Date(paymentData.data.validUntil).toLocaleDateString()}\nNext payment: ${new Date(paymentData.data.nextPayment).toLocaleDateString()}`);
+            
+            // Redirect to dashboard
+            navigate('/dashboard');
+          } else {
+            console.error('Payment processing failed:', paymentData);
+            alert(`Payment processing failed: ${paymentData.message}`);
+          }
+        } catch (error) {
+          console.error('Payment processing error:', error);
+          alert('Payment processing failed. Please contact support.');
+        }
       },
       prefill: {
-        name: 'Demo User',
-        email: 'demo@example.com',
-        contact: '9999999999'
+        name: userInfo.name || 'User',
+        email: userInfo.email || 'user@example.com',
+        contact: userInfo.phone || '9999999999'
       },
       notes: {
         plan: 'Pro',
-        billing: isMonthly ? 'monthly' : 'yearly'
+        billing: isMonthly ? 'monthly' : 'yearly',
+        userId: userInfo.id
       },
       theme: {
         color: '#8B5CF6'
       }
     };
 
+    // Final check before opening Razorpay
+    const finalToken = localStorage.getItem('authToken');
+    if (!finalToken) {
+      alert('Authentication required. Please login first.');
+      navigate('/login?redirect=pricing&plan=pro');
+      return;
+    }
+    
     if (window.Razorpay) {
       const rzp = new window.Razorpay(options);
       rzp.open();
     } else {
-      alert('Razorpay SDK not loaded. Please try again.');
+      alert('Payment system not available. Please login and try again.');
+      navigate('/login?redirect=pricing&plan=pro');
     }
   };
 
@@ -122,7 +327,14 @@ const MainPricing = () => {
               </ul>
             </div>
             <button 
-              onClick={() => navigate('/login')}
+              onClick={() => {
+                const token = localStorage.getItem('authToken');
+                if (!token) {
+                  navigate('/login?redirect=dashboard&plan=basic');
+                } else {
+                  navigate('/dashboard');
+                }
+              }}
               className="mt-6 w-full bg-gradient-to-r from-green-500 to-blue-400 text-white font-medium py-2 rounded-md hover:opacity-90 transition"
             >
               Start for free
@@ -157,7 +369,41 @@ const MainPricing = () => {
               </ul>
             </div>
             <button 
-              onClick={handleRazorpayPayment}
+              onClick={() => {
+                // ALWAYS redirect to login first - no exceptions
+                const token = localStorage.getItem('authToken');
+                if (!token) {
+                  alert('🔒 LOGIN REQUIRED\n\nPlease login to upgrade your plan.');
+                  navigate('/login?redirect=pricing&plan=pro');
+                  return;
+                }
+                
+                // Verify with server before allowing payment
+                fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/subscription/status`, {
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                  }
+                })
+                .then(response => {
+                  if (response.status === 401) {
+                    alert('🔒 SESSION INVALID\n\nPlease login again.');
+                    localStorage.clear();
+                    navigate('/login?redirect=pricing&plan=pro');
+                    return;
+                  }
+                  if (response.ok) {
+                    handleRazorpayPayment();
+                  } else {
+                    alert('🔒 AUTHENTICATION ERROR\n\nPlease login again.');
+                    navigate('/login?redirect=pricing&plan=pro');
+                  }
+                })
+                .catch(() => {
+                  alert('🔒 CONNECTION ERROR\n\nPlease login and try again.');
+                  navigate('/login?redirect=pricing&plan=pro');
+                });
+              }}
               className="mt-6 w-full text-white font-medium py-2 rounded-md bg-gradient-to-r from-purple-500 to-blue-400 hover:opacity-90 transition"
             >
               Get Pro

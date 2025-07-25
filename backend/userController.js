@@ -56,7 +56,8 @@ const getUserProfile = async (req, res) => {
         dob: user.dob || null,
         location: user.location || '',
         verified: user.verified || false,
-        image: user.profileImage || null
+        image: user.profileImage || null,
+        plan: user.plan || 'Basic'
       }
     });
 

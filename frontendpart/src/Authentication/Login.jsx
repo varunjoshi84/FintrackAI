@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -12,6 +12,15 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  
+  // Check for deactivated account error from Google auth
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const errorParam = urlParams.get('error');
+    if (errorParam === 'deactivated') {
+      setError('Your account has been deactivated. Please contact admin@fintrackai.com or support team to reactivate your account.');
+    }
+  }, []);
 
   const validateEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -46,7 +55,8 @@ const Login = () => {
         if (result.user) {
           localStorage.setItem('userInfo', JSON.stringify({
             name: result.user.name,
-            email: result.user.email
+            email: result.user.email,
+            id: result.user.id
           }));
         }
         
@@ -55,8 +65,16 @@ const Login = () => {
           window.dispatchEvent(new CustomEvent('userLogin'));
         }, 100);
         
-        // Redirect to dashboard
-        navigate('/dashboard');
+        // Check for redirect parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirect = urlParams.get('redirect');
+        const plan = urlParams.get('plan');
+        
+        if (redirect === 'pricing' && plan === 'pro') {
+          navigate('/pricing');
+        } else {
+          navigate('/dashboard');
+        }
       } else {
         setError(result.message || 'Login failed. Please try again.');
       }
