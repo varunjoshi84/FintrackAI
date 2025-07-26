@@ -3,6 +3,8 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "rewrites": [
+    { "source": "/dashboard", "destination": "/" },
+    { "source": "/dashboard/**", "destination": "/" },
     {
       "source": "/(.*)",
       "destination": "/index.html"
