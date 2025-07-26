@@ -10,10 +10,20 @@ const AuthSuccessHandler = ({ children }) => {
     const token = params.get('token');
     const userStr = params.get('user');
     
+    console.log('AuthSuccessHandler - URL params:', {
+      hasToken: !!token,
+      hasUser: !!userStr,
+      currentPath: location.pathname,
+      search: location.search
+    });
+    
     // If we have auth parameters, handle the authentication
     if (token && userStr) {
+      console.log('Processing auth parameters...');
       try {
         const user = JSON.parse(decodeURIComponent(userStr));
+        
+        console.log('Parsed user data:', user);
         
         // Store auth token with proper user data
         localStorage.setItem('authToken', token);
@@ -26,10 +36,7 @@ const AuthSuccessHandler = ({ children }) => {
           plan: user.plan || 'Basic'
         }));
         
-        console.log('Google auth success - stored data:', {
-          token: !!token,
-          user: user
-        });
+        console.log('Stored auth data in localStorage');
         
         // Dispatch custom event to notify Header component
         window.dispatchEvent(new CustomEvent('userLogin'));
@@ -38,16 +45,21 @@ const AuthSuccessHandler = ({ children }) => {
         const redirectUrl = localStorage.getItem('loginRedirectUrl') || '/dashboard';
         localStorage.removeItem('loginRedirectUrl');
         
+        console.log('Redirecting to:', redirectUrl);
+        
         // Redirect to the saved URL or dashboard
         setTimeout(() => {
+          console.log('Executing navigation to:', redirectUrl);
           navigate(redirectUrl, { replace: true });
-        }, 100);
+        }, 500);
         return;
       } catch (error) {
         console.error('Error parsing user data:', error);
         navigate('/login');
         return;
       }
+    } else {
+      console.log('No auth parameters found, showing normal homepage');
     }
   }, [navigate, location]);
   
