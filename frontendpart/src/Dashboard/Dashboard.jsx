@@ -302,6 +302,16 @@ const Dashboard = () => {
       document.body.classList.add("dark-mode");
     }
     
+    // Debug authentication state
+    const token = localStorage.getItem('authToken');
+    const userInfo = localStorage.getItem('userInfo');
+    console.log('🔐 Dashboard Auth Check:', {
+      hasToken: !!token,
+      hasUserInfo: !!userInfo,
+      tokenLength: token ? token.length : 0,
+      userInfo: userInfo ? JSON.parse(userInfo) : null
+    });
+    
     // Check user status immediately and start monitoring
     checkUserStatus();
     startAuthMonitoring();

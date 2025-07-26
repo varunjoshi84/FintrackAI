@@ -75,7 +75,11 @@ function App() {
         <Route path="/admin" element={<Admin />} />
         <Route path="/auth/success" element={<AuthSuccess />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard" element={
+          <AuthSuccessHandler>
+            <Dashboard />
+          </AuthSuccessHandler>
+        } />
         <Route path="/transaction" element={<Transactions />} />
         <Route path="/upload" element={<Upload />} />
         <Route path="/insights" element={<Insights />} />

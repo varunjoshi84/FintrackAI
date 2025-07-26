@@ -1,35 +1,33 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const AuthSuccessHandler = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  
-  console.log('=== AUTH SUCCESS HANDLER ===');
-  console.log('Location object:', location);
-  console.log('Location search:', location.search);
-  console.log('Location pathname:', location.pathname);
+  const [isProcessing, setIsProcessing] = useState(false);
   
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const token = params.get('token');
     const userStr = params.get('user');
     
-    console.log('AuthSuccessHandler - URL params:', {
+    console.log('🔍 AuthSuccessHandler checking:', {
       hasToken: !!token,
       hasUser: !!userStr,
       currentPath: location.pathname,
-      search: location.search
+      fullURL: window.location.href
     });
     
     // If we have auth parameters, handle the authentication
-    // Accept token/user params on any route (/, /dashboard, etc)
     if (token && userStr) {
+      setIsProcessing(true);
+      console.log('🚀 Processing Google OAuth authentication...');
+      
       try {
         const user = JSON.parse(decodeURIComponent(userStr));
-        console.log('Parsed user data:', user);
+        console.log('👤 User data:', user);
         
-        // Store auth token with proper user data
+        // Store auth data
         localStorage.setItem('authToken', token);
         localStorage.setItem('userEmail', user.email);
         localStorage.setItem('userInfo', JSON.stringify({
@@ -37,43 +35,66 @@ const AuthSuccessHandler = ({ children }) => {
           name: user.name,
           email: user.email,
           role: user.role || 'user',
-          plan: user.plan || 'Basic'
+          plan: user.plan || 'Basic',
+          isVerified: user.isVerified !== false
         }));
-        console.log('Stored auth data in localStorage');
         
-        // Dispatch custom event to notify Header component
-        window.dispatchEvent(new CustomEvent('userLogin'));
-        // Always redirect to dashboard after Google login
+        console.log('✅ Auth data stored successfully');
+        
+        // Notify other components
+        window.dispatchEvent(new CustomEvent('userLogin', { detail: user }));
+        
+        // Clean the URL and redirect
+        const targetPath = location.pathname === '/' ? '/dashboard' : location.pathname;
+        
         setTimeout(() => {
-          navigate('/dashboard', { replace: true });
-        }, 500);
+          // Use replace to clean the URL and navigate
+          navigate(targetPath, { replace: true });
+          setIsProcessing(false);
+        }, 1500);
+        
         return;
       } catch (error) {
-        console.error('Error parsing user data:', error);
-        navigate('/login');
+        console.error('❌ Auth processing error:', error);
+        setIsProcessing(false);
+        // Show error and redirect to login
+        setTimeout(() => {
+          alert('Authentication failed. Please try again.');
+          navigate('/login');
+        }, 1000);
         return;
       }
-    } else {
-      console.log('No auth parameters found, showing normal homepage');
     }
-  }, [navigate, location]);
+  }, [location, navigate]);
   
   const params = new URLSearchParams(location.search);
   const hasAuthParams = params.get('token') && params.get('user');
   
-  // If we have auth parameters, show loading instead of children
-  if (hasAuthParams) {
+  // Show loading screen during authentication
+  if (hasAuthParams || isProcessing) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mb-4"></div>
-          <p className="text-gray-600">Logging you in...</p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="bg-white p-8 rounded-2xl shadow-xl text-center max-w-md w-full mx-4">
+          <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></div>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome to FinTrackAI!</h2>
+          <p className="text-gray-600 mb-6">Completing your sign in...</p>
+          <div className="space-y-2 text-sm text-gray-500">
+            <div className="flex items-center justify-center space-x-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span>Authentication verified</span>
+            </div>
+            <div className="flex items-center justify-center space-x-2">
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+              <span>Setting up your dashboard</span>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
   
-  // If no auth parameters, render children (normal homepage)
   return children;
 };
 
