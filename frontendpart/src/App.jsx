@@ -28,17 +28,23 @@ import ScrollToTop from './components/ScrollToTop';
 import BackToTopButton from './components/BackToTopButton';
 
 // Home page component
-const HomePage = () => (
-  <AuthSuccessHandler>
-    <div className="font-sans bg-white text-slate-900">
-      <Header />
-      <Hero />
-      <Features />
-      <Pricing />
-      <Footer />
-    </div>
-  </AuthSuccessHandler>
-);
+const HomePage = () => {
+  // Debug: Log current URL
+  console.log('HomePage loaded - Current URL:', window.location.href);
+  console.log('Search params:', window.location.search);
+  
+  return (
+    <AuthSuccessHandler>
+      <div className="font-sans bg-white text-slate-900">
+        <Header />
+        <Hero />
+        <Features />
+        <Pricing />
+        <Footer />
+      </div>
+    </AuthSuccessHandler>
+  );
+};
 
 // Pricing page component
 const PricingPage = () => (

@@ -44,7 +44,9 @@ router.get('/google/callback',
     }
     
     // Redirect to frontend with token (if frontend exists)
-    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/?token=${token}&user=${encodeURIComponent(JSON.stringify(userInfo))}`);
+    const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/?token=${token}&user=${encodeURIComponent(JSON.stringify(userInfo))}`;
+    console.log('Redirecting to frontend URL:', redirectUrl);
+    res.redirect(redirectUrl);
   }
 );
 
