@@ -55,7 +55,7 @@ export const generateInsights = async (transactions) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-goog-api-key": import.meta.env.VITE_GEMINI_API_KEY
+          "x-goog-api-key": import.meta.env.vite_gemini_api_key
         },
         body: JSON.stringify({
           contents: [{
