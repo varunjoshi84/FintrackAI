@@ -30,8 +30,12 @@ import BackToTopButton from './components/BackToTopButton';
 // Home page component
 const HomePage = () => {
   // Debug: Log current URL
-  console.log('HomePage loaded - Current URL:', window.location.href);
+  console.log('=== HOMEPAGE DEBUG ===');
+  console.log('Current URL:', window.location.href);
   console.log('Search params:', window.location.search);
+  console.log('Has token param:', new URLSearchParams(window.location.search).get('token') ? 'YES' : 'NO');
+  console.log('Has user param:', new URLSearchParams(window.location.search).get('user') ? 'YES' : 'NO');
+  console.log('=== END DEBUG ===');
   
   return (
     <AuthSuccessHandler>

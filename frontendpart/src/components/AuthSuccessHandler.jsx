@@ -5,6 +5,11 @@ const AuthSuccessHandler = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   
+  console.log('=== AUTH SUCCESS HANDLER ===');
+  console.log('Location object:', location);
+  console.log('Location search:', location.search);
+  console.log('Location pathname:', location.pathname);
+  
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const token = params.get('token');
