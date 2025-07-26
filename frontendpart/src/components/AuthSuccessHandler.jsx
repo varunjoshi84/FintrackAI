@@ -23,11 +23,10 @@ const AuthSuccessHandler = ({ children }) => {
     });
     
     // If we have auth parameters, handle the authentication
+    // Accept token/user params on any route (/, /dashboard, etc)
     if (token && userStr) {
-      console.log('Processing auth parameters...');
       try {
         const user = JSON.parse(decodeURIComponent(userStr));
-        
         console.log('Parsed user data:', user);
         
         // Store auth token with proper user data
@@ -40,22 +39,13 @@ const AuthSuccessHandler = ({ children }) => {
           role: user.role || 'user',
           plan: user.plan || 'Basic'
         }));
-        
         console.log('Stored auth data in localStorage');
         
         // Dispatch custom event to notify Header component
         window.dispatchEvent(new CustomEvent('userLogin'));
-        
-        // Get redirect URL or default to dashboard
-        const redirectUrl = localStorage.getItem('loginRedirectUrl') || '/dashboard';
-        localStorage.removeItem('loginRedirectUrl');
-        
-        console.log('Redirecting to:', redirectUrl);
-        
-        // Redirect to the saved URL or dashboard
+        // Always redirect to dashboard after Google login
         setTimeout(() => {
-          console.log('Executing navigation to:', redirectUrl);
-          navigate(redirectUrl, { replace: true });
+          navigate('/dashboard', { replace: true });
         }, 500);
         return;
       } catch (error) {
