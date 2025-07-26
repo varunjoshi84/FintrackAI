@@ -39,7 +39,9 @@ const AuthSuccessHandler = ({ children }) => {
         localStorage.removeItem('loginRedirectUrl');
         
         // Redirect to the saved URL or dashboard
-        navigate(redirectUrl);
+        setTimeout(() => {
+          navigate(redirectUrl, { replace: true });
+        }, 100);
         return;
       } catch (error) {
         console.error('Error parsing user data:', error);
@@ -48,6 +50,21 @@ const AuthSuccessHandler = ({ children }) => {
       }
     }
   }, [navigate, location]);
+  
+  const params = new URLSearchParams(location.search);
+  const hasAuthParams = params.get('token') && params.get('user');
+  
+  // If we have auth parameters, show loading instead of children
+  if (hasAuthParams) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+          <p className="text-gray-600">Logging you in...</p>
+        </div>
+      </div>
+    );
+  }
   
   // If no auth parameters, render children (normal homepage)
   return children;
