@@ -16,6 +16,7 @@ import Login from './Authentication/Login';
 import Signup from './Authentication/Signup';
 import Admin from './Authentication/Admin';
 import AuthSuccess from './Authentication/AuthSuccess';
+import AuthSuccessHandler from './components/AuthSuccessHandler';
 import Dashboard from './Dashboard/Dashboard';
 import AdminDashboard from './Dashboard/AdminDashboard';
 import Transactions from './Dashboard/Transactions';
@@ -28,13 +29,15 @@ import BackToTopButton from './components/BackToTopButton';
 
 // Home page component
 const HomePage = () => (
-  <div className="font-sans bg-white text-slate-900">
-    <Header />
-    <Hero />
-    <Features />
-    <Pricing />
-    <Footer />
-  </div>
+  <AuthSuccessHandler>
+    <div className="font-sans bg-white text-slate-900">
+      <Header />
+      <Hero />
+      <Features />
+      <Pricing />
+      <Footer />
+    </div>
+  </AuthSuccessHandler>
 );
 
 // Pricing page component
