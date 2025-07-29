@@ -33,18 +33,11 @@ router.get('/google/callback',
     
     console.log('Google auth callback - user info:', userInfo);
     
-    // For backend-only deployment, return JSON response instead of redirect
-    if (process.env.NODE_ENV === 'production' && !process.env.FRONTEND_URL) {
-      return res.json({
-        success: true,
-        message: 'Google authentication successful',
-        token,
-        user: userInfo
-      });
-    }
+    // Render deployment redirect handling
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     
-    // Redirect to frontend with token (if frontend exists)
-    const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard?token=${token}&user=${encodeURIComponent(JSON.stringify(userInfo))}`;
+    // Direct redirect for Render (works better than postMessage)
+    const redirectUrl = `${frontendUrl}/dashboard?token=${token}&user=${encodeURIComponent(JSON.stringify(userInfo))}`;
     console.log('Redirecting to frontend URL:', redirectUrl);
     res.redirect(redirectUrl);
   }

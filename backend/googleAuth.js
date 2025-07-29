@@ -3,10 +3,10 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 // Use the existing User model
 const User = require('./authentication/User');
 
-// Initialize Google Strategy
+// Initialize Google Strategy - Fixed for Render
 const callbackURL = process.env.NODE_ENV === 'production'
-  ? `${process.env.API_BASE_URL || 'https://fintrackai.onrender.com'}/api/auth/google/callback`
-  : "http://localhost:8000/api/auth/google/callback";
+  ? 'https://fintrackai.onrender.com/api/auth/google/callback'
+  : 'http://localhost:8000/api/auth/google/callback';
 
 // Google OAuth configured for production
 
