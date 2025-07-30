@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import Header from './Header';
 import Footer from '../components/Footer';
 import SubscriptionStatus from '../components/SubscriptionStatus';
+import DashboardPricing from './DashboardPricing';
 import { checkUserStatus, startAuthMonitoring } from '../utils/authCheck';
 import { getDashboardData } from '../api';
 
@@ -10,6 +11,10 @@ const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showPricing, setShowPricing] = useState(() => {
+    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+    return userInfo.plan !== 'Pro'; // Show pricing by default if not Pro user
+  });
   
   const spendingChartRef = useRef(null);
   const categoryChartRef = useRef(null);
@@ -312,9 +317,28 @@ const Dashboard = () => {
       userInfo: userInfo ? JSON.parse(userInfo) : null
     });
     
+    // Check for pricing parameter in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('showPricing') === 'true') {
+      setShowPricing(true);
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
+    // Listen for pricing events from header
+    const handleShowPricing = () => {
+      setShowPricing(true);
+    };
+    
+    window.addEventListener('showPricing', handleShowPricing);
+    
     // Check user status immediately and start monitoring
     checkUserStatus();
     startAuthMonitoring();
+    
+    return () => {
+      window.removeEventListener('showPricing', handleShowPricing);
+    };
   }, []);
 
   return (
@@ -373,7 +397,15 @@ const Dashboard = () => {
         </section>
 
         <section className="bg-white rounded-lg p-4 sm:p-6 shadow-sm animate-fade-in-up delay-150">
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Recent Transactions</h3>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">Recent Transactions</h3>
+            <button 
+              onClick={() => setShowPricing(!showPricing)}
+              className="bg-gradient-to-r from-purple-500 to-pink-600 text-white px-4 py-2 rounded-full text-sm hover:opacity-90 transition"
+            >
+              {showPricing ? 'Hide Pricing' : 'Upgrade Plan'}
+            </button>
+          </div>
           <div className="overflow-x-auto transactions-container">
             {loading ? (
               <div className="text-center py-4">Loading transactions...</div>
@@ -411,6 +443,13 @@ const Dashboard = () => {
             </button>
           </div>
         </section>
+
+        {/* Pricing Section */}
+        {showPricing && (
+          <section className="animate-fade-in-up delay-200">
+            <DashboardPricing />
+          </section>
+        )}
       </main>
 
       <Footer />

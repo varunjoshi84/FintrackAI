@@ -55,7 +55,7 @@ export const generateInsights = async (transactions) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-goog-api-key": import.meta.env.vite_gemini_api_key
+          "x-goog-api-key": import.meta.env.VITE_GEMINI_API_KEY
         },
         body: JSON.stringify({
           contents: [{
@@ -77,7 +77,10 @@ export const generateInsights = async (transactions) => {
     let insights = [];
     
     try {
-      // Extract text from Gemini response
+      // Extract text from Gemini response with null checks
+      if (!result.candidates || !result.candidates[0] || !result.candidates[0].content || !result.candidates[0].content.parts || !result.candidates[0].content.parts[0]) {
+        throw new Error('Invalid API response structure');
+      }
       const responseText = result.candidates[0].content.parts[0].text;
       
       // Try to parse JSON directly

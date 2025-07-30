@@ -5,7 +5,7 @@ import Hero from './components/Hero';
 import Features from './components/Features';
 import Pricing from './components/Pricing';
 import Footer from './components/Footer';
-import MainPricing from './components/MainPricing';
+
 import FeaturesPage from './components/Ftre';
 import Help from './components/Help';
 import Privacy from './components/Privacy';
@@ -26,6 +26,7 @@ import Reports from './Dashboard/Reports';
 import UserDashboard from './UserDashboard/UserDashboard';
 import ScrollToTop from './components/ScrollToTop';
 import BackToTopButton from './components/BackToTopButton';
+import MainPricing from './components/MainPricing';
 
 // Home page component
 const HomePage = () => {
@@ -50,12 +51,7 @@ const HomePage = () => {
   );
 };
 
-// Pricing page component
-const PricingPage = () => (
-  <div className="font-sans bg-white text-slate-900">
-    <MainPricing />
-  </div>
-);
+
 
 function App() {
   return (
@@ -64,8 +60,9 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/features" element={<FeaturesPage />} />
-        <Route path="/pricing" element={<PricingPage />} />
+
         <Route path="/help" element={<Help />} />
+        <Route path="/pricing" element={<MainPricing />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/contact" element={<Contact />} />

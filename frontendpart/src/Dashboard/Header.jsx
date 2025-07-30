@@ -167,9 +167,23 @@ const Header = () => {
               <span className="block px-4 py-2 text-gray-300 rounded-full w-full max-w-48 text-center font-semibold truncate">{userData.name}</span>
               <span className="block px-4 py-2 text-gray-400 rounded-full w-full max-w-48 text-center text-sm truncate">{userData.email}</span>
               <Link to="/userdashboard" className={`block px-4 py-2 ${currentPath.includes('userdashboard') ? 'text-blue-400 font-semibold' : 'text-gray-300'} hover:bg-gray-700 rounded-full w-full max-w-48 text-center`}>My profile</Link>
-              <Link to="/pricing" className="block px-4 py-2 text-green-400 hover:bg-gray-700 rounded-full w-full max-w-48 text-center">
+              <button 
+                onClick={() => {
+                  setIsDropdownOpen(false);
+                  // Scroll to pricing section in dashboard
+                  if (window.location.pathname === '/dashboard') {
+                    // If already on dashboard, trigger pricing display
+                    const event = new CustomEvent('showPricing');
+                    window.dispatchEvent(event);
+                  } else {
+                    // Navigate to dashboard with pricing parameter
+                    window.location.href = '/dashboard?showPricing=true';
+                  }
+                }}
+                className="block px-4 py-2 text-green-400 hover:bg-gray-700 rounded-full w-full max-w-48 text-center"
+              >
                 {userData.plan === 'Pro' ? '🚀 Upgrade to Enterprise' : '⭐ Upgrade to Pro'}
-              </Link>
+              </button>
               <Link to="/" className="block px-4 py-2 text-red-400 hover:bg-gray-700 rounded-full w-full max-w-48 text-center">Sign out</Link>
             </div>
           </div>
@@ -207,9 +221,24 @@ const Header = () => {
               <span className="block px-4 py-2 text-gray-300 rounded-full w-full text-center font-semibold truncate">{userData.name}</span>
               <span className="block px-4 py-2 text-gray-400 rounded-full w-full text-center text-sm truncate">{userData.email}</span>
               <Link to="/userdashboard" className={`block px-4 py-2 ${currentPath.includes('userdashboard') ? 'text-blue-400 font-semibold' : 'text-gray-300'} hover:bg-gray-700 rounded-full w-full text-center`}>My profile</Link>
-              <Link to="/pricing" className="block px-4 py-2 text-green-400 hover:bg-gray-700 rounded-full w-full text-center">
+              <button 
+                onClick={() => {
+                  setIsMobileDropdownOpen(false);
+                  setIsMobileNavOpen(false);
+                  // Scroll to pricing section in dashboard
+                  if (window.location.pathname === '/dashboard') {
+                    // If already on dashboard, trigger pricing display
+                    const event = new CustomEvent('showPricing');
+                    window.dispatchEvent(event);
+                  } else {
+                    // Navigate to dashboard with pricing parameter
+                    window.location.href = '/dashboard?showPricing=true';
+                  }
+                }}
+                className="block px-4 py-2 text-green-400 hover:bg-gray-700 rounded-full w-full text-center"
+              >
                 {userData.plan === 'Pro' ? '🚀 Upgrade to Enterprise' : '⭐ Upgrade to Pro'}
-              </Link>
+              </button>
               <Link to="/" className="block px-4 py-2 text-red-400 hover:bg-gray-700 rounded-full w-full text-center">Sign out</Link>
             </div>
           </div>
