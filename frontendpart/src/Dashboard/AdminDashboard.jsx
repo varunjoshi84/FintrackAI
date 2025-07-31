@@ -590,7 +590,7 @@ const AdminDashboard = () => {
         <div>
           <p className="text-sm text-slate-600 mb-1">{title}</p>
           <p className="text-2xl font-bold text-slate-900">{value}</p>
-          {change && (
+          {change !== undefined && change !== null && (
             <p className={`text-sm ${change > 0 ? 'text-green-600' : 'text-red-600'} flex items-center mt-1`}>
               <i className={`fas ${change > 0 ? 'fa-arrow-up' : 'fa-arrow-down'} mr-1`}></i>
               {Math.abs(change)}%
@@ -725,21 +725,21 @@ const AdminDashboard = () => {
                 title="Total Users"
                 value={systemStats.totalUsers.toLocaleString()}
                 icon="fa-users"
-                change={systemStats.monthlyGrowth}
+                change={systemStats.totalUsersGrowth || systemStats.monthlyGrowth || 0}
                 color="blue"
               />
               <StatCard
                 title="Active Users"
                 value={systemStats.activeUsers.toLocaleString()}
                 icon="fa-user-check"
-                change={8.2}
+                change={systemStats.activeUsersGrowth}
                 color="green"
               />
               <StatCard
-                title="Total Transactions"
-                value={systemStats.totalTransactions.toLocaleString()}
-                icon="fa-exchange-alt"
-                change={15.3}
+                title="Premium Revenue"
+                value={`₹${systemStats.totalRevenue?.toLocaleString() || '0'}`}
+                icon="fa-rupee-sign"
+                change={systemStats.revenueGrowth}
                 color="purple"
               />
             </div>
@@ -822,7 +822,7 @@ const AdminDashboard = () => {
             {/* Quick Actions */}
             <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
               <h3 className="text-lg font-semibold text-slate-900 mb-4">Quick Actions</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <button 
                   onClick={() => setShowAddUserModal(true)}
                   className="flex flex-col items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
@@ -830,13 +830,7 @@ const AdminDashboard = () => {
                   <i className="fas fa-user-plus text-blue-600 text-xl mb-2"></i>
                   <span className="text-sm text-blue-600 font-medium">Add User</span>
                 </button>
-                <button 
-                  onClick={handleSendNotification}
-                  className="flex flex-col items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
-                >
-                  <i className="fas fa-bullhorn text-purple-600 text-xl mb-2"></i>
-                  <span className="text-sm text-purple-600 font-medium">Send Notice</span>
-                </button>
+
                 <button 
                   onClick={handleToggleMaintenance}
                   className="flex flex-col items-center p-4 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"

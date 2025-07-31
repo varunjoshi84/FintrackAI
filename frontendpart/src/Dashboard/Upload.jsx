@@ -15,6 +15,7 @@ const Upload = () => {
   const [error, setError] = useState('');
   const [uploadedFileId, setUploadedFileId] = useState(null);
   const [reportData, setReportData] = useState(null);
+  const [planLimits, setPlanLimits] = useState(null);
   const previewRef = useRef(null);
   const downloadRef = useRef(null);
   const dropZoneRef = useRef(null);
@@ -117,8 +118,33 @@ const Upload = () => {
       }
     } catch (err) {
       console.error('Upload error:', err);
-      setError(err.message || 'Failed to upload file. Please try again.');
-      alert('Upload failed. Please try again.');
+      
+      // Handle plan limit errors
+      if (err.message && err.message.includes('Upload limit reached')) {
+        setError(err.message);
+        // Reload plan limits to update UI
+        const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+        if (userInfo.plan === 'Basic') {
+          try {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/user/plan-limits`, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            if (response.ok) {
+              const data = await response.json();
+              setPlanLimits(data.data);
+            }
+          } catch (limitError) {
+            console.error('Failed to reload plan limits:', limitError);
+          }
+        }
+      } else {
+        setError(err.message || 'Failed to upload file. Please try again.');
+        alert('Upload limit reached. Please upgrade your plan.');
+      }
     } finally {
       setUploading(false);
     }
@@ -193,7 +219,35 @@ const Upload = () => {
     }
   };
 
+  // Load plan limits
   useEffect(() => {
+    const loadPlanLimits = async () => {
+      try {
+        const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+        const userPlan = userInfo.plan || 'Basic';
+        
+        if (userPlan === 'Basic') {
+          // For Basic users, get upload count
+          const token = localStorage.getItem('authToken');
+          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/user/plan-limits`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            setPlanLimits(data.data);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load plan limits:', error);
+      }
+    };
+    
+    loadPlanLimits();
+    
     // Simplified animations
     const timer = setTimeout(() => {
       gsap.from('.hero h2', { y: -30, opacity: 0, duration: 1 });
@@ -219,6 +273,26 @@ const Upload = () => {
           <img src={uploadIllustration} alt="Upload Illustration" />
         </div>
         <div className="upload-form-block">
+          {planLimits && planLimits.currentPlan === 'Basic' && (
+            <div className="plan-limits-info bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg mb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <strong>Basic Plan:</strong> {planLimits.usage.uploadsThisMonth}/5 uploads used this month
+                  {planLimits.usage.uploadsRemaining === 0 && (
+                    <div className="text-red-600 text-sm mt-1">
+                      Upload limit reached. <button onClick={() => navigate('/dashboard?showPricing=true')} className="underline">Upgrade to Pro</button> for unlimited uploads.
+                    </div>
+                  )}
+                </div>
+                <div className="text-right">
+                  <div className="text-sm text-blue-600">
+                    {planLimits.usage.uploadsRemaining} remaining
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
           {error && (
             <div className="error-message bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
               <strong>Error:</strong> {error}

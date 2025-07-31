@@ -5,18 +5,58 @@ const bcrypt = require('bcryptjs');
 const getAdminStats = async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();
-    const activeUsers = await User.countDocuments({ verified: true });
+    const activeUsers = await User.countDocuments({ 
+      $or: [
+        { isVerified: true },
+        { verified: true },
+        { status: 'Active' }
+      ]
+    });
     const newUsersThisMonth = await User.countDocuments({
       createdAt: { $gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) }
     });
+
+    // Get real revenue from payments collection
+    let totalRevenue = 0;
+    try {
+      const Payment = require('./models/Payment'); // Adjust path as needed
+      
+      // Debug: Check actual payment data
+      const samplePayments = await Payment.find({}).limit(3);
+      console.log('Sample payments:', JSON.stringify(samplePayments, null, 2));
+      
+      const revenueResult = await Payment.aggregate([
+        {
+          $match: {
+            status: { $in: ['completed', 'success'] },
+            razorpayPaymentId: { $exists: true, $ne: null },
+            razorpayPaymentId: { $not: /^demo_/ }
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: '$amount' } // Amount already in rupees
+          }
+        }
+      ]);
+      
+      console.log('Revenue calculation result:', revenueResult);
+      totalRevenue = revenueResult[0]?.total || 0;
+    } catch (paymentError) {
+      console.warn('Payment calculation error:', paymentError);
+      totalRevenue = 0;
+    }
 
     res.json({
       success: true,
       data: {
         totalUsers,
         activeUsers,
-        totalTransactions: 45, 
-        totalRevenue: 125000, 
+        totalRevenue: Math.round(totalRevenue),
+        totalUsersGrowth: ((newUsersThisMonth / totalUsers) * 100).toFixed(1),
+        activeUsersGrowth: 0,
+        revenueGrowth: 0,
         monthlyGrowth: ((newUsersThisMonth / totalUsers) * 100).toFixed(1)
       }
     });
@@ -284,7 +324,13 @@ const updateUser = async (req, res) => {
 const getAnalytics = async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();
-    const activeUsers = await User.countDocuments({ verified: true });
+    const activeUsers = await User.countDocuments({ 
+      $or: [
+        { isVerified: true },
+        { verified: true },
+        { status: 'Active' }
+      ]
+    });
     
     // Get real user growth data for the last 12 months
     const userGrowthData = await getUserGrowthDataByPeriod('monthly');

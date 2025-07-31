@@ -5,6 +5,8 @@ const fs = require('fs');
 const path = require('path');
 const { extractTransactionsFromPDF } = require('./pdfUtils');
 const { v4: uuidv4 } = require('uuid');
+const { checkUploadLimit } = require('./middleware/planLimits');
+const User = require('./authentication/User');
 
 // Multer setup for file uploads
 const upload = multer({ dest: 'uploads/' });
@@ -12,6 +14,29 @@ const upload = multer({ dest: 'uploads/' });
 // Handle file upload and extract transactions
 const uploadTransactions = async (req, res) => {
   try {
+    // Check upload limits first
+    const user = await User.findById(req.user.id);
+    const userPlan = user.plan || 'Basic';
+    
+    // Count uploads this month for Basic users
+    if (userPlan === 'Basic') {
+      const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+      const uploadCount = await Transaction.distinct('uploadId', {
+        user: req.user.id,
+        createdAt: { $gte: startOfMonth }
+      }).then(ids => ids.length);
+      
+      if (uploadCount >= 5) {
+        return res.status(403).json({
+          success: false,
+          message: 'Upload limit reached. Basic plan allows 5 uploads per month. Upgrade to Pro for unlimited uploads.',
+          planLimit: true,
+          currentPlan: userPlan,
+          upgradeRequired: true
+        });
+      }
+    }
+    
     if (!req.file) {
       console.error('No file uploaded');
       return res.status(400).json({ success: false, message: 'No file uploaded' });

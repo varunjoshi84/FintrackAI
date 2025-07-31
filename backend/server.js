@@ -171,11 +171,14 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Import upload limit middleware
+const { checkUploadLimit } = require('./middleware/planLimits');
+
 // Upload Transactions Endpoint (Protected - require STRICT authentication)
 // Upload File Endpoint (for generic file uploads)
-app.post('/api/upload/file', strictAuthMiddleware, upload.single('file'), uploadTransactions);
+app.post('/api/upload/file', strictAuthMiddleware, checkUploadLimit, upload.single('file'), uploadTransactions);
 // Existing transactions upload endpoint - NOW WITH STRICT AUTHENTICATION
-app.post('/api/upload/transactions', strictAuthMiddleware, upload.single('file'), uploadTransactions);
+app.post('/api/upload/transactions', strictAuthMiddleware, checkUploadLimit, upload.single('file'), uploadTransactions);
 // Generate report endpoint (after upload)
 app.get('/api/reports/generate', strictAuthMiddleware, generateReport);
 app.post('/api/reports/generate', strictAuthMiddleware, generateReport);
@@ -217,6 +220,10 @@ app.get('/api/user/profile', strictAuthMiddleware, getUserProfile);        // Ge
 app.put('/api/user/profile', strictAuthMiddleware, updateUserProfile);     // Update user profile
 app.delete('/api/user/account', strictAuthMiddleware, deleteUserAccount);  // Delete user account
 app.post('/api/user/verify', strictAuthMiddleware, verifyUserAccount);     // Verify user account
+
+// Import and add plan limits route
+const { getUserPlanLimits } = require('./middleware/planLimits');
+app.get('/api/user/plan-limits', strictAuthMiddleware, getUserPlanLimits);  // Get user plan limits
 
 // Payment Routes (Protected - require STRICT authentication)
 app.post('/api/payment/process', strictAuthMiddleware, processPayment);     // Process payment after Razorpay success

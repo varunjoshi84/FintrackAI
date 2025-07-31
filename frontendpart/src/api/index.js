@@ -10,7 +10,7 @@ export {
   getDashboardStats, 
   getDashboardData,
   getTransactions,
-  addTransaction,  // Add back to prevent white screen
+  addTransaction,  
   getInsights,
   getCategories,
   getDashboardAdminStats,
@@ -18,7 +18,7 @@ export {
   updateDashboardUserStatus,
   deleteUserFromDashboard,
   getDashboardSystemHealth,
-  updateDashboardProfile  // This is the dashboard version
+  updateDashboardProfile  
 } from './dashboard.js';
 
 // Import user functions (these are the ones used by UserDashboard)
