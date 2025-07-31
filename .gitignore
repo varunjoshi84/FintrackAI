@@ -58,3 +58,4 @@ db login
 *.pem
 *.key
 *.crt
+.vercel
