@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 
-const SubscriptionStatus = () => {
+const SubscriptionStatus = ({ onRenewClick }) => {
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -21,6 +20,13 @@ const SubscriptionStatus = () => {
         const data = await response.json();
         if (data.success) {
           setSubscription(data.data);
+          
+          // Update localStorage userInfo if plan was downgraded
+          if (data.data.wasDowngraded) {
+            const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+            userInfo.plan = 'Basic';
+            localStorage.setItem('userInfo', JSON.stringify(userInfo));
+          }
         }
       } catch (error) {
         console.error('Failed to fetch subscription status:', error);
@@ -30,18 +36,31 @@ const SubscriptionStatus = () => {
     };
 
     fetchSubscriptionStatus();
+    
+    // Re-fetch when user comes back to the page
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchSubscriptionStatus();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   if (loading) return null;
   if (!subscription) return null;
 
-  const { currentPlan, planEndDate, daysRemaining, subscriptionStatus } = subscription;
+  const { currentPlan, planEndDate, daysRemaining, subscriptionStatus, wasDowngraded } = subscription;
 
-  // Don't show for basic plan
-  if (currentPlan === 'Basic') return null;
+  // Don't show for basic plan unless it was just downgraded from an expired plan
+  if (currentPlan === 'Basic' && !wasDowngraded) return null;
 
-  const isExpired = subscriptionStatus === 'expired';
-  const isExpiringSoon = daysRemaining <= 7 && daysRemaining > 0;
+  const isExpired = subscriptionStatus === 'expired' || wasDowngraded;
+  const isExpiringSoon = daysRemaining <= 7 && daysRemaining > 0 && !isExpired;
 
   return (
     <div className={`mb-6 p-4 rounded-lg border ${
@@ -66,18 +85,23 @@ const SubscriptionStatus = () => {
             'text-green-600'
           }`}>
             {isExpired 
-              ? `Expired on ${new Date(planEndDate).toLocaleDateString()}`
+              ? wasDowngraded 
+                ? `Your premium plan expired on ${new Date(planEndDate).toLocaleDateString()}. Upgrade to continue enjoying premium features.`
+                : `Expired on ${new Date(planEndDate).toLocaleDateString()}`
               : `${daysRemaining} days remaining • Expires ${new Date(planEndDate).toLocaleDateString()}`
             }
           </p>
         </div>
-        {(isExpired || isExpiringSoon) && (
-          <Link 
-            to="/pricing" 
+        {(isExpired || isExpiringSoon) && onRenewClick && (
+          <button 
+            onClick={(e) => {
+              e.preventDefault();
+              onRenewClick();
+            }} 
             className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700 transition-colors"
           >
-            Renew Now
-          </Link>
+            {isExpired ? 'Upgrade Now' : 'Renew Now'}
+          </button>
         )}
       </div>
     </div>

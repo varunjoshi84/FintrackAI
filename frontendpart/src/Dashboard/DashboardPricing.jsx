@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 const DashboardPricing = () => {
   const [isMonthly, setIsMonthly] = useState(true);
-  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
 
+  // Load Razorpay SDK
   useEffect(() => {
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
     script.async = true;
+    script.onload = () => console.log('Razorpay SDK loaded successfully');
+    script.onerror = () => console.error('Failed to load Razorpay SDK');
     document.body.appendChild(script);
+
     return () => {
       if (document.body.contains(script)) {
         document.body.removeChild(script);
@@ -17,96 +20,154 @@ const DashboardPricing = () => {
     };
   }, []);
 
-  const handleRazorpayPayment = () => {
+  const handleRazorpayPayment = async () => {
     const token = localStorage.getItem('authToken');
     const userInfoString = localStorage.getItem('userInfo');
-    
+
     if (!token || !userInfoString) {
-      alert('AUTHENTICATION REQUIRED\n\nPlease refresh the page and try again.');
+      alert('Please login to continue with payment.');
       return;
     }
-    
+
     if (!window.Razorpay) {
-      alert('PAYMENT SYSTEM UNAVAILABLE\n\nPlease refresh the page and try again.');
+      alert('Payment gateway is loading. Please try again in a moment.');
       return;
     }
 
-    const amount = isMonthly ? 199 : 2148; // Yearly with 10% discount
-    
+    const amount = isMonthly ? 199 : 2148;
     let userInfo;
+
     try {
-      userInfo = JSON.parse(userInfoString || '{}');
-      if (!userInfo.email || !userInfo.name) {
-        throw new Error('Invalid user data');
-      }
-    } catch (error) {
-      alert('Invalid user session. Please refresh the page.');
+      userInfo = JSON.parse(userInfoString);
+    } catch {
+      alert('Session error. Please refresh and try again.');
       return;
     }
-    
-    const options = {
-      key: 'rzp_test_1DP5mmOlF5G5ag',
-      amount: amount * 100,
-      currency: 'INR',
-      name: 'Fintack AI',
-      description: `Pro Plan - ${isMonthly ? 'Monthly' : 'Yearly'}`,
-      image: '/logo.png',
-      handler: async function (response) {
-        try {
-          const currentToken = localStorage.getItem('authToken');
-          if (!currentToken) {
-            alert('Authentication lost. Please refresh the page.');
-            return;
-          }
-          
-          const paymentResult = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/payment/process`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${currentToken}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_order_id: response.razorpay_order_id || 'demo_order_' + Date.now(),
-              amount: amount * 100,
-              plan: 'Pro',
-              billing: isMonthly ? 'monthly' : 'yearly'
-            })
-          });
 
-          const paymentData = await paymentResult.json();
-          
-          if (paymentData.success) {
-            alert(`🎉 Payment Successful! Welcome to Pro Plan!\n\nPlan: ${paymentData.data.plan}\nValid until: ${new Date(paymentData.data.validUntil).toLocaleDateString()}\nNext payment: ${new Date(paymentData.data.nextPayment).toLocaleDateString()}`);
-            window.location.reload();
-          } else {
-            alert(`Payment processing failed: ${paymentData.message}`);
-          }
-        } catch (error) {
-          alert('Payment processing failed. Please contact support.');
+    setIsLoading(true);
+
+    try {
+      // ✅ STEP 1: Create order on backend first
+      const orderRes = await fetch(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/payment/create-order`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            amount,
+            billing: isMonthly ? 'monthly' : 'yearly',
+          }),
         }
-      },
-      prefill: {
-        name: userInfo.name || 'User',
-        email: userInfo.email || 'user@example.com',
-        contact: userInfo.phone || '9999999999'
-      },
-      notes: {
-        plan: 'Pro',
-        billing: isMonthly ? 'monthly' : 'yearly',
-        userId: userInfo.id
-      },
-      theme: {
-        color: '#8B5CF6'
+      );
+
+      const orderData = await orderRes.json();
+
+      if (!orderData.success) {
+        alert(`Failed to initiate payment: ${orderData.message || 'Please try again.'}`);
+        setIsLoading(false);
+        return;
       }
-    };
-    
-    const rzp = new window.Razorpay(options);
-    rzp.open();
+
+      // ✅ STEP 2: Open Razorpay checkout with the real order_id
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        order_id: orderData.orderId, // ← THIS was missing before
+        name: 'FintrackAI',
+        description: `Pro Plan - ${isMonthly ? 'Monthly' : 'Yearly'} Subscription`,
+        image: 'https://cdn-icons-png.flaticon.com/512/2920/2920349.png',
+        handler: async function (response) {
+          try {
+            console.log('Payment successful:', response);
+
+            const paymentResult = await fetch(
+              `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/payment/process`,
+              {
+                method: 'POST',
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_signature: response.razorpay_signature,
+                  amount: amount * 100,
+                  plan: 'Pro',
+                  billing: isMonthly ? 'monthly' : 'yearly',
+                }),
+              }
+            );
+
+            const paymentData = await paymentResult.json();
+
+            if (paymentData.success) {
+              userInfo.plan = 'Pro';
+              userInfo.planEndDate = paymentData.data.validUntil;
+              localStorage.setItem('userInfo', JSON.stringify(userInfo));
+
+              alert(
+                `🎉 Payment Successful!\n\n` +
+                  `Welcome to Pro Plan!\n` +
+                  `Valid until: ${new Date(paymentData.data.validUntil).toLocaleDateString()}\n\n` +
+                  `All premium features are now unlocked!`
+              );
+
+              window.location.reload();
+            } else {
+              alert(`Payment verification failed: ${paymentData.message}`);
+            }
+          } catch (error) {
+            console.error('Payment processing error:', error);
+            alert('Payment verification failed. Please contact support.');
+          }
+        },
+        prefill: {
+          name: userInfo.name || 'User',
+          email: userInfo.email || '',
+          contact: userInfo.phone || '',
+        },
+        notes: {
+          plan: 'Pro',
+          billing: isMonthly ? 'monthly' : 'yearly',
+        },
+        theme: {
+          color: '#8B5CF6',
+        },
+        modal: {
+          ondismiss: function () {
+            console.log('Payment cancelled by user');
+            setIsLoading(false);
+          },
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+
+      rzp.on('payment.failed', function (response) {
+        console.error('Payment failed:', response.error);
+        alert(
+          `Payment Failed\n\n` +
+            `${response.error.description || 'Unknown error'}\n\n` +
+            `Please try again or contact support.`
+        );
+        setIsLoading(false);
+      });
+
+      rzp.open();
+    } catch (error) {
+      console.error('Razorpay initialization error:', error);
+      alert('Unable to open payment gateway. Please try again.');
+      setIsLoading(false);
+    }
   };
 
   const userPlan = JSON.parse(localStorage.getItem('userInfo') || '{}').plan || 'Basic';
-  
+
   const pricingData = {
     monthly: {
       basic: '₹0',
@@ -115,13 +176,16 @@ const DashboardPricing = () => {
     },
     yearly: {
       basic: '₹0',
-      pro: '₹2,148', // 199 * 12 * 0.9 (10% discount)
-      enterprise: '₹10,788', // 999 * 12 * 0.9 (10% discount)
+      pro: '₹2,148',
+      enterprise: '₹10,788',
     },
   };
 
   return (
     <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-6 sm:p-8 shadow-lg border border-gray-100">
+      {/* Razorpay Test Mode Badge */}
+     
+
       <div className="text-center mb-8">
         <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full mb-4">
           <i className="fas fa-crown text-white text-xl"></i>
@@ -137,8 +201,8 @@ const DashboardPricing = () => {
       <div className="flex justify-center gap-4 mb-8">
         <button
           className={`px-6 py-3 text-sm font-semibold rounded-full transition-all duration-300 ${
-            isMonthly 
-              ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg' 
+            isMonthly
+              ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg'
               : 'bg-white text-gray-600 hover:text-gray-800 shadow-md border border-gray-200'
           }`}
           onClick={() => setIsMonthly(true)}
@@ -147,8 +211,8 @@ const DashboardPricing = () => {
         </button>
         <button
           className={`px-6 py-3 text-sm font-semibold rounded-full transition-all duration-300 ${
-            !isMonthly 
-              ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg' 
+            !isMonthly
+              ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg'
               : 'bg-white text-gray-600 hover:text-gray-800 shadow-md border border-gray-200'
           }`}
           onClick={() => setIsMonthly(false)}
@@ -166,20 +230,20 @@ const DashboardPricing = () => {
                 <i className="fas fa-check text-white text-lg"></i>
               </div>
               <div>
-                <h3 className="text-xl font-bold text-gray-900">
-                  {userPlan} Plan
-                </h3>
+                <h3 className="text-xl font-bold text-gray-900">{userPlan} Plan</h3>
                 <p className="text-sm text-gray-500">Current Plan</p>
               </div>
             </div>
           </div>
-          
+
           <div className="mb-6">
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-bold text-gray-900">
-                {userPlan === 'Basic' ? pricingData[isMonthly ? 'monthly' : 'yearly'].basic : 
-                 userPlan === 'Pro' ? pricingData[isMonthly ? 'monthly' : 'yearly'].pro : 
-                 pricingData[isMonthly ? 'monthly' : 'yearly'].enterprise}
+                {userPlan === 'Basic'
+                  ? pricingData[isMonthly ? 'monthly' : 'yearly'].basic
+                  : userPlan === 'Pro'
+                  ? pricingData[isMonthly ? 'monthly' : 'yearly'].pro
+                  : pricingData[isMonthly ? 'monthly' : 'yearly'].enterprise}
               </span>
               <span className="text-gray-500">/{isMonthly ? 'month' : 'year'}</span>
             </div>
@@ -256,11 +320,13 @@ const DashboardPricing = () => {
           <div className="absolute top-0 right-0 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-1 rounded-bl-xl text-sm font-semibold">
             {userPlan === 'Basic' ? 'Most Popular' : 'Enterprise'}
           </div>
-          
+
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl flex items-center justify-center">
-                <i className={`fas ${userPlan === 'Basic' ? 'fa-rocket' : 'fa-building'} text-white text-lg`}></i>
+                <i
+                  className={`fas ${userPlan === 'Basic' ? 'fa-rocket' : 'fa-building'} text-white text-lg`}
+                ></i>
               </div>
               <div>
                 <h3 className="text-xl font-bold text-gray-900">
@@ -272,11 +338,13 @@ const DashboardPricing = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="mb-6">
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                {userPlan === 'Basic' ? pricingData[isMonthly ? 'monthly' : 'yearly'].pro : pricingData[isMonthly ? 'monthly' : 'yearly'].enterprise}
+                {userPlan === 'Basic'
+                  ? pricingData[isMonthly ? 'monthly' : 'yearly'].pro
+                  : pricingData[isMonthly ? 'monthly' : 'yearly'].enterprise}
               </span>
               <span className="text-gray-500">/{isMonthly ? 'month' : 'year'}</span>
             </div>
@@ -335,7 +403,7 @@ const DashboardPricing = () => {
             )}
           </ul>
 
-          <button 
+          <button
             onClick={() => {
               if (userPlan === 'Basic') {
                 handleRazorpayPayment();
@@ -343,17 +411,31 @@ const DashboardPricing = () => {
                 alert('📧 Contact our sales team at sales@fintrackai.com for Enterprise plan!');
               }
             }}
-            className="w-full py-4 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-xl font-semibold text-lg hover:from-purple-600 hover:to-blue-600 transition-all duration-300 shadow-lg hover:shadow-xl"
+            disabled={isLoading}
+            className={`w-full py-4 rounded-xl font-semibold text-lg transition-all duration-300 shadow-lg hover:shadow-xl
+              ${isLoading
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600'
+              }`}
           >
-            {userPlan === 'Basic' ? 'Upgrade to Pro' : 'Contact Sales'}
+            {isLoading ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="animate-spin h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                </svg>
+                Preparing Payment...
+              </span>
+            ) : userPlan === 'Basic' ? 'Upgrade to Pro' : 'Contact Sales'}
           </button>
         </div>
       </div>
 
       <div className="text-center mt-8">
         <p className="text-gray-500 text-sm">
-          🔒 Secure payment powered by Razorpay • Cancel anytime
+          🔒 Secure payments powered by Razorpay • Test Mode Active
         </p>
+        <p className="text-gray-400 text-xs mt-1">No real charges in test mode • Cancel anytime</p>
       </div>
     </div>
   );

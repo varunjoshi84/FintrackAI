@@ -28,16 +28,24 @@ const getTransactions = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const category = req.query.category;
     const type = req.query.type;
+    const search = req.query.search; // ✅ NEW
 
     // Build query for this user only
     let query = { user: userId };
 
-    // Apply filters
+    // Category filter
     if (category && category !== 'All Categories') {
       query.category = category;
     }
+
+    // Type filter (debit/credit)
     if (type && type !== 'all') {
       query.type = type;
+    }
+
+    // ✅ NEW: Search filter - searches description
+    if (search && search.trim()) {
+      query.description = { $regex: search.trim(), $options: 'i' };
     }
 
     // Get total count for pagination
@@ -109,14 +117,13 @@ const updateTransaction = async (req, res) => {
     const transactionId = req.params.id;
     const { type, amount, description, category, date } = req.body;
 
-    // Find and update transaction for this user only
     const updatedTransaction = await Transaction.findOneAndUpdate(
       { _id: transactionId, user: userId },
       {
-        type: type,
+        type,
         amount: amount ? parseFloat(amount) : undefined,
-        description: description,
-        category: category,
+        description,
+        category,
         date: date ? new Date(date) : undefined
       },
       { new: true, runValidators: true }
@@ -144,7 +151,6 @@ const deleteTransaction = async (req, res) => {
     const userId = req.user._id || req.user.id;
     const transactionId = req.params.id;
 
-    // Find and delete transaction for this user only
     const deletedTransaction = await Transaction.findOneAndDelete({
       _id: transactionId,
       user: userId

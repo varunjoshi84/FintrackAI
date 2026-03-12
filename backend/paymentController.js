@@ -1,7 +1,61 @@
 const User = require('./authentication/User');
 const Payment = require('./models/Payment');
+const Razorpay = require('razorpay');
 
-// Process payment after Razorpay success
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET
+});
+
+// ✅ NEW: Create Razorpay order (must be called before opening checkout)
+const createOrder = async (req, res) => {
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required',
+      });
+    }
+
+    const { amount, billing } = req.body;
+
+    if (!amount || !billing) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields: amount, billing',
+      });
+    }
+
+    const options = {
+      amount: amount * 100, // Convert to paise
+      currency: 'INR',
+      receipt: `receipt_${Date.now()}`,
+      notes: {
+        userId: req.user.id.toString(),
+        billing,
+      },
+    };
+
+    const order = await razorpay.orders.create(options);
+
+    console.log('Razorpay order created:', order.id);
+
+    res.json({
+      success: true,
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency,
+    });
+  } catch (error) {
+    console.error('Order creation error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create order',
+    });
+  }
+};
+
+// Process payment (supports both demo and real payment gateways)
 const processPayment = async (req, res) => {
   try {
     console.log('Payment processing attempt:', {
@@ -142,6 +196,14 @@ const getSubscriptionStatus = async (req, res) => {
     const now = new Date();
     const isExpired = user.planEndDate && new Date(user.planEndDate) < now;
 
+    // Auto-downgrade expired plans to Basic
+    if (isExpired && user.plan !== 'Basic') {
+      user.plan = 'Basic';
+      user.subscriptionStatus = 'inactive';
+      await user.save();
+      console.log(`🔄 Auto-downgraded user ${userId} to Basic plan`);
+    }
+
     res.json({
       success: true,
       data: {
@@ -149,7 +211,8 @@ const getSubscriptionStatus = async (req, res) => {
         planEndDate: user.planEndDate,
         nextPaymentDate: user.nextPaymentDate,
         subscriptionStatus: isExpired ? 'expired' : (user.subscriptionStatus || 'inactive'),
-        daysRemaining: user.planEndDate ? Math.ceil((new Date(user.planEndDate) - now) / (1000 * 60 * 60 * 24)) : 0
+        daysRemaining: user.planEndDate ? Math.ceil((new Date(user.planEndDate) - now) / (1000 * 60 * 60 * 24)) : 0,
+        wasDowngraded: isExpired && user.plan === 'Basic'
       }
     });
 
@@ -163,6 +226,7 @@ const getSubscriptionStatus = async (req, res) => {
 };
 
 module.exports = {
+  createOrder,       // ✅ NEW export
   processPayment,
   getPaymentHistory,
   getSubscriptionStatus
