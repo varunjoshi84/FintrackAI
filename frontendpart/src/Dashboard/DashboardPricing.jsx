@@ -22,12 +22,12 @@ const DashboardPricing = () => {
     const userInfoString = localStorage.getItem('userInfo');
     
     if (!token || !userInfoString) {
-      alert('❌ AUTHENTICATION REQUIRED\n\nPlease refresh the page and try again.');
+      alert('AUTHENTICATION REQUIRED\n\nPlease refresh the page and try again.');
       return;
     }
     
     if (!window.Razorpay) {
-      alert('❌ PAYMENT SYSTEM UNAVAILABLE\n\nPlease refresh the page and try again.');
+      alert('PAYMENT SYSTEM UNAVAILABLE\n\nPlease refresh the page and try again.');
       return;
     }
 

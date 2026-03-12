@@ -484,11 +484,7 @@ const sendNotification = async (req, res) => {
       });
     }
 
-    // Here you could implement actual notification logic:
-    // - Save to database
-    // - Send emails to users
-    // - Push notifications
-    
+   
 
     console.log(`Admin Notification: ${title} - ${message}`);
 

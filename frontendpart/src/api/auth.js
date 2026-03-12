@@ -123,11 +123,12 @@ export const logout = async () => {
     localStorage.removeItem('userInfo');
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminInfo');
-    return {
-      success: true,
-      message: 'Logged out successfully'
-    };
   }
+
+  return {
+    success: true,
+    message: 'Logged out successfully'
+  };
 };
 
 // Verify token validity

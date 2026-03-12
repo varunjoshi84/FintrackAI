@@ -262,7 +262,7 @@ const Contact = () => {
             <div className="space-y-4">
               <p className="flex items-center justify-center md:justify-start text-gray-700">
                 <i className="fas fa-map-marker-alt text-blue-600 mr-3 w-5"></i>
-                Moonshine St. 14/05, Light City, London
+                  H1-B Boring Road Patna Bihar
               </p>
               <p className="flex items-center justify-center md:justify-start text-gray-700">
                 <i className="fas fa-phone text-blue-600 mr-3 w-5"></i>

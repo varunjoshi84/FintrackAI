@@ -36,13 +36,11 @@ const createAdminUser = async () => {
     });
 
     await adminUser.save();
-    console.log('✅ Admin user created successfully!');
-    console.log('Email: admin@fintack.com');
-    console.log('Password: admin123');
+    console.log('Admin user created successfully!');
     console.log('Role: admin');
     
   } catch (error) {
-    console.error('❌ Error creating admin user:', error);
+    console.error('Error creating admin user:', error);
   } finally {
     mongoose.disconnect();
     process.exit(0);

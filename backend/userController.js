@@ -16,7 +16,7 @@ const verifyToken = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'defaultsecret');
     
-    // Set both id and _id for compatibility
+    // Set both id and _id for compatibility // decoded is payload of the jwt i.e., the data that was originally “signed” when the user logged in
     req.user = {
       ...decoded,
       _id: decoded.id || decoded._id || decoded.userId,

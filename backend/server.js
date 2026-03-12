@@ -3,7 +3,8 @@
 
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config({ quiet: true });
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 // Import database connection
 const connectDB = require('./database');
@@ -105,9 +106,6 @@ const corsOptions = {
       'https://fintrackai-j3ldui64a-varunjoshi84s-projects.vercel.app',
       'https://fintrackai-git-main-varunjoshi84s-projects.vercel.app',
       'http://localhost:5173', // Development (Vite)
-      'http://localhost:3000', // Alternative dev port
-      'http://localhost:8080', // Vue/Webpack dev server
-      'http://localhost:4200'  // Angular dev server
     ].filter(Boolean);
     
     if (!origin || allowedOrigins.includes(origin)) {
