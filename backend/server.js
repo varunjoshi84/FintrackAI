@@ -1,4 +1,3 @@
-
 // This file connects everything together!
 
 const express = require('express');
@@ -76,8 +75,9 @@ const {
   deleteContactMessage 
 } = require('./contactController');
 
-// Import payment functions
+// ✅ UPDATED: Added createOrder to imports
 const {
+  createOrder,
   processPayment,
   getPaymentHistory,
   getSubscriptionStatus
@@ -224,7 +224,8 @@ const { getUserPlanLimits } = require('./middleware/planLimits');
 app.get('/api/user/plan-limits', strictAuthMiddleware, getUserPlanLimits);  // Get user plan limits
 
 // Payment Routes (Protected - require STRICT authentication)
-app.post('/api/payment/process', strictAuthMiddleware, processPayment);     // Process payment after Razorpay success
+app.post('/api/payment/create-order', strictAuthMiddleware, createOrder);   // ✅ NEW: Create Razorpay order
+app.post('/api/payment/process', strictAuthMiddleware, processPayment);     // Process payment
 app.get('/api/payment/history', strictAuthMiddleware, getPaymentHistory);   // Get payment history
 app.get('/api/subscription/status', strictAuthMiddleware, getSubscriptionStatus); // Get subscription status
 
@@ -307,5 +308,3 @@ process.on('SIGINT', () => {
     console.log('Process terminated');
   });
 });
-
-

@@ -346,7 +346,7 @@ const Dashboard = () => {
 
       {/* Main Dashboard Content */}
       <main className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 dashboard-content">
-        <SubscriptionStatus />
+        <SubscriptionStatus onRenewClick={() => setShowPricing(true)} />
         <div className="text-center mb-6 sm:mb-8">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 drop-shadow-lg tracking-wide animate-fade-in-up">
             <i className="fas fa-chart-line mr-2 text-blue-500 animate-pulse"></i>

@@ -33,6 +33,17 @@ const PLAN_LIMITS = {
 const checkUploadLimit = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id);
+    
+    // Check if plan is expired and auto-downgrade to Basic
+    const now = new Date();
+    const isExpired = user.planEndDate && new Date(user.planEndDate) < now;
+    if (isExpired && user.plan !== 'Basic') {
+      user.plan = 'Basic';
+      user.subscriptionStatus = 'inactive';
+      await user.save();
+      console.log(`🔄 Auto-downgraded user ${req.user.id} to Basic plan in middleware`);
+    }
+    
     const userPlan = user.plan || 'Basic';
     const limits = PLAN_LIMITS[userPlan];
 
@@ -67,6 +78,17 @@ const checkFeatureAccess = (feature) => {
   return async (req, res, next) => {
     try {
       const user = await User.findById(req.user.id);
+      
+      // Check if plan is expired and auto-downgrade to Basic
+      const now = new Date();
+      const isExpired = user.planEndDate && new Date(user.planEndDate) < now;
+      if (isExpired && user.plan !== 'Basic') {
+        user.plan = 'Basic';
+        user.subscriptionStatus = 'inactive';
+        await user.save();
+        console.log(`🔄 Auto-downgraded user ${req.user.id} to Basic plan in feature access check`);
+      }
+      
       const userPlan = user.plan || 'Basic';
       const limits = PLAN_LIMITS[userPlan];
 
