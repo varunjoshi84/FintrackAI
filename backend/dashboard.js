@@ -30,7 +30,7 @@ const getDashboardData = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // For now, we'll send basic user data and some sample dashboard stats
+
   
     const dashboardData = {
       user: {

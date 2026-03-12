@@ -87,6 +87,7 @@ export const generateInsights = async (transactions) => {
       try {
         insights = JSON.parse(responseText);
       } catch (jsonError) {
+        console.error('JSON parse error:', jsonError);
         // If direct JSON parsing fails, try to extract JSON from the text
         const jsonMatch = responseText.match(/\[\s*\{.*\}\s*\]/s);
         if (jsonMatch) {

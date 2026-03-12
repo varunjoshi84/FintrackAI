@@ -15,7 +15,7 @@ const Dashboard = () => {
     const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
     return userInfo.plan !== 'Pro'; // Show pricing by default if not Pro user
   });
-  
+  const currentMonth = new Date().toLocaleString("default", { month: "long" });
   const spendingChartRef = useRef(null);
   const categoryChartRef = useRef(null);
   const spendingChartInstance = useRef(null);
@@ -105,7 +105,6 @@ const Dashboard = () => {
     
     return "Other";
   };
-
   // Initialize charts
   useEffect(() => {
     const initializeCharts = async () => {
@@ -353,7 +352,7 @@ const Dashboard = () => {
             <i className="fas fa-chart-line mr-2 text-blue-500 animate-pulse"></i>
             Financial Dashboard
           </h2>
-          <p className="text-sm sm:text-base text-gray-600 mt-2">Your complete financial overview for July</p>
+          <p className="text-sm sm:text-base text-gray-600 mt-2"> Your complete financial overview for {currentMonth}</p>
         </div>
 
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 animate-fade-in-up">

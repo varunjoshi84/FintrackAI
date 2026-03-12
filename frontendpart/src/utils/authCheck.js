@@ -18,7 +18,7 @@ export const checkUserStatus = async () => {
       localStorage.removeItem('userEmail');
       
       // Show message and redirect to login
-      alert('🚫 ACCOUNT DEACTIVATED\n\nYour account has been deactivated by admin.\nPlease contact admin@fintrackai.com to reactivate your account.');
+      alert('ACCOUNT DEACTIVATED\n\nYour account has been deactivated by admin.\nPlease contact admin@fintrackai.com to reactivate your account.');
       window.location.href = '/login';
       return false;
     }
