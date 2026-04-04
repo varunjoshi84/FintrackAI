@@ -1,164 +1,166 @@
-// Function to generate insights using Google's Gemini API
+const HF_MODEL = "meta-llama/Llama-3.1-8B-Instruct:cheapest"; // cheapest over fastest
+
+const CACHE_KEY = "fintrack_insights_cache";
+const CACHE_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+// Create a stable hash from transactions so we only re-call if data actually changed
+const hashTransactions = (transactions) => {
+  const str = transactions
+    .map((tx) => `${tx.type}:${tx.amount}:${tx.category}`)
+    .join("|");
+  return str.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0).toString();
+};
+
 export const generateInsights = async (transactions) => {
+  //  Check cache first — skip API call if data hasn't changed within 24hrs
   try {
-    // Format transaction data for the model
+    const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
+    const currentHash = hashTransactions(transactions);
+
+    if (
+      cached &&
+      cached.hash === currentHash &&
+      Date.now() - cached.timestamp < CACHE_DURATION_MS
+    ) {
+      console.log("✅ Returning cached insights — no API call made");
+      return { success: true, insights: cached.insights, fromCache: true };
+    }
+  } catch (_) {}
+
+  try {
     const spendingByCategory = {};
     let totalSpending = 0;
     let totalIncome = 0;
-    
-    transactions.forEach(tx => {
-      if (tx.type === 'debit') {
-        const category = tx.category || 'Other';
-        if (!spendingByCategory[category]) {
-          spendingByCategory[category] = 0;
-        }
+
+    transactions.forEach((tx) => {
+      if (tx.type === "debit") {
+        const category = tx.category || "Other";
+        if (!spendingByCategory[category]) spendingByCategory[category] = 0;
         spendingByCategory[category] += tx.amount;
         totalSpending += tx.amount;
-      } else if (tx.type === 'credit') {
+      } else if (tx.type === "credit") {
         totalIncome += tx.amount;
       }
     });
-    
-    // Create a prompt for the model
-    const prompt = `
-      As a financial advisor, analyze this spending data and provide 3 specific money-saving insights:
-      
-      Total Income: ₹${totalIncome.toFixed(2)}
-      Total Spending: ₹${totalSpending.toFixed(2)}
-      
-      Spending by Category:
-      ${Object.entries(spendingByCategory)
-        .map(([category, amount]) => `${category}: ₹${amount.toFixed(2)} (${((amount/totalSpending)*100).toFixed(1)}%)`)
-        .join('\n')}
-      
-      For each insight, include:
-      1. A specific title
-      2. A detailed recommendation with amounts
-      3. The category it applies to
-      4. The potential savings amount
-      
-      Format your response as JSON with this structure:
-      [
-        {
-          "title": "Short insight title",
-          "description": "Detailed recommendation with specific amounts",
-          "category": "Category name",
-          "savingPotential": number
-        }
-      ]
-    `;
-    
-    // Call Gemini API
+
+    const categoryBreakdown = Object.entries(spendingByCategory)
+      .map(
+        ([cat, amt]) =>
+          `${cat}: ₹${amt.toFixed(2)} (${((amt / totalSpending) * 100).toFixed(1)}%)`
+      )
+      .join("\n");
+
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+      "https://router.huggingface.co/v1/chat/completions",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-goog-api-key": import.meta.env.VITE_GEMINI_API_KEY
+          Authorization: `Bearer ${import.meta.env.VITE_HF_TOKEN}`,
         },
         body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: prompt
-            }]
-          }],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 1024
-          }
+          model: HF_MODEL,
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are a financial advisor. Respond ONLY with a valid JSON array. No markdown, no explanation, just raw JSON.",
+            },
+            {
+              role: "user",
+              content: `Give 3 money-saving insights as a JSON array.
+
+Total Income: ₹${totalIncome.toFixed(2)}
+Total Spending: ₹${totalSpending.toFixed(2)}
+Categories:
+${categoryBreakdown}
+
+Format:
+[{"title":"...","description":"...","category":"...","savingPotential": 1234}]`,
+            },
+          ],
+          max_tokens: 512, // ✅ Reduced from 1024 — cuts cost by ~50%
+          temperature: 0.5, // ✅ Lower = more focused, fewer wasted tokens
         }),
       }
     );
-    
-    const result = await response.json();
-    
-    // Parse the response into structured insights
-    let insights = [];
-    
-    try {
-      // Extract text from Gemini response with null checks
-      if (!result.candidates || !result.candidates[0] || !result.candidates[0].content || !result.candidates[0].content.parts || !result.candidates[0].content.parts[0]) {
-        throw new Error('Invalid API response structure');
-      }
-      const responseText = result.candidates[0].content.parts[0].text;
-      
-      // Try to parse JSON directly
-      try {
-        insights = JSON.parse(responseText);
-      } catch (jsonError) {
-        console.error('JSON parse error:', jsonError);
-        // If direct JSON parsing fails, try to extract JSON from the text
-        const jsonMatch = responseText.match(/\[\s*\{.*\}\s*\]/s);
-        if (jsonMatch) {
-          insights = JSON.parse(jsonMatch[0]);
-        } else {
-          // If no JSON found, extract insights manually
-          const insightTexts = responseText.split(/\d+\./).filter(text => text.trim().length > 0);
-          
-          insights = insightTexts.map(text => {
-            // Extract title (first sentence or line)
-            const titleMatch = text.match(/^([^.!?:]+)[.!?:]/);
-            const title = titleMatch ? titleMatch[1].trim() : "Financial Insight";
-            
-            // Extract category (look for category mentions)
-            const categoryMatch = text.match(/category:?\s*([A-Za-z &]+)/i) || 
-                                text.match(/in\s+([A-Za-z &]+)\s+spending/i);
-            const category = categoryMatch ? categoryMatch[1].trim() : "General";
-            
-            // Extract potential savings (look for numbers with ₹ symbol or "save" mentions)
-            const savingsMatch = text.match(/₹\s*(\d+[,\d]*(\.\d+)?)/i) || 
-                                text.match(/save\s*₹?\s*(\d+[,\d]*(\.\d+)?)/i) ||
-                                text.match(/saving\s*₹?\s*(\d+[,\d]*(\.\d+)?)/i);
-            const savingPotential = savingsMatch ? 
-              parseFloat(savingsMatch[1].replace(/,/g, '')) : 
-              Math.round(spendingByCategory[category] * 0.2 || totalSpending * 0.1);
-            
-            return {
-              title,
-              description: text.trim(),
-              category,
-              savingPotential
-            };
-          });
-        }
-      }
-    } catch (parseError) {
-      console.error('Error parsing Gemini response:', parseError);
-      throw new Error('Failed to parse AI response');
+
+    if (!response.ok) {
+      const errBody = await response.json().catch(() => ({}));
+      throw new Error(errBody?.error?.message || `HF API error: ${response.status}`);
     }
-    
-    return {
-      success: true,
-      insights: insights.slice(0, 3) // Limit to 3 insights
-    };
+
+    const result = await response.json();
+    const responseText = result?.choices?.[0]?.message?.content?.trim();
+
+    if (!responseText) throw new Error("Empty response from Hugging Face API");
+
+    let insights = [];
+    try {
+      const cleaned = responseText
+        .replace(/^```(?:json)?/i, "")
+        .replace(/```$/, "")
+        .trim();
+      insights = JSON.parse(cleaned);
+    } catch {
+      const jsonMatch = responseText.match(/\[\s*\{[\s\S]*?\}\s*\]/);
+      if (jsonMatch) insights = JSON.parse(jsonMatch[0]);
+      else throw new Error("Could not parse JSON from model response");
+    }
+
+    insights = insights
+      .filter((item) => item && typeof item === "object")
+      .map((item) => ({
+        title: String(item.title || "Financial Insight"),
+        description: String(item.description || ""),
+        category: String(item.category || "General"),
+        // ✅ Cap saving potential at 50% of category spend — prevents "100% reduction" oddity
+        savingPotential: Math.min(
+          Number(item.savingPotential) || 0,
+          (spendingByCategory[item.category] || totalSpending) * 0.5
+        ),
+      }));
+
+    const finalInsights = insights.slice(0, 3);
+
+    // ✅ Save to cache
+    try {
+      localStorage.setItem(
+        CACHE_KEY,
+        JSON.stringify({
+          hash: hashTransactions(transactions),
+          timestamp: Date.now(),
+          insights: finalInsights,
+        })
+      );
+    } catch (_) {}
+
+    return { success: true, insights: finalInsights, fromCache: false };
   } catch (error) {
-    console.error('Error generating insights:', error);
-    
-    // Fallback insights if API call fails
+    console.error("Error generating insights:", error);
     return {
       success: false,
       error: error.message,
       insights: [
         {
           title: "Reduce Food & Dining Expenses",
-          description: "You're spending a significant amount on food. Consider cooking at home more often to reduce expenses by 20-30%.",
+          description: "Consider cooking at home more often to reduce expenses by 20-30%.",
           category: "Food & Dining",
-          savingPotential: 2000
+          savingPotential: 2000,
         },
         {
           title: "Create a Budget",
-          description: "Setting a monthly budget can help you save up to 15% of your current spending.",
+          description: "Setting a monthly budget can help you save up to 15% of your spending.",
           category: "Budgeting",
-          savingPotential: 1500
+          savingPotential: 1500,
         },
         {
           title: "Build an Emergency Fund",
-          description: "Try to save 10% of your income each month for emergencies and future goals.",
+          description: "Try to save 10% of your income each month for emergencies.",
           category: "Savings",
-          savingPotential: 3000
-        }
-      ]
+          savingPotential: 3000,
+        },
+      ],
     };
   }
 };
