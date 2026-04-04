@@ -20,7 +20,7 @@ const Transactions = () => {
   const [totalTransactions, setTotalTransactions] = useState(0);
   const itemsPerPage = 10;
 
-  // ✅ All categories matching pdfUtils.js categorize() output
+  //  All categories matching pdfUtils.js categorize() output
   const ALL_CATEGORIES = [
     'All Categories',
     'Food & Dining',
@@ -44,7 +44,7 @@ const Transactions = () => {
     'Others',
   ];
 
-  // ✅ Category color map matching all categories
+  //  Category color map matching all categories
   const categoryColors = {
     'Food & Dining':        'bg-orange-100 text-orange-800',
     'Groceries':            'bg-green-100 text-green-800',
@@ -92,7 +92,7 @@ const Transactions = () => {
     return map[category] || 'bg-gray-400';
   };
 
-  // ✅ Load transactions with server-side filtering
+  //  Load transactions with server-side filtering
   const loadTransactions = async (page = 1) => {
     try {
       setLoading(true);
@@ -103,17 +103,17 @@ const Transactions = () => {
         limit: itemsPerPage.toString(),
       });
 
-      // ✅ Send category filter to backend
+      // Send category filter to backend
       if (categoryFilter !== 'All Categories') {
         queryParams.append('category', categoryFilter);
       }
 
-      // ✅ Send type filter to backend
+      //  Send type filter to backend
       if (typeFilter !== 'All') {
         queryParams.append('type', typeFilter.toLowerCase());
       }
 
-      // ✅ Send search term to backend
+      // Send search term to backend
       if (searchTerm.trim()) {
         queryParams.append('search', searchTerm.trim());
       }

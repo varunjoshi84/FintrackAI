@@ -1,8 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    // Initial check
+    setIsLoggedIn(!!localStorage.getItem('authToken'));
+
+    // Setup event listeners for auth changes
+    const handleAuthChange = () => {
+      setIsLoggedIn(!!localStorage.getItem('authToken'));
+    };
+
+    window.addEventListener('storage', handleAuthChange);
+    window.addEventListener('userLogin', handleAuthChange);
+
+    return () => {
+      window.removeEventListener('storage', handleAuthChange);
+      window.removeEventListener('userLogin', handleAuthChange);
+    };
+  }, []);
 
   const toggleMenu = () => setMenuOpen(!menuOpen);
 
@@ -22,12 +41,21 @@ const Header = () => {
             <Link to="/features" className="text-slate-600 hover:text-blue-600">Features</Link>
             <Link to="/pricing" className="text-slate-600 hover:text-blue-600">Pricing</Link>
             <Link to="/about" className="text-slate-600 hover:text-blue-600">About</Link>
-            <Link
-              to="/login"
-              className="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700"
-            >
-              Get Started
-            </Link>
+            {isLoggedIn ? (
+              <Link
+                to="/dashboard"
+                className="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700"
+              >
+                Dashboard
+              </Link>
+            ) : (
+              <Link
+                to="/login"
+                className="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700"
+              >
+                Get Started
+              </Link>
+            )}
           </div>
           <button onClick={toggleMenu} className="md:hidden text-slate-700 text-xl">
             <i className={`fas ${menuOpen ? 'fa-times' : 'fa-bars'}`}></i>
@@ -40,12 +68,21 @@ const Header = () => {
             <Link to="/features" className="block py-2 text-slate-600 hover:text-blue-600">Features</Link>
             <Link to="/pricing" className="block py-2 text-slate-600 hover:text-blue-600">Pricing</Link>
             <Link to="/about" className="block py-2 text-slate-600 hover:text-blue-600">About</Link>
-            <Link
-              to="/login"
-              className="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700"
-            >
-              Get Started
-            </Link>
+            {isLoggedIn ? (
+              <Link
+                to="/dashboard"
+                className="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700"
+              >
+                Dashboard
+              </Link>
+            ) : (
+              <Link
+                to="/login"
+                className="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700"
+              >
+                Get Started
+              </Link>
+            )}
           </div>
         </div>
       )}

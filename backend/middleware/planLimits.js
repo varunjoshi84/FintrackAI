@@ -41,7 +41,7 @@ const checkUploadLimit = async (req, res, next) => {
       user.plan = 'Basic';
       user.subscriptionStatus = 'inactive';
       await user.save();
-      console.log(`🔄 Auto-downgraded user ${req.user.id} to Basic plan in middleware`);
+      console.log(` Auto-downgraded user ${req.user.id} to Basic plan in middleware`);
     }
     
     const userPlan = user.plan || 'Basic';

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import Features from './components/Features';
@@ -28,16 +28,17 @@ import ScrollToTop from './components/ScrollToTop';
 import BackToTopButton from './components/BackToTopButton';
 import MainPricing from './components/MainPricing';
 
+//  ProtectedRoute — checks localStorage for token, redirects to login if missing
+const ProtectedRoute = ({ children }) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+};
+
 // Home page component
 const HomePage = () => {
-  // Debug: Log current URL
-  console.log('=== HOMEPAGE DEBUG ===');
-  console.log('Current URL:', window.location.href);
-  console.log('Search params:', window.location.search);
-  console.log('Has token param:', new URLSearchParams(window.location.search).get('token') ? 'YES' : 'NO');
-  console.log('Has user param:', new URLSearchParams(window.location.search).get('user') ? 'YES' : 'NO');
-  console.log('=== END DEBUG ===');
-  
   return (
     <AuthSuccessHandler>
       <div className="font-sans bg-white text-slate-900">
@@ -51,16 +52,14 @@ const HomePage = () => {
   );
 };
 
-
-
 function App() {
   return (
     <Router>
       <ScrollToTop />
       <Routes>
+        {/* ── Public Routes ── */}
         <Route path="/" element={<HomePage />} />
         <Route path="/features" element={<FeaturesPage />} />
-
         <Route path="/help" element={<Help />} />
         <Route path="/pricing" element={<MainPricing />} />
         <Route path="/privacy" element={<Privacy />} />
@@ -71,17 +70,45 @@ function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/auth/success" element={<AuthSuccess />} />
-        <Route path="/admin-dashboard" element={<AdminDashboard />} />
+
+        {/* ── Protected Routes — all require login ── */}
         <Route path="/dashboard" element={
+          // ✅ No ProtectedRoute here — AuthSuccessHandler handles both
+          // Google OAuth redirect (/dashboard?token=...) AND normal auth check
           <AuthSuccessHandler>
             <Dashboard />
           </AuthSuccessHandler>
         } />
-        <Route path="/transaction" element={<Transactions />} />
-        <Route path="/upload" element={<Upload />} />
-        <Route path="/insights" element={<Insights />} />
-        <Route path="/reports" element={<Reports />} />
-        <Route path="/userdashboard" element={<UserDashboard />} />
+        <Route path="/transaction" element={
+          <ProtectedRoute>
+            <Transactions />
+          </ProtectedRoute>
+        } />
+        <Route path="/upload" element={
+          <ProtectedRoute>
+            <Upload />
+          </ProtectedRoute>
+        } />
+        <Route path="/insights" element={
+          <ProtectedRoute>
+            <Insights />
+          </ProtectedRoute>
+        } />
+        <Route path="/reports" element={
+          <ProtectedRoute>
+            <Reports />
+          </ProtectedRoute>
+        } />
+        <Route path="/userdashboard" element={
+          <ProtectedRoute>
+            <UserDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin-dashboard" element={
+          <ProtectedRoute>
+            <AdminDashboard />
+          </ProtectedRoute>
+        } />
       </Routes>
       <BackToTopButton />
     </Router>

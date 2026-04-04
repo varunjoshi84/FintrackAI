@@ -13,7 +13,6 @@ const checkTransactions = async (req, res, next) => {
     
     // Get userId from authentication middleware
     const userId = req.user ? req.user._id : null;
-    
     if (!userId) {
       return next();
     }

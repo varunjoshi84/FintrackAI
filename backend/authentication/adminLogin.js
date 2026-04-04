@@ -10,7 +10,6 @@ const adminLogin = async (req, res) => {
     let email, password;
     
     if (req.body.email && typeof req.body.email === 'object') {
-      // Frontend is sending nested format: { email: { email: "...", password: "..." } }
       email = req.body.email.email;
       password = req.body.email.password;
     } else {

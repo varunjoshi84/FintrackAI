@@ -13,14 +13,20 @@ const Login = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   
-  // Check for deactivated account error from Google auth
+  // Check for deactivated account error from Google auth, and if already logged in
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const errorParam = urlParams.get('error');
     if (errorParam === 'deactivated') {
       setError('Your account has been deactivated. Please contact admin@fintrackai.com or support team to reactivate your account.');
     }
-  }, []);
+    
+    // Redirect if already logged in
+    const token = localStorage.getItem('authToken');
+    if (token && !errorParam) {
+      navigate('/dashboard');
+    }
+  }, [navigate]);
 
   const validateEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

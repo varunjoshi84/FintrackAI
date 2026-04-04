@@ -122,7 +122,7 @@ const Header = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between py-3 md:py-4">
           {/* Logo */}
-          <Link to="/">
+          <Link to="/dashboard">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                 <i className="fas fa-chart-line text-white text-sm"></i>
@@ -184,7 +184,17 @@ const Header = () => {
               >
                 {userData.plan === 'Pro' ? '🚀 Upgrade to Enterprise' : '⭐ Upgrade to Pro'}
               </button>
-              <Link to="/" className="block px-4 py-2 text-red-400 hover:bg-gray-700 rounded-full w-full max-w-48 text-center">Sign out</Link>
+              <button 
+                onClick={() => {
+                  localStorage.removeItem('authToken');
+                  localStorage.removeItem('userInfo');
+                  localStorage.removeItem('userEmail');
+                  window.location.href = '/';
+                }}
+                className="block px-4 py-2 text-red-400 hover:bg-gray-700 rounded-full w-full max-w-48 text-center"
+              >
+                Sign out
+              </button>
             </div>
           </div>
         </div>
@@ -239,7 +249,17 @@ const Header = () => {
               >
                 {userData.plan === 'Pro' ? '🚀 Upgrade to Enterprise' : '⭐ Upgrade to Pro'}
               </button>
-              <Link to="/" className="block px-4 py-2 text-red-400 hover:bg-gray-700 rounded-full w-full text-center">Sign out</Link>
+              <button 
+                onClick={() => {
+                  localStorage.removeItem('authToken');
+                  localStorage.removeItem('userInfo');
+                  localStorage.removeItem('userEmail');
+                  window.location.href = '/';
+                }}
+                className="block px-4 py-2 text-red-400 hover:bg-gray-700 rounded-full w-full text-center"
+              >
+                Sign out
+              </button>
             </div>
           </div>
         </div>
