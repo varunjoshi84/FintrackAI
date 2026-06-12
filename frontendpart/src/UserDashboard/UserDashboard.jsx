@@ -25,8 +25,6 @@ const UserDashboard = () => {
         if (result.success) {
           setUserData(result.data);
         } else {
-          // ✅ Only redirect to login if token is explicitly rejected (401)
-          // Do NOT remove token on other errors (network issues, 500s, etc.)
           if (result.status === 401 || result.message?.toLowerCase().includes('invalid token')) {
             localStorage.removeItem('authToken');
             navigate('/login');

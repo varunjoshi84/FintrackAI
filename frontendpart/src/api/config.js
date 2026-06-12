@@ -1,11 +1,11 @@
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.vite_api_url || 'https://fintrackai.onrender.com/api';
 
-console.log('API Configuration:', {
-  VITE_API_URL: import.meta.env.VITE_API_URL,
-  vite_api_url: import.meta.env.vite_api_url,
-  API_BASE_URL: API_BASE_URL
-});
+// console.log('API Configuration:', {
+//   VITE_API_URL: import.meta.env.VITE_API_URL,
+//   vite_api_url: import.meta.env.vite_api_url,
+//   API_BASE_URL: API_BASE_URL
+// });
 
 // API endpoints
 export const API_ENDPOINTS = {

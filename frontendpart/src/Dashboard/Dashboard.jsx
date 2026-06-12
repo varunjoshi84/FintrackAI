@@ -8,7 +8,7 @@ import { getDashboardData } from '../api';
 
 const Dashboard = () => {
   const [transactionCount, setTransactionCount] = useState(0);
-  const [dashboardData, setDashboardData] = useState(null);
+  // const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showPricing, setShowPricing] = useState(() => {
@@ -78,7 +78,6 @@ const Dashboard = () => {
           setTransactionCount(txs.length);
         }
       } catch (err) {
-        console.error('Transactions loading error:', err);
         setError(err.message || 'Failed to load transactions');
       } finally {
         setLoading(false);
@@ -307,14 +306,14 @@ const Dashboard = () => {
     }
     
     // Debug authentication state
-    const token = localStorage.getItem('authToken');
-    const userInfo = localStorage.getItem('userInfo');
-    console.log('🔐 Dashboard Auth Check:', {
-      hasToken: !!token,
-      hasUserInfo: !!userInfo,
-      tokenLength: token ? token.length : 0,
-      userInfo: userInfo ? JSON.parse(userInfo) : null
-    });
+    // const token = localStorage.getItem('authToken');
+    // const userInfo = localStorage.getItem('userInfo');
+    // console.log('🔐 Dashboard Auth Check:', {
+    //   hasToken: !!token,
+    //   hasUserInfo: !!userInfo,
+    //   tokenLength: token ? token.length : 0,
+    //   userInfo: userInfo ? JSON.parse(userInfo) : null
+    // });
     
     // Check for pricing parameter in URL
     const urlParams = new URLSearchParams(window.location.search);

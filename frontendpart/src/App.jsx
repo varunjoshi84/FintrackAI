@@ -1,11 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import Features from './components/Features';
 import Pricing from './components/Pricing';
 import Footer from './components/Footer';
-
 import FeaturesPage from './components/Ftre';
 import Help from './components/Help';
 import Privacy from './components/Privacy';
@@ -27,6 +26,7 @@ import UserDashboard from './UserDashboard/UserDashboard';
 import ScrollToTop from './components/ScrollToTop';
 import BackToTopButton from './components/BackToTopButton';
 import MainPricing from './components/MainPricing';
+import { checkNetworkStatus } from './api';
 
 //  ProtectedRoute — checks localStorage for token, redirects to login if missing
 const ProtectedRoute = ({ children }) => {
@@ -37,22 +37,18 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-// Home page component
-const HomePage = () => {
-  return (
-    <AuthSuccessHandler>
-      <div className="font-sans bg-white text-slate-900">
-        <Header />
-        <Hero />
-        <Features />
-        <Pricing />
-        <Footer />
-      </div>
-    </AuthSuccessHandler>
-  );
-};
-
 function App() {
+  useEffect(() => {
+    const runHealthCheck = () => {
+      void checkNetworkStatus();
+    };
+
+    runHealthCheck();
+    const intervalId = window.setInterval(runHealthCheck, 2 * 60 * 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
+
   return (
     <Router>
       <ScrollToTop />
@@ -73,8 +69,6 @@ function App() {
 
         {/* ── Protected Routes — all require login ── */}
         <Route path="/dashboard" element={
-          // ✅ No ProtectedRoute here — AuthSuccessHandler handles both
-          // Google OAuth redirect (/dashboard?token=...) AND normal auth check
           <AuthSuccessHandler>
             <Dashboard />
           </AuthSuccessHandler>

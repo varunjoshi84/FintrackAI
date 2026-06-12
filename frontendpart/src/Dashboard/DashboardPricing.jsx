@@ -9,8 +9,8 @@ const DashboardPricing = () => {
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
     script.async = true;
-    script.onload = () => console.log('Razorpay SDK loaded successfully');
-    script.onerror = () => console.error('Failed to load Razorpay SDK');
+    // script.onload = () => console.log('Razorpay SDK loaded successfully');
+    // script.onerror = () => console.error('Failed to load Razorpay SDK');
     document.body.appendChild(script);
 
     return () => {

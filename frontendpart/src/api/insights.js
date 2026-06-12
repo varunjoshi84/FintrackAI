@@ -22,7 +22,7 @@ export const generateInsights = async (transactions) => {
       cached.hash === currentHash &&
       Date.now() - cached.timestamp < CACHE_DURATION_MS
     ) {
-      console.log("✅ Returning cached insights — no API call made");
+      // console.log("✅ Returning cached insights — no API call made");
       return { success: true, insights: cached.insights, fromCache: true };
     }
   } catch (_) {}
@@ -79,8 +79,8 @@ Format:
 [{"title":"...","description":"...","category":"...","savingPotential": 1234}]`,
             },
           ],
-          max_tokens: 512, // ✅ Reduced from 1024 — cuts cost by ~50%
-          temperature: 0.5, // ✅ Lower = more focused, fewer wasted tokens
+          max_tokens: 512, 
+          temperature: 0.5, 
         }),
       }
     );
