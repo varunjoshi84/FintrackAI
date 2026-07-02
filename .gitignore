@@ -2,17 +2,17 @@
 .env
 .env.local
 .env.production
-frontendpart/.env
+web/.env
 backend/.env
 
 # Dependencies
 node_modules/
-frontendpart/node_modules/
+web/node_modules/
 backend/node_modules/
 
 # Build outputs
-frontendpart/dist/
-frontendpart/build/
+web/dist/
+web/build/
 
 # Logs
 *.log
