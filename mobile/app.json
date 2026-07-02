@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "FinTrackAI",
+    "slug": "fintrackai-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#2563EB"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.varun.fintrackai"
+    },
+    "android": {
+      "package": "com.varun.fintrackai",
+      "adaptiveIcon": {
+        "backgroundColor": "#2563EB"
+      }
+    }
+  }
+}
