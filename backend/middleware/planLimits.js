@@ -86,7 +86,7 @@ const checkFeatureAccess = (feature) => {
         user.plan = 'Basic';
         user.subscriptionStatus = 'inactive';
         await user.save();
-        console.log(`🔄 Auto-downgraded user ${req.user.id} to Basic plan in feature access check`);
+        console.log(` Auto-downgraded user ${req.user.id} to Basic plan in feature access check`);
       }
       
       const userPlan = user.plan || 'Basic';

@@ -45,6 +45,7 @@ const createOrder = async (req, res) => {
       orderId: order.id,
       amount: order.amount,
       currency: order.currency,
+      keyId: process.env.RAZORPAY_KEY_ID,
     });
   } catch (error) {
     console.error('Order creation error:', error);

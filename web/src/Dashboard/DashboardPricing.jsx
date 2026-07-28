@@ -73,7 +73,7 @@ const DashboardPricing = () => {
 
       // ✅ STEP 2: Open Razorpay checkout with the real order_id
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY,
+        key: orderData.keyId || import.meta.env.VITE_RAZORPAY_KEY,
         amount: orderData.amount,
         currency: orderData.currency,
         order_id: orderData.orderId, // ← THIS was missing before
