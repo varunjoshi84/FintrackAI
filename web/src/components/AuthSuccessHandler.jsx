@@ -11,11 +11,11 @@ const AuthSuccessHandler = ({ children }) => {
     const token = params.get('token');
     const userStr = params.get('user');
 
-    console.log('🔍 AuthSuccessHandler checking:', {
-      hasToken: !!token,
-      hasUser: !!userStr,
-      currentPath: location.pathname,
-    });
+    // console.log('🔍 AuthSuccessHandler checking:', {
+    //   hasToken: !!token,
+    //   hasUser: !!userStr,
+    //   currentPath: location.pathname,
+    // });
 
     if (token && userStr) {
       setIsProcessing(true);

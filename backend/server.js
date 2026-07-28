@@ -161,7 +161,7 @@ app.get('/', (req, res) => {
 });
 
 // Health check endpoint for deployment
-app.get('/health', (req, res) => {
+app.get(['/health', '/api/health'], (req, res) => {
   res.status(200).json({ 
     status: 'healthy',
     uptime: process.uptime(),
