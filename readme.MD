@@ -6,9 +6,11 @@
 [![React Native](https://img.shields.io/badge/React_Native-0.81-61DAFB?style=flat&logo=react&logoColor=black)](https://reactnative.dev/)
 [![Expo](https://img.shields.io/badge/Expo-SDK_54-000020?style=flat&logo=expo&logoColor=white)](https://expo.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-38B2AC?style=flat&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-4169E1?style=flat&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Prisma](https://img.shields.io/badge/Prisma-5.22-2D3748?style=flat&logo=prisma&logoColor=white)](https://www.prisma.io/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=flat&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
 
-**FinTrackAI** is a multi-platform financial intelligence ecosystem designed to simplify personal and small-business finances. It combines **automated statement ingestion (PDF & CSV)**, **AI-powered transaction categorization and financial insights (Google Gemini & Hugging Face)**, **real-time analytics dashboards**, **Razorpay subscription billing**, and a seamless experience across **Web (React + Vite)** and **Mobile (React Native + Expo)**.
+**FinTrackAI** is a multi-platform financial intelligence ecosystem designed to simplify personal and small-business finances. Built on a high-performance **polyglot persistence architecture** (**PostgreSQL + Prisma** for financial transactions & subscription payments; **MongoDB** for user accounts, auth & messaging), it combines **automated statement ingestion (PDF & CSV)**, **AI-powered transaction categorization and financial insights (Google Gemini & Hugging Face)**, **real-time analytics dashboards**, **Razorpay subscription billing**, and a seamless experience across **Web (React + Vite)** and **Mobile (React Native + Expo)**.
 
 ---
 
@@ -18,7 +20,9 @@ The repository is structured as a unified monorepo containing three core sub-pro
 
 ```
 FintrackAI/
-├── 📁 backend/          # Node.js + Express + MongoDB REST API & AI Parser Engine
+├── 📁 backend/          # Node.js + Express + Polyglot (PostgreSQL/Prisma + MongoDB) REST API & AI Parser
+│   ├── 📁 prisma/       # Prisma PostgreSQL Schemas & Migrations (Transactions, Payments)
+│   ├── 📁 repositories/ # Data Access Layer for Relational Financial Data
 │   └── 📄 README.md     # Dedicated Backend Documentation
 ├── 📁 web/              # React 19 + Vite + Tailwind CSS v4 Web Client
 │   └── 📄 README.md     # Dedicated Web Client Documentation
@@ -49,10 +53,15 @@ flowchart TD
         TXN[💳 Transaction & Dashboard Engine]
         PAY[💰 Razorpay Payment Handler]
         EMAIL[✉️ Nodemailer SMTP Service]
+        REPO[⚡ Prisma Repository Layer]
     end
 
-    subgraph External_Services [Databases & AI Integrations]
-        DB[(🍃 MongoDB Atlas)]
+    subgraph Polyglot_Databases [Databases & Persistence]
+        MONGO[(🍃 MongoDB Atlas<br/>Users, Profiles, Contacts)]
+        PG[(🐘 PostgreSQL / Supabase via Prisma<br/>Transactions & Subscription Payments)]
+    end
+
+    subgraph External_Services [Third-Party Integrations]
         GEMINI[🤖 Google Gemini AI / HuggingFace]
         RZP[💳 Razorpay Gateway]
     end
@@ -60,11 +69,12 @@ flowchart TD
     W -->|REST API / JWT| Backend_Service
     M -->|REST API / JWT| Backend_Service
 
-    AUTH --> DB
-    TXN --> DB
-    PARSER --> DB
+    AUTH --> MONGO
+    TXN --> REPO
+    PARSER --> REPO
     PAY --> RZP
-    PAY --> DB
+    PAY --> REPO
+    REPO --> PG
     W -->|AI Insights Prompt| GEMINI
 ```
 
@@ -76,6 +86,7 @@ flowchart TD
 - **Node.js**: version `18.x` or higher
 - **npm**: version `9.x` or higher
 - **MongoDB**: A running local instance or free MongoDB Atlas URI
+- **PostgreSQL**: A running local instance or cloud PostgreSQL (e.g., Supabase) URI
 - **Expo Go App** (optional, for running the mobile app on a physical phone)
 
 ---
@@ -87,7 +98,12 @@ flowchart TD
    npm install
    ```
 2. Create `backend/.env` (see [backend/README.md](file:///backend/README.md) for full configuration).
-3. Start the backend server:
+3. Initialize the PostgreSQL schema with Prisma:
+   ```bash
+   npx prisma generate
+   npx prisma db push
+   ```
+4. Start the backend server:
    ```bash
    npm run dev
    ```
@@ -133,8 +149,8 @@ flowchart TD
 | :--- | :--- | :--- | :--- |
 | **Framework / Runtime** | Node.js + Express.js | React 19 + Vite 7 | React Native 0.81 + Expo 54 |
 | **Styling & UI** | N/A | Tailwind CSS v4 + GSAP | React Native Stylesheet + Ionicons |
-| **State / Storage** | MongoDB + Mongoose | React State + LocalStorage | React Context + AsyncStorage |
-| **Charts & Visuals** | Analytical Aggregations | Chart.js | React Native Chart Kit + SVG |
+| **State / Storage** | **Polyglot:** MongoDB (Users/Auth) + PostgreSQL/Prisma (Transactions & Payments) | React State + LocalStorage | React Context + AsyncStorage |
+| **Charts & Visuals** | Analytical Aggregations & Groupings | Chart.js | React Native Chart Kit + SVG |
 | **Auth Strategy** | JWT + Passport Google OAuth | Bearer Token in Headers | Bearer Token in Headers |
 | **File / Media Input** | Multer + PDF-Parse + CSV-Parser | File Drag-and-Drop | Expo Document / Image Picker |
 | **Deployment Target** | Render / Docker / Vercel | Vercel / Netlify | Expo EAS (Google Play & App Store) |
