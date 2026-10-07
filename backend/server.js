@@ -5,8 +5,9 @@ const cors = require('cors');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
-// Import database connection
+// Import database connections (Polyglot: MongoDB + PostgreSQL)
 const connectDB = require('./database');
+const { connectPostgres } = require('./config/postgres');
 
 // Import authentication functions from the authentication folder
 const signup = require('./authentication/signup');
@@ -146,8 +147,9 @@ app.use(passport.session());
 // Apply maintenance mode middleware (before other routes)
 app.use(checkMaintenanceMode);
 
-// Connect to database
+// Connect to databases (Polyglot: MongoDB + PostgreSQL)
 connectDB();
+connectPostgres().catch(err => console.error('PostgreSQL startup connection failed:', err.message));
 
 
 // Health check - test if server is working

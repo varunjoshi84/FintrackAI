@@ -13,6 +13,9 @@ RUN npm install --omit=dev
 # Copy source code
 COPY . .
 
+# Generate Prisma Client
+RUN npx prisma generate
+
 # Create uploads directory
 RUN mkdir -p uploads
 

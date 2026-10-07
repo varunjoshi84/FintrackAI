@@ -1,6 +1,5 @@
 const fs = require('fs');
 const pdfParse = require('pdf-parse');
-const mongoose = require('mongoose');
 
 /**
  * COMPREHENSIVE INDIAN BANK STATEMENT PARSER
@@ -210,11 +209,8 @@ const extractTransactionsFromPDF = async (filePath, userId, uploadId) => {
     const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
     console.log('Total lines extracted from PDF:', lines.length);
 
-    // Convert userId
-    let userObjectId = userId;
-    if (userId && typeof userId === 'string' && mongoose.Types.ObjectId.isValid(userId)) {
-      userObjectId = new mongoose.Types.ObjectId(userId);
-    }
+    // User ID for relational linkage
+    const userStringId = String(userId);
 
     let transactions = [];
     let headerPassed = false;
@@ -309,7 +305,8 @@ const extractTransactionsFromPDF = async (filePath, userId, uploadId) => {
       prevBalance = balance;
 
       const transaction = {
-        user: userObjectId,
+        userId: userStringId,
+        user: userStringId,
         uploadId,
         date,
         description,
@@ -373,7 +370,8 @@ const extractTransactionsFromPDF = async (filePath, userId, uploadId) => {
         prevBalance = balance;
 
         transactions.push({
-          user: userObjectId,
+          userId: userStringId,
+          user: userStringId,
           uploadId,
           date,
           description,

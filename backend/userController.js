@@ -154,6 +154,18 @@ const deleteUserAccount = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // Clean up user transactions and payments from PostgreSQL
+    try {
+      const transactionRepository = require('./repositories/transactionRepository');
+      const paymentRepository = require('./repositories/paymentRepository');
+      await Promise.all([
+        transactionRepository.deleteByUserId(userId),
+        paymentRepository.deleteByUserId(userId),
+      ]);
+    } catch (cleanupErr) {
+      console.error('Error cleaning up PostgreSQL records for deleted user:', cleanupErr);
+    }
+
     res.json({
       success: true,
       message: 'Account deleted successfully'

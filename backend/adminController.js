@@ -16,33 +16,17 @@ const getAdminStats = async (req, res) => {
       createdAt: { $gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) }
     });
 
-    // Get real revenue from payments collection
+    // Get real revenue from payments in PostgreSQL
     let totalRevenue = 0;
     try {
-      const Payment = require('./models/Payment'); // Adjust path as needed
+      const paymentRepository = require('./repositories/paymentRepository');
       
       // Debug: Check actual payment data
-      const samplePayments = await Payment.find({}).limit(3);
-      console.log('Sample payments:', JSON.stringify(samplePayments, null, 2));
+      const samplePayments = await paymentRepository.findRecent(3);
+      console.log('Sample payments from PostgreSQL:', JSON.stringify(samplePayments, null, 2));
       
-      const revenueResult = await Payment.aggregate([
-        {
-          $match: {
-            status: { $in: ['completed', 'success'] },
-            razorpayPaymentId: { $exists: true, $ne: null },
-            razorpayPaymentId: { $not: /^demo_/ }
-          }
-        },
-        {
-          $group: {
-            _id: null,
-            total: { $sum: '$amount' } // Amount already in rupees
-          }
-        }
-      ]);
-      
-      console.log('Revenue calculation result:', revenueResult);
-      totalRevenue = revenueResult[0]?.total || 0;
+      totalRevenue = await paymentRepository.getTotalRevenue();
+      console.log('Revenue calculation result:', totalRevenue);
     } catch (paymentError) {
       console.warn('Payment calculation error:', paymentError);
       totalRevenue = 0;
@@ -200,6 +184,18 @@ const deleteUser = async (req, res) => {
     
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Clean up user transactions and payments from PostgreSQL
+    try {
+      const transactionRepository = require('./repositories/transactionRepository');
+      const paymentRepository = require('./repositories/paymentRepository');
+      await Promise.all([
+        transactionRepository.deleteByUserId(userId),
+        paymentRepository.deleteByUserId(userId),
+      ]);
+    } catch (cleanupErr) {
+      console.error('Error cleaning up PostgreSQL records on admin user delete:', cleanupErr);
     }
 
     res.json({

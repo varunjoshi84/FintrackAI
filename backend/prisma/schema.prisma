@@ -1,0 +1,58 @@
+// Prisma schema for FinTrackAI
+// Relational Transaction and Subscription/Payment models in PostgreSQL
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum TransactionType {
+  credit
+  debit
+}
+
+model Transaction {
+  id          String          @id @default(uuid())
+  userId      String          @map("user_id")
+  date        DateTime
+  description String
+  amount      Float
+  type        TransactionType
+  category    String          @default("Others")
+  balance     Float?
+  uploadId    String?         @map("upload_id")
+  createdAt   DateTime        @default(now()) @map("created_at")
+
+  @@index([userId, date(sort: Desc)], name: "idx_transactions_user_date")
+  @@index([userId, category], name: "idx_transactions_user_category")
+  @@index([userId, type], name: "idx_transactions_user_type")
+  @@index([userId, uploadId], name: "idx_transactions_user_upload")
+  @@map("transactions")
+}
+
+model Payment {
+  id                String   @id @default(uuid())
+  userId            String   @map("user_id")
+  razorpayPaymentId String   @map("razorpay_payment_id")
+  razorpayOrderId   String   @map("razorpay_order_id")
+  amount            Float
+  currency          String   @default("INR")
+  plan              String   // 'Pro', 'Enterprise'
+  billing           String   // 'monthly', 'yearly'
+  status            String   @default("pending") // 'pending', 'completed', 'failed'
+  startDate         DateTime @default(now()) @map("start_date")
+  endDate           DateTime @map("end_date")
+  nextPaymentDate   DateTime @map("next_payment_date")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@index([userId, createdAt(sort: Desc)], name: "idx_payments_user_created")
+  @@index([razorpayPaymentId], name: "idx_payments_razorpay_payment_id")
+  @@index([razorpayOrderId], name: "idx_payments_razorpay_order_id")
+  @@index([status], name: "idx_payments_status")
+  @@map("payments")
+}

@@ -1,4 +1,4 @@
-const Transaction = require('../models/Transaction');
+const transactionRepository = require('../repositories/transactionRepository');
 
 // Middleware to check if user has transactions
 const checkTransactions = async (req, res, next) => {
@@ -12,15 +12,15 @@ const checkTransactions = async (req, res, next) => {
     }
     
     // Get userId from authentication middleware
-    const userId = req.user ? req.user._id : null;
+    const userId = req.user ? (req.user._id || req.user.id || req.user.userId) : null;
     if (!userId) {
       return next();
     }
     
-    // Check if user has any transactions
-    const transactionCount = await Transaction.countDocuments({ userId });
+    // Check if user has any transactions in PostgreSQL
+    const userHasTransactions = await transactionRepository.hasTransactions(userId);
     
-    if (transactionCount === 0) {
+    if (!userHasTransactions) {
       return res.status(200).json({
         success: false,
         message: 'Please upload your bank statement or transactions in the upload section',

@@ -1,4 +1,4 @@
-const Transaction = require('./models/Transaction');
+const transactionRepository = require('./repositories/transactionRepository');
 const multer = require('multer');
 const csv = require('csv-parser');
 const fs = require('fs');
@@ -15,16 +15,18 @@ const upload = multer({ dest: 'uploads/' });
 const uploadTransactions = async (req, res) => {
   try {
     // Check upload limits first
-    const user = await User.findById(req.user.id);
-    const userPlan = user.plan || 'Basic';
+    const userId = req.user ? (req.user._id || req.user.id || req.user.userId) : null;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'User authentication required' });
+    }
+
+    const user = await User.findById(userId);
+    const userPlan = user ? (user.plan || 'Basic') : 'Basic';
     
     // Count uploads this month for Basic users
     if (userPlan === 'Basic') {
       const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-      const uploadCount = await Transaction.distinct('uploadId', {
-        user: req.user.id,
-        createdAt: { $gte: startOfMonth }
-      }).then(ids => ids.length);
+      const uploadCount = await transactionRepository.countDistinctUploadsThisMonth(userId, startOfMonth);
       
       if (uploadCount >= 5) {
         return res.status(403).json({
@@ -60,13 +62,6 @@ const uploadTransactions = async (req, res) => {
 
     // Generate a unique uploadId for this upload
     const uploadId = uuidv4();
-
-    // Get userId from authentication middleware
-    const userId = req.user ? (req.user._id || req.user.id) : null;
-    
-    if (!userId) {
-      return res.status(401).json({ success: false, message: 'User authentication required' });
-    }
     
     console.log('Upload - Authenticated user ID:', userId);
 
@@ -77,15 +72,15 @@ const uploadTransactions = async (req, res) => {
         fs.unlinkSync(filePath);
         let saved = [];
         if (transactions.length) {
-          // Insert transactions
-          saved = await Transaction.insertMany(transactions);
-          console.log('Saved transactions:', saved.length);
+          // Bulk insert transactions into PostgreSQL
+          saved = await transactionRepository.bulkCreate(transactions);
+          console.log('Saved transactions in Postgres:', saved.length);
         }
         return res.json({ success: true, message: 'PDF transactions extracted', data: saved, uploadId });
       } catch (pdfError) {
         console.error('PDF extraction error:', pdfError);
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-        return res.status(500).json({ success: false, message: 'PDF extraction error', error: pdfError });
+        return res.status(500).json({ success: false, message: 'PDF extraction error', error: pdfError.message || pdfError });
       }
     } else if (isCSV) {
       try {
@@ -98,32 +93,32 @@ const uploadTransactions = async (req, res) => {
                 description: row.description,
                 amount: parseFloat(row.amount),
                 type: row.type.toLowerCase(),
-                category: row.category || '',
+                category: row.category || 'Others',
                 uploadId,
-                user: userId
+                userId: String(userId)
               });
             }
           })
           .on('end', async () => {
             try {
-              const saved = await Transaction.insertMany(transactions);
+              const saved = await transactionRepository.bulkCreate(transactions);
               fs.unlinkSync(filePath);
               res.json({ success: true, message: 'CSV transactions uploaded', data: saved, uploadId });
             } catch (dbError) {
               console.error('CSV DB error:', dbError);
               if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-              res.status(500).json({ success: false, message: 'DB error', error: dbError });
+              res.status(500).json({ success: false, message: 'DB error', error: dbError.message || dbError });
             }
           })
           .on('error', (csvError) => {
             console.error('CSV parse error:', csvError);
             if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-            res.status(500).json({ success: false, message: 'CSV parse error', error: csvError });
+            res.status(500).json({ success: false, message: 'CSV parse error', error: csvError.message || csvError });
           });
       } catch (csvOuterError) {
         console.error('CSV outer error:', csvOuterError);
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-        return res.status(500).json({ success: false, message: 'CSV upload error', error: csvOuterError });
+        return res.status(500).json({ success: false, message: 'CSV upload error', error: csvOuterError.message || csvOuterError });
       }
     } else {
       console.error('Unsupported file type:', ext, mimetype);
@@ -133,7 +128,7 @@ const uploadTransactions = async (req, res) => {
   } catch (error) {
     console.error('Upload error:', error);
     if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
-    res.status(500).json({ success: false, message: 'Upload error', error });
+    res.status(500).json({ success: false, message: 'Upload error', error: error.message || error });
   }
 };
 
@@ -141,7 +136,7 @@ const uploadTransactions = async (req, res) => {
 const generateReport = async (req, res) => {
   try {
     // Get userId from authenticated user
-    const userId = req.user ? req.user._id || req.user.id : null;
+    const userId = req.user ? (req.user._id || req.user.id || req.user.userId) : null;
     
     if (!userId) {
       return res.status(401).json({ success: false, message: 'User not authenticated' });
@@ -152,18 +147,8 @@ const generateReport = async (req, res) => {
     
     console.log('Generate Report - User ID:', userId, 'File ID:', fileId);
     
-    // Build query - always filter by user
-    let query = { user: userId };
-    
-    // If we have a fileId, also filter by that
-    if (fileId) {
-      query.uploadId = fileId;
-    }
-    
-    console.log('Transaction query:', query);
-    
-    // Find transactions for this user only
-    const transactions = await Transaction.find(query).sort({ date: 1 });
+    // Find transactions for this user only from PostgreSQL
+    const transactions = await transactionRepository.findByUserAndUploadId(userId, fileId);
     console.log('Found transactions for user:', transactions.length);
     
     // Calculate date range if transactions exist

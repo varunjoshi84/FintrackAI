@@ -1,5 +1,5 @@
 const User = require('./authentication/User');
-const Payment = require('./models/Payment');
+const paymentRepository = require('./repositories/paymentRepository');
 const Razorpay = require('razorpay');
 
 const razorpay = new Razorpay({
@@ -110,9 +110,9 @@ const processPayment = async (req, res) => {
       nextPaymentDate.setFullYear(nextPaymentDate.getFullYear() + 1);
     }
 
-    // Create payment record
-    const payment = new Payment({
-      user: userId,
+    // Create payment record in PostgreSQL
+    const payment = await paymentRepository.create({
+      userId,
       razorpayPaymentId: razorpay_payment_id,
       razorpayOrderId: orderIdToUse,
       amount: amount / 100, // Convert from paise to rupees
@@ -123,8 +123,6 @@ const processPayment = async (req, res) => {
       endDate,
       nextPaymentDate
     });
-
-    await payment.save();
 
     // Update user plan
     await User.findByIdAndUpdate(userId, {
@@ -161,9 +159,7 @@ const getPaymentHistory = async (req, res) => {
   try {
     const userId = req.user.id || req.user._id;
 
-    const payments = await Payment.find({ user: userId })
-      .sort({ createdAt: -1 })
-      .limit(10);
+    const payments = await paymentRepository.findByUser(userId, 10);
 
     res.json({
       success: true,
