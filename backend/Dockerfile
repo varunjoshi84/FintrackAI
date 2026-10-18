@@ -7,8 +7,9 @@ RUN apk add --no-cache openssl libc6-compat
 # Set working directory
 WORKDIR /app
 
-# Copy package files
+# Copy package files and prisma directory
 COPY package*.json ./
+COPY prisma ./prisma/
 
 # Install dependencies
 RUN npm install --omit=dev
