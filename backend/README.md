@@ -1,299 +1,222 @@
-# 🏦 FinTrackAI - Backend API
+<div align="center">
 
-Robust, scalable RESTful API service powering the **FinTrackAI** ecosystem (Web & React Native Mobile). Built on a high-performance **Polyglot Persistence Architecture** (**PostgreSQL** via **Prisma ORM** for transactions and subscription payments; **MongoDB** via **Mongoose** for user identity and contact messaging). Features automated financial statement parsing (PDF/CSV), JWT & Google OAuth authentication, Razorpay subscription billing, Nodemailer notifications, and comprehensive administrative controls.
+# 🏦 FinTrackAI - High-Performance Backend Core
+### Distributed Polyglot Financial Ingestion & Analytics REST Engine
 
----
+[![Node.js](https://img.shields.io/badge/Node.js-18.x-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Express](https://img.shields.io/badge/Express-4.18-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Prisma](https://img.shields.io/badge/Prisma-5.22-2D3748?style=for-the-badge&logo=prisma&logoColor=white)](https://www.prisma.io/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
+[![Razorpay](https://img.shields.io/badge/Razorpay-Billing-02042B?style=for-the-badge&logo=razorpay&logoColor=3395FF)](https://razorpay.com/)
 
-## 🚀 Features
+<p align="center">
+  <b>The mission-critical backbone of FinTrackAI.</b><br/>
+  Engineered with polyglot persistence (PostgreSQL for ACID financial ledgers + MongoDB for high-velocity user identities), streaming bank statement parsing, cryptographic billing webhooks, and AI pipeline orchestration.
+</p>
 
-- **Polyglot Persistence & Data Integrity**
-  - **Relational Financial Engine (PostgreSQL + Prisma)**: Strictly-typed schema, ACID guarantees, and composite B-tree indexes for lightning-fast queries and aggregations.
-  - **Subscription Billing (PostgreSQL + Prisma)**: Atomic plan updates, payment auditing, and Razorpay order/payment ledger tracking.
-  - **User & Inquiries Document Store (MongoDB + Mongoose)**: Flexible user profiles, OAuth identities, contact requests, and newsletter leads.
-  - **Zero Breaking Changes**: Repository layer seamlessly maps both `id` and `_id` on all record outputs for seamless client compatibility across React Web, React Native, and iOS.
-- **Authentication & Security**
-  - Secure email/password authentication using bcrypt hashing & JWT tokens.
-  - Google OAuth 2.0 integration via Passport.js.
-  - Strict role-based authorization (User & Admin).
-  - Rate limiting, security headers, and maintenance mode middleware.
-- **Statement & Receipt Parsing**
-  - Automated statement ingestion supporting **CSV** and **PDF** formats.
-  - Intelligent transaction extraction (`pdf-parse`, `csv-parser`) and auto-categorization.
-  - Subscription plan-based upload quota enforcement.
-- **Financial Analytics & Dashboard**
-  - Real-time income, expense, balance, and savings rate calculations.
-  - Category-level breakdown and monthly trend aggregations directly powered by PostgreSQL repository queries.
-  - Custom report generation and download.
-- **Payments & Subscriptions**
-  - Razorpay order creation and HMAC-SHA256 signature verification.
-  - Tiered subscription management (Free, Pro, Enterprise).
-  - Synchronized user plan upgrade across databases upon successful payment.
-- **Admin Management Suite**
-  - User management (listing, status toggling, deletion with cross-database cascade cleanup).
-  - Platform analytics and user growth tracking.
-  - Contact message handling with direct email responses.
-  - Maintenance mode toggle and broadcast notifications.
-- **Communication & Notifications**
-  - Automated welcome emails and payment receipts using Nodemailer (SMTP).
-  - Newsletter subscription management.
+</div>
 
 ---
 
-## 🏛️ Polyglot Architecture & Data Layer
+## 🏛️ Polyglot Architecture & Domain Matrix
 
-FinTrackAI combines the strengths of relational and document databases:
+FinTrackAI separates relational financial obligations from dynamic user document stores:
 
-| Domain | Database | Access Layer / Driver | Key Characteristics |
-| :--- | :--- | :--- | :--- |
-| **Transactions & Ledger** | PostgreSQL (Supabase / Local) | Prisma ORM (`@prisma/client`) | ACID compliance, composite indexes (`[userId, date]`, `[userId, category]`, `[userId, type]`, `[userId, uploadId]`), high-speed aggregations. |
-| **Payments & Billing** | PostgreSQL (Supabase / Local) | Prisma ORM (`@prisma/client`) | Strict audit trail, order & payment ID indexing (`[razorpayPaymentId]`, `[razorpayOrderId]`, `[userId, createdAt]`). |
-| **Users & Authentication** | MongoDB Atlas | Mongoose ODM | Flexible document schema, embedded preference fields, OAuth metadata. |
-| **Contacts & Messages** | MongoDB Atlas | Mongoose ODM | Unstructured inquiry payloads and communication history. |
+```
+                  ┌──────────────────────────────┐
+                  │    Express API Application   │
+                  └──────────────┬───────────────┘
+                                 │
+                 ┌───────────────┴───────────────┐
+                 ▼                               ▼
+    ┌─────────────────────────┐     ┌─────────────────────────┐
+    │  Prisma Repository DAL  │     │   Mongoose ODM Layer    │
+    └────────────┬────────────┘     └────────────┬────────────┘
+                 ▼                               ▼
+    ┌─────────────────────────┐     ┌─────────────────────────┐
+    │  🐘 PostgreSQL Ledger   │     │   🍃 MongoDB Atlas      │
+    │  - Transactions (ACID)  │     │  - User Accounts & Auth │
+    │  - Subscription Payments│     │  - Contacts & Inquiries │
+    │  - Composite B-Tree Idx │     │  - Audit System Logs    │
+    └─────────────────────────┘     └─────────────────────────┘
+```
+
+---
+
+## 🗺️ Backend Data Flow Diagrams (DFD)
+
+### Level 0 DFD: Backend Service Boundary
+
+```mermaid
+flowchart TD
+    Client([💻 Web / 📱 Mobile Client])
+    OAuthProv([🔑 Google OAuth])
+    RazorpayGW([💳 Razorpay Gateway])
+    EmailService([✉️ Nodemailer SMTP])
+    AIProvider([🤖 Gemini / HuggingFace])
+
+    BackendCore[[⚙️ FinTrackAI Backend API Core]]
+
+    Client -->|REST Requests, JWT Headers, Multer Files| BackendCore
+    BackendCore -->|JSON Payloads, Dashboards, Pre-Signed URLs| Client
+
+    BackendCore <-->|OAuth Code Exchange & Verification| OAuthProv
+    BackendCore <-->|Order Creation & HMAC Verification| RazorpayGW
+    BackendCore -->|Trigger Notifications & Invoices| EmailService
+    BackendCore <-->|Transaction NLP Classification Prompts| AIProvider
+```
+
+---
+
+### Level 1 DFD: Internal Backend Flow & Data Stores
+
+```mermaid
+flowchart TD
+    subgraph Inbound_Traffic [Clients]
+        REQ[Web & Mobile REST Requests]
+    end
+
+    subgraph Security_Layer [Gatekeeper & Middleware]
+        MW1[Strict Auth & JWT Validator]
+        MW2[Role-Based Authorization Admin/User]
+        MW3[Multer File Upload Streamer]
+        MW4[Rate Limiter & Security Headers]
+    end
+
+    subgraph Controllers [Application Controllers]
+        C1[Auth & User Controller]
+        C2[Upload & Parsing Controller]
+        C3[Transaction & Analytics Controller]
+        C4[Payment & Subscription Controller]
+        C5[Admin Operations Controller]
+    end
+
+    subgraph Repositories_and_Services [Data Access & Logic Layer]
+        S_PARSE[PDF / CSV Parser Service]
+        S_AI[Gemini / HF AI Categorizer]
+        R_TXN[Transaction Repository]
+        R_PAY[Payment Repository]
+    end
+
+    subgraph Polyglot_Databases [Databases]
+        DB_MONGO[(🍃 MongoDB Atlas)]
+        DB_PG[(🐘 PostgreSQL via Prisma)]
+    end
+
+    REQ --> MW4 --> MW1 --> MW2
+
+    MW1 --> C1
+    MW3 --> C2
+    MW1 --> C3
+    MW1 --> C4
+    MW2 --> C5
+
+    %% Auth Controller
+    C1 <-->|Read / Write User Credentials| DB_MONGO
+
+    %% Upload Controller
+    C2 --> S_PARSE
+    S_PARSE --> S_AI
+    S_AI --> R_TXN
+
+    %% Transaction Controller
+    C3 <--> R_TXN
+    R_TXN <--> DB_PG
+
+    %% Payment Controller
+    C4 <--> R_PAY
+    R_PAY <--> DB_PG
+    C4 -->|Update Plan Status| DB_MONGO
+
+    %% Admin Controller
+    C5 <--> DB_MONGO
+    C5 <--> DB_PG
+```
+
+---
+
+### Level 2 DFD: Payment & Subscription Ledger Subsystem
 
 ```mermaid
 flowchart LR
-    Client([Web / Mobile Client]) --> Server[Express REST API]
-    
-    subgraph Data_Layer [Data Access Layer]
-        Server --> UserCtrl[User / Auth Controller]
-        Server --> TxnCtrl[Transaction Controller]
-        Server --> PayCtrl[Payment Controller]
-        
-        TxnCtrl --> TxnRepo[Transaction Repository]
-        PayCtrl --> PayRepo[Payment Repository]
-        
-        TxnRepo --> PrismaClient[Prisma Client]
-        PayRepo --> PrismaClient
-        UserCtrl --> Mongoose[Mongoose Models]
+    subgraph Client_App [Client Browser / App]
+        P_INIT[Select Plan Upgrade]
+        P_CHECKOUT[Complete Razorpay Modal]
     end
-    
-    PrismaClient --> PG[(PostgreSQL Database)]
-    Mongoose --> Mongo[(MongoDB Atlas)]
+
+    subgraph Backend_Payment_Pipeline [Payment Verification Engine]
+        P1[Create Razorpay Order]
+        P2[Receive Payment Response]
+        P3[Validate HMAC-SHA256 Signature]
+        P4[Atomic Transaction: Record Ledger]
+        P5[Upgrade Subscription Profile]
+        P6[Dispatch Receipt Email]
+    end
+
+    subgraph Storage [Databases]
+        PG[(🐘 PostgreSQL Payments Table)]
+        MONGO[(🍃 MongoDB Users Table)]
+    end
+
+    P_INIT --> P1
+    P1 -->|Return order_id| P_CHECKOUT
+    P_CHECKOUT -->|razorpay_payment_id + signature| P2
+    P2 --> P3
+    P3 -->|Signature Verified| P4 & P5
+    P4 --> PG
+    P5 --> MONGO
+    P5 --> P6
 ```
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Tech Stack & Dependencies
 
-| Component | Technology | Version |
+| Layer | Library / Tool | Purpose |
 | :--- | :--- | :--- |
-| **Runtime** | Node.js | `>= 16.0.0` |
-| **Framework** | Express.js | `^4.18.2` |
-| **Relational Database** | PostgreSQL (Supabase / Self-hosted) | `>= 15.0` |
-| **ORM** | Prisma ORM (`@prisma/client`, `prisma`) | `^5.22.0` |
-| **Document Database** | MongoDB Atlas with Mongoose ODM | `^7.5.0` |
-| **Auth** | JSONWebToken (`jsonwebtoken`), Passport.js (`passport-google-oauth20`), `bcryptjs` | |
-| **File Processing**| Multer (`multer`), `pdf-parse`, `csv-parser` | |
-| **Payment Gateway**| Razorpay Node SDK (`razorpay`) | `^2.9.6` |
-| **Email Service** | Nodemailer (`nodemailer`) | `^6.9.4` |
-| **Dev Tools** | Nodemon, Prisma Studio / CLI | `^3.0.1` / `^5.22.0` |
+| **Runtime & Framework** | Node.js `>=18.x`, Express `4.18.x` | RESTful API server |
+| **Relational ORM** | Prisma `5.22.x` | PostgreSQL schema migrations & queries |
+| **Document ODM** | Mongoose `8.x` | MongoDB connection & document models |
+| **Document Processing** | `pdf-parse`, `csv-parser`, `multer` | Multi-format bank statement OCR & stream parsing |
+| **Security & Auth** | `jsonwebtoken`, `bcryptjs`, `passport-google-oauth20` | Dual JWT & OAuth 2.0 implementation |
+| **Payments** | `razorpay`, `crypto` | Order generation & cryptographic webhook verification |
+| **Notifications** | `nodemailer` | Automated HTML transactional emails |
 
 ---
 
-## 📁 Project Structure
+## 📁 Directory Structure
 
 ```
 backend/
-├── authentication/           # User schema & authentication logic (signup, login, Google OAuth)
-│   ├── User.js               # MongoDB User model & schema
-│   ├── login.js              # Login handler & JWT creation
-│   └── signup.js             # User registration handler
-├── config/                   # Configuration managers
-│   └── postgres.js           # Prisma client singleton & PostgreSQL connection verifier
-├── middleware/               # Auth, security, and plan limit middlewares
-│   ├── strictAuth.js         # JWT validation & user extraction
-│   └── planLimits.js         # Upload limit checks based on active subscription tier
-├── models/                   # Mongoose Database Schemas
-│   └── Contact.js            # Contact submissions schema
-├── prisma/                   # Prisma ORM Definitions
-│   └── schema.prisma         # Transaction and Payment PostgreSQL schemas & indexes
-├── repositories/             # Data Access Layer for PostgreSQL
-│   ├── transactionRepository.js  # Transaction CRUD, filters, aggregations, dual ID mapping
-│   └── paymentRepository.js      # Payment creation, queries, order lookup, dual ID mapping
-├── routes/                   # Modular Express route handlers
-│   ├── authRoutes.js         # Google OAuth & session routes
-│   ├── dashboardRoutes.js    # Dashboard metrics routes
-│   ├── reportRoutes.js       # Report generation routes
-│   └── user.js               # User management routes
-├── scripts/                  # Database migration & benchmarking utilities
-│   ├── migrateTransactionsToPostgres.js # MongoDB -> PostgreSQL transaction migration
-│   ├── migratePaymentsToPostgres.js     # MongoDB -> PostgreSQL payment migration
-│   └── benchmarkTransactions.js         # Performance benchmark suite
-├── uploads/                  # Temporary file upload staging directory
-├── adminController.js        # Admin metrics, user CRUD, cascade deletion, maintenance
-├── contactController.js      # Contact forms & email reply handling
-├── dashboard.js              # Aggregated dashboard metrics & insights
-├── database.js               # MongoDB connection handler
-├── emailService.js           # Nodemailer transport & HTML email templates
-├── googleAuth.js             # Passport Google Strategy configuration
-├── newsletterController.js   # Newsletter subscription management
-├── paymentController.js      # Razorpay order creation & payment verification
-├── pdfUtils.js               # PDF & CSV parsing and categorization engine
-├── server.js                 # Express application entrypoint & routing table
-├── transactionController.js  # Transaction endpoints (powered by transactionRepository)
-├── uploadController.js       # File upload handler & parser orchestrator
-├── userController.js         # User profile and account operations
-├── Dockerfile                # Docker containerization config
-├── vercel.json               # Serverless deployment configuration
-└── package.json              # Project dependencies & scripts
+├── config/            # DB connectors (MongoDB, Prisma, Passport, Mailer)
+├── controllers/       # Controller business logic (Auth, User, Admin, Payment)
+├── middleware/        # Strict authentication, RBAC, Multer file filters
+├── models/            # Mongoose schemas (User, Contact, Newsletter)
+├── prisma/            # Relational PostgreSQL schema (schema.prisma) & migrations
+├── repositories/      # Prisma Data Access Layer for Transactions and Payments
+├── routes/            # Express router definitions
+├── utils/             # PDF parser, CSV parser, AI category mapper
+└── server.js          # Main application bootstrapper
 ```
 
 ---
 
-## ⚙️ Environment Variables
+## ⚡ Quick Start
 
-Create a `.env` file in the `backend/` directory based on `backend/.env.example`:
-
-```env
-# Server Configuration
-NODE_ENV=development
-PORT=8000
-
-# Polyglot Database Configuration
-# MongoDB (User Accounts, Authentication, Contacts)
-MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/fintrackai?retryWrites=true&w=majority
-
-# PostgreSQL (Financial Transactions & Payments via Prisma)
-# Note: For Supabase, use the Transaction Pooler connection string (port 6543) for IPv4 compatibility:
-DATABASE_URL=postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:6543/postgres?pgbouncer=true
-
-# JWT & Authentication
-JWT_SECRET=your_super_secure_jwt_secret_key
-JWT_EXPIRE=7d
-SESSION_SECRET=your_session_secret_key
-
-# Google OAuth 2.0
-GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-
-# Frontend & CORS Configuration
-FRONTEND_URL=http://localhost:5173
-CORS_ORIGIN=http://localhost:5173
-
-# Payment Gateway (Razorpay)
-RAZORPAY_KEY_ID=rzp_test_your_key_id
-RAZORPAY_KEY_SECRET=your_razorpay_secret_key
-
-# Email Service (Nodemailer SMTP)
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USER=your_email@gmail.com
-EMAIL_PASS=your_app_password
-EMAIL_FROM_NAME="FinTrackAI Team"
-
-# File Uploads
-MAX_FILE_SIZE=5242880 # 5MB in bytes
-UPLOAD_PATH=./uploads
-```
-
----
-
-## 🚦 Getting Started
-
-### 1. Prerequisites
-- [Node.js](https://nodejs.org/) (version `>= 18.x` recommended)
-- [MongoDB](https://www.mongodb.com/) (Local instance or MongoDB Atlas cluster)
-- [PostgreSQL](https://www.postgresql.org/) (Local instance or [Supabase](https://supabase.com/))
-- [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
-
-### 2. Installation
 ```bash
-# Navigate to backend directory
 cd backend
-
-# Install dependencies
 npm install
-```
 
-### 3. Initialize PostgreSQL with Prisma
-Sync the Prisma schema to your PostgreSQL database:
-```bash
-# Generate Prisma Client
+# 1. Environment configuration
+cp .env.example .env
+
+# 2. Database migrations (PostgreSQL)
 npx prisma generate
-
-# Push schema to PostgreSQL (creates tables & composite indexes)
 npx prisma db push
-```
 
-*(Optional)* If you have legacy records in MongoDB that need migration into PostgreSQL:
-```bash
-# Migrate existing transactions
-node scripts/migrateTransactionsToPostgres.js
-
-# Migrate existing subscription payments
-node scripts/migratePaymentsToPostgres.js
-
-# (Optional) Benchmark query latency
-node scripts/benchmarkTransactions.js
-```
-
-### 4. Running Locally
-
-```bash
-# Start in development mode with auto-reload
+# 3. Start development server
 npm run dev
-
-# Start in production mode
-npm start
 ```
-The server will start at `http://localhost:8000` (or the configured `PORT`), connecting to both MongoDB and PostgreSQL upon startup.
 
----
-
-## 📡 API Reference Overview
-
-### Health Check
-- `GET /` - Root health check & API status
-- `GET /api/health` - Deployment uptime status
-
-### Authentication
-- `POST /api/auth/register` - Register a new user account
-- `POST /api/auth/login` - User login with JWT token return
-- `POST /api/auth/admin/login` - Admin login
-- `GET /api/auth/google` - Initiate Google OAuth flow
-- `GET /api/auth/google/callback` - Google OAuth callback
-
-### Dashboard & Analytics (Protected)
-- `GET /api/dashboard` - Get summarized financial stats & charts data
-- `PUT /api/dashboard/profile` - Update user profile settings
-
-### Transactions (Protected - Powered by PostgreSQL Repository)
-- `GET /api/transactions` - Fetch user transactions with filters, search, and pagination
-- `POST /api/transactions` - Create a single manual transaction
-- `PUT /api/transactions/:id` - Update an existing transaction
-- `DELETE /api/transactions/:id` - Delete a transaction
-
-### Statements & File Upload (Protected)
-- `POST /api/upload/file` - Upload statement file (PDF/CSV) & parse transactions directly into PostgreSQL
-- `POST /api/upload/transactions` - Alternative batch upload endpoint
-- `POST /api/reports/generate` - Generate formatted financial summary report
-
-### Payments & Subscription (Protected - Powered by PostgreSQL Repository)
-- `POST /api/payment/create-order` - Create a Razorpay payment order
-- `POST /api/payment/process` - Verify HMAC signature, save payment to PostgreSQL, and upgrade user tier
-- `GET /api/payment/history` - Retrieve user payment history from PostgreSQL
-- `GET /api/subscription/status` - Check current active plan & quota
-
-### User & Admin Operations
-- `GET /api/user/profile` - Get logged-in user profile
-- `PUT /api/user/profile` - Update profile data
-- `GET /api/admin/stats` - Platform-wide statistics (Admin only)
-- `GET /api/admin/users` - Paginated user directory (Admin only)
-- `DELETE /api/admin/users/:id` - Delete user account with cascade cleanup across MongoDB & PostgreSQL (Admin only)
-- `POST /api/admin/maintenance` - Toggle maintenance mode (Admin only)
-- `POST /api/contact/send` - Submit public contact message
-- `POST /api/newsletter/subscribe` - Newsletter subscription
-
----
-
-## 🐳 Docker Deployment
-
-You can containerize the backend using the included `Dockerfile`:
-
-```bash
-# Build Docker image
-docker build -t fintrackai-backend .
-
-# Run Docker container
-docker run -p 8000:8000 --env-file .env fintrackai-backend
-```
+*Server will initialize on `http://localhost:8000`.*

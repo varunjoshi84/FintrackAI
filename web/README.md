@@ -1,177 +1,180 @@
-# 🌐 FinTrackAI - Web Client (React + Vite)
+<div align="center">
 
-Modern, high-performance web application for **FinTrackAI**, featuring interactive financial dashboards, AI-powered transaction analysis (Google Gemini & Hugging Face), bank statement parsing, dynamic charts, Razorpay payments, and an administrative control suite.
+# 🌐 FinTrackAI - Web Client (React 19 + Vite)
+### High-Performance Interactive Financial Intelligence Portal
 
-Built with **React 19**, **Vite 7**, and **Tailwind CSS v4** with silky-smooth **GSAP** animations.
+[![React](https://img.shields.io/badge/React-19.1-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-7.0-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![GSAP](https://img.shields.io/badge/GSAP-3.13-88CE02?style=for-the-badge&logo=greensock&logoColor=white)](https://greensock.com/gsap/)
+[![Chart.js](https://img.shields.io/badge/Chart.js-4.5-FF6384?style=for-the-badge&logo=chart.js&logoColor=white)](https://www.chartjs.org/)
 
----
+<p align="center">
+  <b>The modern web experience for FinTrackAI.</b><br/>
+  Featuring reactive financial dashboards, drag-and-drop statement ingestion, dynamic Chart.js visualizations, GSAP micro-animations, Razorpay checkout modals, and a comprehensive admin management console.
+</p>
 
-## ✨ Features
-
-- 💎 **Modern Landing & Marketing Pages**
-  - High-converting Hero, Features, Pricing, Help, About, Contact, Terms, and Privacy pages.
-  - Interactive micro-animations powered by **GSAP**.
-  - Fully responsive design tailored for mobile, tablet, and widescreen displays.
-- 🔐 **Comprehensive Authentication**
-  - Standard Email/Password registration and login with JWT session handling.
-  - **Google OAuth 2.0** login with dedicated callback token handler (`/auth/success`).
-  - Route protection wrapper (`ProtectedRoute`) ensuring secured access.
-- 📊 **Interactive Financial Dashboard**
-  - Real-time income, expense, balance, and savings rate trackers.
-  - Interactive dynamic charts using **Chart.js** (doughnut spending distributions & monthly cash flow bar graphs).
-- 💳 **Transaction Hub**
-  - Search, sort, and paginate through past financial transactions.
-  - Instant categorization tags (e.g., Food, Travel, Utilities, Investments).
-  - Add, edit, or delete transactions with live balance recalculations.
-- 📂 **Statement Ingestion & AI Parsing**
-  - Drag-and-drop upload interface for bank statements (**PDF** and **CSV**).
-  - Real-time parsing feedback and automatic transaction extraction.
-- 🤖 **AI-Driven Insights & Reports**
-  - Smart financial advice and spending anomaly detection using **Google Gemini** & **Hugging Face** models.
-  - Detailed downloadable financial summary reports.
-- 💳 **Razorpay Subscription Checkout**
-  - Seamless in-app subscription upgrade modal with Razorpay Checkout integration.
-  - Plan quota tracking and entitlement enforcement.
-- 🛠️ **Administrative Portal**
-  - Platform-wide statistics (active users, total revenue, transaction counts).
-  - User management table (status toggles, user edits, deletions).
-  - Maintenance mode toggle and broadcast notification sender.
+</div>
 
 ---
 
-## 🛠️ Tech Stack
+## ✨ Interface Highlights
 
-| Component | Technology | Version |
+- 💎 **Ultra-Smooth UI/UX**: Built with Tailwind CSS v4 and fluid scroll animations powered by GSAP.
+- 📊 **Dynamic Financial Visualizations**: Real-time spending breakdowns, doughnut charts, and cash-flow trends.
+- 📂 **Smart Statement Ingestion**: Instant drag-and-drop support for PDF and CSV bank statements.
+- 🤖 **Predictive AI Insights**: Integrated prompts requesting personalized advice via Google Gemini.
+- 💳 **In-App Razorpay Checkout**: One-click subscription tier upgrades with automatic session updates.
+
+---
+
+## 🗺️ Web Client Data Flow Diagrams (DFD)
+
+### Level 0 DFD: Web Client Boundary
+
+```mermaid
+flowchart TD
+    User([👤 Web User / Admin])
+    Backend([🏦 FinTrackAI REST API])
+    RazorpayModal([💳 Razorpay Web Modal])
+    GeminiAPI([🧠 Gemini AI Engine])
+
+    WebClient[[🌐 FinTrackAI Web Application]]
+
+    User -->|Interactions, Files, Credentials, Settings| WebClient
+    WebClient -->|Rendered Dashboards, Charts, Alerts, Receipts| User
+
+    WebClient <-->|Axios Requests & JWT Bearer Auth| Backend
+    WebClient <-->|Open Checkout & Receive Payment Verification| RazorpayModal
+    WebClient <-->|Natural Language Insights Query| GeminiAPI
+```
+
+---
+
+### Level 1 DFD: Internal React Architecture & State Flow
+
+```mermaid
+flowchart TD
+    subgraph User_Interactions [Browser User Interface]
+        UI_AUTH[Auth Forms / OAuth Button]
+        UI_DASH[Dashboard & Chart Cards]
+        UI_UPLOAD[Statement Dropzone]
+        UI_TXN[Transaction Table & Filters]
+        UI_BILLING[Pricing & Checkout Modal]
+    end
+
+    subgraph State_and_Routing [Client State & Router]
+        ROUTER[React Router DOM v7]
+        AUTH_CTX[Auth State & LocalStorage]
+        DATA_STATE[Component Local & Metric States]
+    end
+
+    subgraph API_Services [Axios API Client Services]
+        A_AUTH[api/auth.js]
+        A_DASH[api/dashboard.js]
+        A_UPLOAD[api/upload.js]
+        A_INSIGHTS[api/insights.js]
+        A_ADMIN[api/admin.js]
+    end
+
+    subgraph External_Servers [Backend & Gateways]
+        API_SERVER[(FinTrackAI REST API)]
+        RZP[(Razorpay Checkout SDK)]
+    end
+
+    UI_AUTH --> A_AUTH
+    A_AUTH <--> API_SERVER
+    A_AUTH --> AUTH_CTX
+
+    AUTH_CTX --> ROUTER
+
+    UI_UPLOAD --> A_UPLOAD
+    A_UPLOAD <--> API_SERVER
+
+    UI_DASH --> A_DASH
+    A_DASH <--> API_SERVER
+    A_DASH --> DATA_STATE
+    DATA_STATE --> UI_DASH
+
+    UI_TXN <--> API_SERVER
+
+    UI_BILLING --> RZP
+    RZP --> API_SERVER
+```
+
+---
+
+### Level 2 DFD: Client Document Upload & Live Chart Update Subsystem
+
+```mermaid
+flowchart LR
+    subgraph User_Action
+        FILE[/Drag & Drop Bank PDF / CSV/]
+    end
+
+    subgraph Client_Processor [Web Processing Pipeline]
+        V[1. Client-Side Format & Size Validation]
+        M[2. Multipart FormData Packing]
+        API[3. Post to /api/upload with Bearer Token]
+        POLL[4. Await Extraction & Normalization]
+        RERENDER[5. Trigger Chart.js & Metric Recalculation]
+    end
+
+    subgraph Visual_Output
+        CANVAS[Interactive Dashboard Re-Rendered]
+    end
+
+    FILE --> V
+    V --> M
+    M --> API
+    API --> POLL
+    POLL --> RERENDER
+    RERENDER --> CANVAS
+```
+
+---
+
+## 🛠️ Tech Stack & Dependencies
+
+| Tool | Version | Description |
 | :--- | :--- | :--- |
-| **Framework** | [React](https://react.dev/) | `^19.1.0` |
-| **Build Tool / Bundler** | [Vite](https://vitejs.dev/) | `^7.0.3` |
-| **Routing** | [React Router DOM](https://reactrouter.com/) | `^7.6.3` |
-| **Styling** | [Tailwind CSS v4](https://tailwindcss.com/) + PostCSS + Autoprefixer | `@tailwindcss/vite ^4.1.11` |
-| **Animations** | [GSAP (GreenSock)](https://greensock.com/gsap/) | `^3.13.0` |
-| **Data Visualization** | [Chart.js](https://www.chartjs.org/) | `^4.5.0` |
-| **AI Integration** | Google Gemini API & Hugging Face Inference API | |
-| **Payments** | Razorpay Web Checkout SDK | |
+| **Framework** | React `19.1.0` | Core UI library |
+| **Bundler** | Vite `7.0.3` | Ultra-fast HMR and build pipeline |
+| **Styling** | Tailwind CSS `v4.1.x` | Modern utility-first CSS |
+| **Animations** | GSAP `3.13.x` | Timeline and tween animations |
+| **Visuals** | Chart.js `4.5.x` | High-DPI canvas charts and legends |
+| **Routing** | React Router DOM `7.6.x` | Client-side routing with protected view wrappers |
+| **HTTP Client** | Axios `1.7.x` | Network requests with interceptors |
 
 ---
 
-## 📁 Project Structure
+## 📁 Directory Structure
 
 ```
 web/
-├── public/                   # Static assets (favicons, logos, images)
+├── public/                 # Favicons, logos, static illustrations
 ├── src/
-│   ├── api/                  # API client modules & endpoints
-│   │   ├── admin.js          # Admin actions & metrics API
-│   │   ├── adminApi.js       # Admin user management API
-│   │   ├── auth.js           # Authentication API calls
-│   │   ├── config.js         # Axios/fetch configuration & endpoints map
-│   │   ├── contact.js        # Contact form submission API
-│   │   ├── dashboard.js      # Dashboard stats & metrics API
-│   │   ├── insights.js       # AI insights API & data processing
-│   │   ├── location.js       # Geolocation & IP location utilities
-│   │   ├── upload.js         # File upload & parse API
-│   │   └── user.js           # User profile & account API
-│   ├── assets/               # Images, SVG icons, and media files
-│   ├── Authentication/       # Authentication Views & Modals
-│   │   ├── Admin.jsx         # Admin login screen
-│   │   ├── AuthSuccess.jsx   # Google OAuth callback handler
-│   │   ├── Login.jsx         # User login form
-│   │   └── Signup.jsx        # User registration form
-│   ├── components/           # Reusable UI Components
-│   │   ├── BackToTopButton.jsx # Smooth scroll-to-top button
-│   │   ├── Features.jsx      # Features section component
-│   │   ├── Footer.jsx        # Global page footer
-│   │   ├── Header.jsx        # Navigation bar & header
-│   │   ├── Hero.jsx          # Hero section with animated elements
-│   │   ├── Pricing.jsx       # Pricing tiers component
-│   │   └── ScrollToTop.jsx   # Route change scroll reset helper
-│   ├── Dashboard/            # App Dashboard Screens
-│   │   ├── AdminDashboard.jsx# Admin metrics, user list, maintenance
-│   │   ├── Dashboard.jsx     # Main user dashboard overview
-│   │   ├── Insights.jsx      # AI analytics & charts
-│   │   ├── Reports.jsx       # Financial report generator
-│   │   ├── Transactions.jsx  # Transaction log & filtering table
-│   │   └── Upload.jsx        # PDF/CSV statement uploader
-│   ├── UserDashboard/        # User Profile & Settings
-│   │   └── UserDashboard.jsx # Profile edit, subscription upgrade, security
-│   ├── utils/                # Helper functions (formatting, date parsers)
-│   ├── App.jsx               # Application routes & ProtectedRoute setup
-│   ├── index.css             # Global CSS & Tailwind CSS directives
-│   └── main.jsx              # React DOM entrypoint
-├── index.html                # HTML template
-├── netlify.toml              # Netlify SPA redirect & build config
-├── vercel.json               # Vercel SPA routing configuration
-├── vite.config.js            # Vite build configuration with React & Tailwind plugins
-└── package.json              # Web client dependencies & scripts
+│   ├── api/                # API client modules (auth, dashboard, upload, admin)
+│   ├── assets/             # Media and SVGs
+│   ├── Authentication/     # Login, Signup, OAuth success redirects
+│   ├── components/         # Navbar, Footer, Modals, StatCards, Charts
+│   ├── pages/              # Landing, Dashboard, Transactions, Ingestion, Admin
+│   ├── App.jsx             # Route definitions and layout wrappers
+│   └── main.jsx            # React root mount
+├── package.json
+└── vite.config.js
 ```
 
 ---
 
-## ⚙️ Environment Variables
+## ⚡ Quick Start
 
-Create a `.env` file inside the `web/` directory with the following variables:
-
-```env
-# Backend API Base URL
-VITE_API_URL=http://localhost:8000/api
-
-# Google Gemini AI Key (for automated financial advice & statement insights)
-vite_gemini_api_key=your_google_gemini_api_key
-
-# Razorpay Key ID (Public Client Key for checkout modal)
-VITE_RAZORPAY_KEY=rzp_test_your_razorpay_key_id
-
-# Hugging Face Token (optional alternative for AI models)
-VITE_HF_TOKEN=hf_your_huggingface_token
-```
-
----
-
-## 🚀 Getting Started
-
-### 1. Prerequisites
-- [Node.js](https://nodejs.org/) (version 18.x or higher)
-- [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
-- Running instance of the [FinTrackAI Backend](../backend)
-
-### 2. Installation
 ```bash
-# Navigate to web directory
 cd web
-
-# Install dependencies
 npm install
-```
 
-### 3. Development Server
-```bash
-# Run local Vite development server
+# Start Vite dev server
 npm run dev
 ```
-Open [http://localhost:5173](http://localhost:5173) in your browser to view the application.
 
----
-
-## 🛠️ Available Scripts
-
-| Command | Action |
-| :--- | :--- |
-| `npm run dev` | Starts the local Vite development server with Hot Module Replacement (HMR). |
-| `npm run build` | Compiles and bundles production-ready assets into the `dist/` directory. |
-| `npm run preview` | Locally previews the production build from `dist/`. |
-| `npm run lint` | Runs ESLint across all source files to enforce code style. |
-
----
-
-## 🌐 Deployment
-
-The web client is pre-configured for seamless single-page application (SPA) deployment on **Vercel** and **Netlify**:
-
-- **Vercel**: Configuration is handled via `vercel.json` rewriting all routes to `/index.html`.
-- **Netlify**: Configuration is defined in `netlify.toml` with publish directory set to `dist`.
-
-```bash
-# Production build
-npm run build
-```
-Upload the generated `dist/` folder or link your Git repository to Vercel/Netlify for automatic CI/CD deployments.
+*Open `http://localhost:5173` in your browser.*

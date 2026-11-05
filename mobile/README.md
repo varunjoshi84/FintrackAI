@@ -1,182 +1,198 @@
-# 📱 FinTrackAI - Mobile App (React Native & Expo)
+<div align="center">
 
-Cross-platform mobile application for **FinTrackAI**, bringing AI-driven financial tracking, statement uploads, interactive spending charts, and transaction management directly to iOS and Android devices.
+# 📱 FinTrackAI - Native Mobile App
+### Cross-Platform React Native & Expo Financial Intelligence
 
-Built with **React Native** and powered by the **Expo SDK 54** ecosystem.
+[![React Native](https://img.shields.io/badge/React_Native-0.81-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactnative.dev/)
+[![Expo](https://img.shields.io/badge/Expo-SDK_54-000020?style=for-the-badge&logo=expo&logoColor=white)](https://expo.dev/)
+[![React Navigation](https://img.shields.io/badge/React_Navigation-v7-6B52AE?style=for-the-badge&logo=react&logoColor=white)](https://reactnavigation.org/)
+[![GitHub Release](https://img.shields.io/github/v/release/varunjoshi84/FintrackAI?color=7C3AED&label=Download%20APK&logo=android&logoColor=white)](https://github.com/varunjoshi84/FintrackAI/releases/latest)
 
----
+<p align="center">
+  <b>Enterprise personal finance in the palm of your hand.</b><br/>
+  Native iOS & Android mobile application engineered with React Native and Expo SDK 54, offering seamless session recovery, instant statement and camera-receipt uploads, real-time spending telemetry, and offline-resilient caching.
+</p>
 
-## ✨ Features
+[🚀 Download Production Standalone APK](https://github.com/varunjoshi84/FintrackAI/releases/latest)
 
-- 🔐 **Authentication & Session Persistence**
-  - Seamless User Login and Registration.
-  - Secure token storage using `@react-native-async-storage/async-storage`.
-  - Automatic session restore and protected route gating.
-- 📊 **Smart Financial Dashboard**
-  - Instant overview of Total Income, Total Expenses, and Net Balance.
-  - Recent transactions list with clear debit/credit indicators.
-  - Pull-to-refresh to fetch the latest financial stats in real time.
-- 💳 **Transaction Management**
-  - View, search, and filter transactions across dates, types, and categories.
-  - Add and edit manual transactions with instant cloud synchronization.
-- 📄 **Statement & Receipt Upload**
-  - Upload PDF/CSV bank statements via `expo-document-picker`.
-  - Capture or upload receipt photos via `expo-image-picker`.
-  - Multi-part form data upload to the backend parser engine.
-- 📈 **Visual Spending Insights**
-  - Interactive charts powered by `react-native-chart-kit` and `react-native-svg`.
-  - Category-by-category expense breakdowns and financial health metrics.
-- 👤 **User Profile & Settings**
-  - View account details, subscription tier, and upload quotas.
-  - Safe sign-out clearing local storage and session state.
+</div>
 
 ---
 
-## 🛠️ Tech Stack
+## ✨ Mobile Highlights
 
-| Category | Technology | Version / Details |
+- ⚡ **Native Performance**: Ultra-responsive screens built on React Native 0.81 with Hermes engine.
+- 📸 **Receipt & Document Scanning**: Take photos of physical receipts via `expo-image-picker` or pick bank statements via `expo-document-picker`.
+- 📊 **Vector Spending Visualizations**: Smooth Bézier curves and donut charts powered by `react-native-chart-kit` and `react-native-svg`.
+- 🔐 **Secure Native Storage**: Session tokens and credentials preserved across reboots using `@react-native-async-storage/async-storage`.
+- 📦 **Automated Cloud Builds**: Production standalone `.apk` builds streamlined via Expo Application Services (EAS).
+
+---
+
+## 🗺️ Mobile App Data Flow Diagrams (DFD)
+
+### Level 0 DFD: Mobile App Boundary
+
+```mermaid
+flowchart TD
+    User([📱 Mobile User])
+    OS_Services([📷 Camera / 📁 File System])
+    Backend([🏦 FinTrackAI REST API])
+    EAS_Cloud([☁️ Expo Application Services])
+
+    MobileApp[[📱 FinTrackAI Native Client]]
+
+    User -->|Touch Gestures, Form Inputs, Auth Requests| MobileApp
+    MobileApp -->|Rendered Native UI, Real-time Visuals, Alerts| User
+
+    MobileApp <-->|Access Storage & Camera Roll| OS_Services
+    MobileApp <-->|REST Requests with Bearer Auth Token| Backend
+    MobileApp <-->|Over-The-Air Updates & Standalone APK Packaging| EAS_Cloud
+```
+
+---
+
+### Level 1 DFD: Internal React Native Architecture & State Management
+
+```mermaid
+flowchart TD
+    subgraph UI_Screens [Native Screens]
+        SCR_LOGIN[Login / Signup Screen]
+        SCR_DASH[Dashboard Screen]
+        SCR_TXN[Transactions Screen]
+        SCR_UPLOAD[Upload Screen]
+        SCR_INSIGHTS[Insights Screen]
+        SCR_PROF[Profile & Settings Screen]
+    end
+
+    subgraph Navigation_and_Context [Navigation & Global State]
+        APP_NAV[AppNavigator: BottomTabs & Stack]
+        AUTH_CTX[AuthContext: User & Session]
+        ASYNC_STORAGE[(AsyncStorage: Persisted Session Token)]
+    end
+
+    subgraph Native_Sensors_and_Pickers [Device Hardware Integration]
+        DOC_PICKER[expo-document-picker: PDFs/CSVs]
+        IMG_PICKER[expo-image-picker: Camera/Gallery]
+    end
+
+    subgraph Mobile_API_Layer [API Client & Config]
+        API_AUTH[api/auth.js]
+        API_DASH[api/dashboard.js]
+        API_USER[api/user.js]
+    end
+
+    subgraph Backend_Cloud [Backend API]
+        BACKEND_API[(FinTrackAI Backend)]
+    end
+
+    SCR_LOGIN --> API_AUTH
+    API_AUTH <--> BACKEND_API
+    API_AUTH --> AUTH_CTX
+    AUTH_CTX <--> ASYNC_STORAGE
+    AUTH_CTX --> APP_NAV
+
+    APP_NAV --> SCR_DASH & SCR_TXN & SCR_UPLOAD & SCR_INSIGHTS & SCR_PROF
+
+    SCR_UPLOAD --> DOC_PICKER & IMG_PICKER
+    DOC_PICKER & IMG_PICKER --> BACKEND_API
+
+    SCR_DASH & SCR_TXN & SCR_INSIGHTS <--> API_DASH
+    API_DASH <--> BACKEND_API
+
+    SCR_PROF <--> API_USER
+    API_USER <--> BACKEND_API
+```
+
+---
+
+### Level 2 DFD: Mobile Receipt / Statement Upload Subsystem
+
+```mermaid
+flowchart LR
+    subgraph Device_Input
+        DOC[Document Picker: PDF/CSV]
+        CAM[Camera: Receipt Photo]
+    end
+
+    subgraph Mobile_Engine [Mobile Ingestion Pipeline]
+        N1[1. Native File System Read]
+        N2[2. Construct Multi-Part FormData Payload]
+        N3[3. Attach Authorization Bearer Token]
+        N4[4. Upload Stream to /api/upload]
+        N5[5. Receive Parsed Entities & Refresh State]
+    end
+
+    subgraph Screen_Refresh
+        SCR[Dashboard & Transactions Screen Updated]
+    end
+
+    DOC & CAM --> N1
+    N1 --> N2
+    N2 --> N3
+    N3 --> N4
+    N4 --> N5
+    N5 --> SCR
+```
+
+---
+
+## 🛠️ Tech Stack & Dependencies
+
+| Tool | Version | Description |
 | :--- | :--- | :--- |
-| **Framework** | [React Native](https://reactnative.dev/) | `0.81.0` |
-| **Tooling & Runtime** | [Expo](https://expo.dev/) | `~54.0.0` |
-| **Language** | React (JSX / JavaScript) | `19.1.0` |
-| **Navigation** | [React Navigation](https://reactnavigation.org/) | `^7.0.0` (Native Stack & Bottom Tabs) |
-| **State & Storage** | React Context API + `@react-native-async-storage/async-storage` | `2.2.0` |
-| **Charts & Visuals** | `react-native-chart-kit` + `react-native-svg` | `^6.12.0` / `15.12.1` |
-| **File & Camera** | `expo-document-picker`, `expo-image-picker` | `~14.0.0` / `~17.0.0` |
-| **Icons** | `@expo/vector-icons` (Ionicons) | `^15.0.0` |
-| **Build & Deploy** | Expo Application Services (EAS Build) | `eas.json` configured |
+| **Framework** | React Native `0.81.0` | Mobile application core |
+| **Tooling** | Expo SDK `~54.0.0` | Development toolkit and native modules |
+| **Navigation** | React Navigation `^7.0.0` | Native Stack and Bottom Tabs |
+| **Storage** | Async Storage `2.2.0` | Asynchronous, unencrypted, persistent key-value storage |
+| **Visuals** | `react-native-chart-kit` & `react-native-svg` | Smooth chart drawing & SVG icons |
+| **Device APIs** | `expo-document-picker`, `expo-image-picker` | File picking and camera integration |
+| **Build System** | Expo EAS CLI | Cloud compilation to `.apk` & `.aab` |
 
 ---
 
-## 📁 Project Structure
+## 📁 Directory Structure
 
 ```
 mobile/
 ├── src/
-│   ├── api/                  # API request helpers and endpoint definitions
-│   │   ├── auth.js           # Authentication API calls (login, signup, token validation)
-│   │   ├── config.js         # API Base URL and fetch wrapper with auth headers
-│   │   ├── dashboard.js      # Dashboard stats, transactions, insights API
-│   │   └── user.js           # User profile and account API
-│   ├── context/
-│   │   └── AuthContext.js    # Global auth state & session provider
-│   ├── navigation/
-│   │   └── AppNavigator.js   # Bottom Tab & Stack navigation container
-│   ├── screens/              # App Screen Components
-│   │   ├── LoginScreen.js        # User login screen
-│   │   ├── SignupScreen.js       # New user registration screen
-│   │   ├── DashboardScreen.js    # Financial overview & recent cards
-│   │   ├── TransactionsScreen.js # Detailed transaction logs & filters
-│   │   ├── UploadScreen.js       # Document & receipt upload interface
-│   │   ├── InsightsScreen.js     # Charts & category breakdown
-│   │   └── ProfileScreen.js      # Profile details & settings
-│   └── theme/
-│       └── colors.js         # Unified color palette & design tokens
-├── App.js                    # Mobile root component wrapped with AuthProvider
-├── app.json                  # Expo project manifest (bundle ID, permissions, icon)
-├── eas.json                  # EAS build profiles (development, preview, production)
-└── package.json              # Dependencies and start scripts
+│   ├── api/             # Network requests (auth, dashboard, user)
+│   ├── context/         # AuthContext with session restoration
+│   ├── navigation/      # Native AppNavigator routing
+│   ├── screens/         # Dashboard, Transactions, Upload, Insights, Profile
+│   └── theme/           # Color tokens & design constants
+├── App.js               # Entry point wrapped with AuthProvider
+├── app.json             # Manifest configuration
+├── eas.json             # EAS cloud build configurations (Preview APK)
+└── package.json
 ```
 
 ---
 
-## ⚙️ Configuration & Backend URL
+## ⚡ Quick Start & Development
 
-The mobile app connects to the FinTrackAI Backend API. You can configure the API endpoint in [`src/api/config.js`](file:///src/api/config.js):
-
-```javascript
-// For production backend:
-export const API_BASE_URL = 'https://fintrackai.onrender.com/api';
-
-// For local development:
-// Replace with your local machine's LAN IP address (do not use 'localhost' on physical devices)
-// export const API_BASE_URL = 'http://192.168.1.X:8000/api';
-```
-
-> **Note for Physical Devices & Emulators:**
-> When testing on a physical phone with Expo Go or in an emulator, use your computer's local network IP address (e.g. `http://192.168.1.50:8000/api`) so the mobile device can reach your local backend server.
-
----
-
-## 🚀 Getting Started
-
-### 1. Prerequisites
-- [Node.js](https://nodejs.org/) (version 18+ recommended)
-- [Expo Go App](https://expo.dev/go) installed on your iOS or Android phone (optional for testing on physical device)
-- [Xcode](https://developer.apple.com/xcode/) (macOS only, for iOS Simulator)
-- [Android Studio](https://developer.android.com/studio) (for Android Emulator)
-
-### 2. Installation
 ```bash
-# Navigate to the mobile directory
 cd mobile
-
-# Install dependencies
 npm install
-```
 
-### 3. Running the App
-
-```bash
-# Start the Expo development server
+# Start development packager
 npm start
 ```
 
-After starting the development server:
-- Scan the QR code using the **Expo Go** app on Android or the **Camera** app on iOS.
-- Or press `a` in the terminal to launch in the **Android Emulator**.
-- Or press `i` in the terminal to launch in the **iOS Simulator**.
-- Or press `w` to open in a web browser.
-
-### Dedicated Platform Commands:
-```bash
-# Run on Android directly
-npm run android
-
-# Run on iOS directly
-npm run ios
-
-# Run web preview
-npm run web
-```
+- Press `a` for Android Emulator
+- Press `i` for iOS Simulator
+- Scan QR code using the **Expo Go** app on your phone.
 
 ---
 
-## 📦 Building with EAS (Expo Application Services)
+## 📦 Building Standalone APK
 
-The project includes `eas.json` configured for Android and iOS builds.
+The mobile app includes configured EAS profiles in `eas.json`. To compile a new standalone Android `.apk`:
 
-### 1. Install EAS CLI & Login
 ```bash
-npm install -g eas-cli
-eas login
-```
-
-### 2. Build for Preview / Internal Testing (e.g., Android APK)
-```bash
-# Build standalone Android APK
 eas build -p android --profile preview
-
-# Build for iOS
-eas build -p ios --profile preview
 ```
 
-### 3. Build for Production Store Distribution
-```bash
-# Build Android App Bundle (AAB) for Google Play
-eas build -p android --profile production
+Or download the latest pre-compiled build:
 
-# Build IPA for Apple App Store
-eas build -p ios --profile production
-```
-
----
-
-## 🎨 UI & Design Tokens
-
-The mobile app follows a clean, modern aesthetic defined in `src/theme/colors.js`:
-- **Primary Color**: `#2563EB` (Royal Blue)
-- **Background**: `#F8FAFC` (Clean Light Gray)
-- **Success / Income**: `#10B981` (Emerald Green)
-- **Danger / Expense**: `#EF4444` (Crimson Red)
-- **Card Background**: `#FFFFFF` with soft drop shadows
+🚀 **[Download Latest FinTrackAI Android APK](https://github.com/varunjoshi84/FintrackAI/releases/latest)**
