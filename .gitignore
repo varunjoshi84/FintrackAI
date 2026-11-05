@@ -58,6 +58,7 @@ db login
 *.pem
 *.key
 *.crt
+*.apk
 .vercel
 mobile/node_modules/
 mobile/.env
