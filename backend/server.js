@@ -90,6 +90,9 @@ const {
   getSubscriptionStatus
 } = require('./paymentController');
 
+// Import AI insights controller
+const { generateInsights } = require('./insightsController');
+
 // Import strict auth middlewares
 const strictAuthMiddleware = require('./middleware/strictAuth');
 const requireAdmin = require('./middleware/requireAdmin');
@@ -221,6 +224,7 @@ app.use('/api/auth', authRoutes);
 // Dashboard Routes
 app.get('/api/dashboard', strictAuthMiddleware, getDashboardData);
 app.put('/api/dashboard/profile', strictAuthMiddleware, updateProfile);
+app.post('/api/insights/generate', strictAuthMiddleware, generateInsights); // Server-side AI insights proxy
 
 // Transaction Routes
 app.get('/api/transactions', strictAuthMiddleware, getTransactions);

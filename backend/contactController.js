@@ -1,12 +1,12 @@
 const Contact = require('./models/Contact');
+const { escapeHtml } = require('./utils/sanitizeHtml');
 const { sendContactNotification, sendContactConfirmation, sendContactResponse } = require('./emailService');
 
-// Contact form handler
+// Contact form handler with strict input escaping and validation
 const sendContactMessage = async (req, res) => {
   try {
-    const { firstName, lastName, email, department, message } = req.body;
+    let { firstName, lastName, email, department, message } = req.body;
 
-    // Validation
     if (!firstName || !lastName || !email || !message) {
       return res.status(400).json({
         success: false,
@@ -14,7 +14,25 @@ const sendContactMessage = async (req, res) => {
       });
     }
 
-    // Email validation
+    if (
+      typeof firstName !== 'string' ||
+      typeof lastName !== 'string' ||
+      typeof email !== 'string' ||
+      typeof message !== 'string'
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid input format'
+      });
+    }
+
+    firstName = firstName.trim().slice(0, 80);
+    lastName = lastName.trim().slice(0, 80);
+    email = email.trim().toLowerCase().slice(0, 120);
+    department = (typeof department === 'string' ? department.trim() : '').slice(0, 50);
+    message = message.trim().slice(0, 3000);
+
+    // Strict Email validation regex
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({
@@ -36,7 +54,7 @@ const sendContactMessage = async (req, res) => {
 
     const savedContact = await contactMessage.save();
 
-    // Send notification email to admin
+    // Send escaped notification email to admin
     try {
       await sendContactNotification({ 
         name: `${firstName} ${lastName}`, 
@@ -46,14 +64,14 @@ const sendContactMessage = async (req, res) => {
         contactId: savedContact._id 
       });
     } catch (emailError) {
-      console.error('Failed to send admin notification:', emailError);
+      console.warn('Failed to send admin notification:', emailError.message);
     }
 
-    // Send confirmation email to user
+    // Send escaped confirmation email to user
     try {
       await sendContactConfirmation(email, firstName);
     } catch (emailError) {
-      console.error('Failed to send user confirmation:', emailError);
+      console.warn('Failed to send user confirmation:', emailError.message);
     }
 
     res.status(200).json({
@@ -68,7 +86,7 @@ const sendContactMessage = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Contact form error:', error);
+    console.error('Contact form error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Failed to send message. Please try again later.'
@@ -88,26 +106,25 @@ const getContactMessages = async (req, res) => {
       search 
     } = req.query;
 
-    // Build filter object
     const filter = {};
-    if (status) filter.status = status;
-    if (department) filter.department = department;
-    if (priority) filter.priority = priority;
+    if (status && typeof status === 'string') filter.status = status;
+    if (department && typeof department === 'string') filter.department = department;
+    if (priority && typeof priority === 'string') filter.priority = priority;
     
-    // Search in name, email, or message
-    if (search) {
+    if (search && typeof search === 'string') {
+      const sanitizedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       filter.$or = [
-        { firstName: { $regex: search, $options: 'i' } },
-        { lastName: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-        { message: { $regex: search, $options: 'i' } }
+        { firstName: { $regex: sanitizedSearch, $options: 'i' } },
+        { lastName: { $regex: sanitizedSearch, $options: 'i' } },
+        { email: { $regex: sanitizedSearch, $options: 'i' } },
+        { message: { $regex: sanitizedSearch, $options: 'i' } }
       ];
     }
 
     const contacts = await Contact.find(filter)
       .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit)
+      .limit(Number(limit) || 10)
+      .skip(((Number(page) || 1) - 1) * (Number(limit) || 10))
       .exec();
 
     const total = await Contact.countDocuments(filter);
@@ -116,13 +133,13 @@ const getContactMessages = async (req, res) => {
       success: true,
       data: contacts,
       pagination: {
-        current: page,
-        total: Math.ceil(total / limit),
+        current: parseInt(page, 10),
+        total: Math.ceil(total / (Number(limit) || 10)),
         totalRecords: total
       }
     });
   } catch (error) {
-    console.error('Error fetching contact messages:', error);
+    console.error('Error fetching contact messages:', error.message);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch contact messages'
@@ -151,22 +168,15 @@ const getContactStats = async (req, res) => {
       }
     ]);
 
-    const recentContacts = await Contact.find()
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .select('firstName lastName email department createdAt status');
-
     res.json({
       success: true,
       data: {
         statusStats: stats,
-        departmentStats: departmentStats,
-        recentContacts: recentContacts,
-        totalContacts: await Contact.countDocuments()
+        departmentStats: departmentStats
       }
     });
   } catch (error) {
-    console.error('Error fetching contact stats:', error);
+    console.error('Error fetching contact stats:', error.message);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch contact statistics'
@@ -174,100 +184,60 @@ const getContactStats = async (req, res) => {
   }
 };
 
-// Update contact message status and add admin response
+// Update contact message status
 const updateContactMessage = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, adminResponse, priority } = req.body;
+    const { status, adminResponse } = req.body;
 
-    const updateData = { updatedAt: Date.now() };
-    
-    if (status) updateData.status = status;
-    if (priority) updateData.priority = priority;
-    if (adminResponse) {
-      updateData.adminResponse = adminResponse;
-      updateData.respondedBy = req.user?.email || 'Admin';
-      updateData.respondedAt = Date.now();
+    const updateFields = { updatedAt: new Date() };
+    if (status && typeof status === 'string') updateFields.status = status;
+    if (adminResponse && typeof adminResponse === 'string') {
+      updateFields.adminResponse = adminResponse;
+      updateFields.respondedBy = req.user?.email || 'admin';
+      updateFields.respondedAt = new Date();
     }
 
-    const contact = await Contact.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true }
-    );
-
-    if (!contact) {
-      return res.status(404).json({
-        success: false,
-        message: 'Contact message not found'
-      });
+    const updated = await Contact.findByIdAndUpdate(id, updateFields, { new: true });
+    if (!updated) {
+      return res.status(404).json({ success: false, message: 'Message not found' });
     }
 
-    res.json({
-      success: true,
-      data: contact,
-      message: 'Contact message updated successfully'
-    });
+    res.json({ success: true, data: updated });
   } catch (error) {
-    console.error('Error updating contact message:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to update contact message'
-    });
+    console.error('Update contact message error:', error.message);
+    res.status(500).json({ success: false, message: 'Failed to update contact message' });
   }
 };
 
-// Send email response to contact
+// Send email response from admin to user
 const sendEmailResponse = async (req, res) => {
   try {
     const { id } = req.params;
-    const { responseMessage } = req.body;
+    const { response } = req.body;
 
-    if (!responseMessage) {
-      return res.status(400).json({
-        success: false,
-        message: 'Response message is required'
-      });
+    if (!response || typeof response !== 'string') {
+      return res.status(400).json({ success: false, message: 'Response message is required' });
     }
 
     const contact = await Contact.findById(id);
     if (!contact) {
-      return res.status(404).json({
-        success: false,
-        message: 'Contact message not found'
-      });
+      return res.status(404).json({ success: false, message: 'Contact message not found' });
     }
 
-    // Send email response (you'll need to implement this in emailService)
-    try {
-      await sendContactResponse(contact.email, contact.firstName, responseMessage);
-      
-      // Update contact with response
-      await Contact.findByIdAndUpdate(id, {
-        adminResponse: responseMessage,
-        respondedBy: req.user?.email || 'Admin',
-        respondedAt: Date.now(),
-        status: 'resolved',
-        updatedAt: Date.now()
-      });
+    await sendContactResponse(contact.email, contact.firstName, response, contact.department || 'Inquiry');
 
-      res.json({
-        success: true,
-        message: 'Response sent successfully'
-      });
-    } catch (emailError) {
-      console.error('Failed to send email response:', emailError);
-      res.status(500).json({
-        success: false,
-        message: 'Failed to send email response'
-      });
-    }
+    contact.adminResponse = response;
+    contact.respondedBy = req.user?.email || 'admin';
+    contact.respondedAt = new Date();
+    contact.status = 'resolved';
+    contact.updatedAt = new Date();
+    await contact.save();
+
+    res.json({ success: true, message: 'Response sent successfully' });
   } catch (error) {
-    console.error('Error sending contact response:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to send response'
-    });
+    console.error('Send contact response error:', error.message);
+    res.status(500).json({ success: false, message: 'Failed to send response email' });
   }
 };
 
@@ -275,25 +245,14 @@ const sendEmailResponse = async (req, res) => {
 const deleteContactMessage = async (req, res) => {
   try {
     const { id } = req.params;
-
-    const contact = await Contact.findByIdAndDelete(id);
-    if (!contact) {
-      return res.status(404).json({
-        success: false,
-        message: 'Contact message not found'
-      });
+    const deleted = await Contact.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: 'Message not found' });
     }
-
-    res.json({
-      success: true,
-      message: 'Contact message deleted successfully'
-    });
+    res.json({ success: true, message: 'Message deleted successfully' });
   } catch (error) {
-    console.error('Error deleting contact message:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to delete contact message'
-    });
+    console.error('Delete contact message error:', error.message);
+    res.status(500).json({ success: false, message: 'Failed to delete message' });
   }
 };
 
@@ -303,5 +262,5 @@ module.exports = {
   getContactStats,
   updateContactMessage,
   sendEmailResponse,
-  deleteContactMessage
+  deleteContactMessage,
 };

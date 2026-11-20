@@ -1,17 +1,35 @@
 const Newsletter = require('./Newsletter');
+const crypto = require('crypto');
 const { sendWelcomeEmail } = require('./emailService');
+
+// Generate HMAC unsubscribe token for an email address
+const getUnsubscribeToken = (email) => {
+  const secret = process.env.JWT_SECRET || 'newsletter_secret_salt';
+  return crypto.createHmac('sha256', secret).update(email.toLowerCase().trim()).digest('hex');
+};
 
 // Subscribe to newsletter
 const subscribeNewsletter = async (req, res) => {
   try {
-    const { email } = req.body;
+    let { email } = req.body;
 
-    if (!email) {
+    if (!email || typeof email !== 'string') {
       return res.status(400).json({
         success: false,
-        message: 'Email is required'
+        message: 'A valid email is required'
       });
     }
+
+    email = email.trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid email address'
+      });
+    }
+
+    const unsubToken = getUnsubscribeToken(email);
 
     // Check if email already exists
     const existingSubscription = await Newsletter.findOne({ email });
@@ -23,22 +41,19 @@ const subscribeNewsletter = async (req, res) => {
           message: 'Email is already subscribed to our newsletter'
         });
       } else {
-        // Reactivate subscription
         existingSubscription.isActive = true;
         existingSubscription.subscribedAt = new Date();
         await existingSubscription.save();
         
-        // Send welcome back email
         try {
-          await sendWelcomeEmail(email);
+          await sendWelcomeEmail(email, unsubToken);
         } catch (emailError) {
-          console.error('Failed to send welcome email:', emailError);
-          // Don't fail the subscription if email fails
+          console.warn('Welcome back email warning:', emailError.message);
         }
         
         return res.status(200).json({
           success: true,
-          message: 'Welcome back! Your newsletter subscription has been reactivated. Check your email for confirmation! 🎉',
+          message: 'Welcome back! Your newsletter subscription has been reactivated.',
           data: { email }
         });
       }
@@ -48,53 +63,47 @@ const subscribeNewsletter = async (req, res) => {
     const newSubscription = new Newsletter({ email });
     await newSubscription.save();
 
-    // Send welcome email to new subscriber
     try {
-      await sendWelcomeEmail(email);
+      await sendWelcomeEmail(email, unsubToken);
     } catch (emailError) {
-      console.error('Failed to send welcome email:', emailError);
-      // Don't fail the subscription if email fails
+      console.warn('Welcome email warning:', emailError.message);
     }
 
     res.status(201).json({
       success: true,
-      message: 'Successfully subscribed to newsletter! Check your email for a warm welcome message! 🎉',
+      message: 'Successfully subscribed to newsletter!',
       data: { email }
     });
 
   } catch (error) {
-    console.error('Newsletter subscription error:', error);
-    
-    if (error.code === 11000) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email is already subscribed to our newsletter'
-      });
-    }
-
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({
-        success: false,
-        message: 'Please enter a valid email address'
-      });
-    }
-
+    console.error('Newsletter subscription error:', error.message);
     res.status(500).json({
       success: false,
-      message: 'Internal server error. Please try again later.'
+      message: 'Internal server error while processing subscription'
     });
   }
 };
 
-// Unsubscribe from newsletter
+// Unsubscribe from newsletter with signed token verification
 const unsubscribeNewsletter = async (req, res) => {
   try {
-    const { email } = req.body;
+    let { email, token } = req.body;
 
-    if (!email) {
+    if (!email || typeof email !== 'string') {
       return res.status(400).json({
         success: false,
-        message: 'Email is required'
+        message: 'Email is required to unsubscribe'
+      });
+    }
+
+    email = email.trim().toLowerCase();
+
+    // Verify cryptographic unsubscribe token to prevent arbitrary unsubscription of victims
+    const expectedToken = getUnsubscribeToken(email);
+    if (!token || token !== expectedToken) {
+      return res.status(403).json({
+        success: false,
+        message: 'Invalid or missing unsubscribe security token',
       });
     }
 
@@ -114,7 +123,6 @@ const unsubscribeNewsletter = async (req, res) => {
       });
     }
 
-    // Deactivate subscription instead of deleting
     subscription.isActive = false;
     await subscription.save();
 
@@ -125,10 +133,10 @@ const unsubscribeNewsletter = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Newsletter unsubscribe error:', error);
+    console.error('Newsletter unsubscribe error:', error.message);
     res.status(500).json({
       success: false,
-      message: 'Internal server error. Please try again later.'
+      message: 'Internal server error while unsubscribing'
     });
   }
 };
@@ -137,14 +145,13 @@ const unsubscribeNewsletter = async (req, res) => {
 const getAllSubscribers = async (req, res) => {
   try {
     const { page = 1, limit = 10, active = true } = req.query;
-    
     const filter = { isActive: active === 'true' };
     
     const subscribers = await Newsletter.find(filter)
       .select('email subscribedAt isActive')
       .sort({ subscribedAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
+      .limit(Number(limit) || 10)
+      .skip(((Number(page) || 1) - 1) * (Number(limit) || 10));
 
     const total = await Newsletter.countDocuments(filter);
 
@@ -154,19 +161,19 @@ const getAllSubscribers = async (req, res) => {
       data: {
         subscribers,
         pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
+          page: parseInt(page, 10),
+          limit: parseInt(limit, 10),
           total,
-          pages: Math.ceil(total / limit)
+          pages: Math.ceil(total / (Number(limit) || 10))
         }
       }
     });
 
   } catch (error) {
-    console.error('Get subscribers error:', error);
+    console.error('Get subscribers error:', error.message);
     res.status(500).json({
       success: false,
-      message: 'Internal server error. Please try again later.'
+      message: 'Failed to retrieve newsletter subscribers'
     });
   }
 };

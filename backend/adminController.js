@@ -130,7 +130,7 @@ const getUserById = async (req, res) => {
   }
 };
 
-// Update user status (activate/deactivate)
+// Update user status (activate/deactivate) - does NOT mutate email verification flag
 const updateUserStatus = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -140,12 +140,10 @@ const updateUserStatus = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid status' });
     }
 
+    // Keep isVerified completely separate from account active status
     const user = await User.findByIdAndUpdate(
       userId,
-      { 
-        status,
-        isVerified: status === 'Active'
-      },
+      { status },
       { new: true }
     ).select('-password');
 
@@ -160,44 +158,43 @@ const updateUserStatus = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        status: user.status
+        status: user.status,
+        isVerified: user.isVerified || false
       }
     });
   } catch (error) {
-    console.error('Update user status error:', error);
+    console.error('Update user status error:', error.message);
     res.status(500).json({ success: false, message: 'Failed to update user status' });
   }
 };
 
-// Delete user
+// Delete user with safe PostgreSQL-first order
 const deleteUser = async (req, res) => {
   try {
     const { userId } = req.params;
     
-    const user = await User.findByIdAndDelete(userId);
-    
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    // Clean up user transactions and payments from PostgreSQL
-    try {
-      const transactionRepository = require('./repositories/transactionRepository');
-      const paymentRepository = require('./repositories/paymentRepository');
-      await Promise.all([
-        transactionRepository.deleteByUserId(userId),
-        paymentRepository.deleteByUserId(userId),
-      ]);
-    } catch (cleanupErr) {
-      console.error('Error cleaning up PostgreSQL records on admin user delete:', cleanupErr);
-    }
+    // 1. Clean up user transactions and payments from PostgreSQL first
+    const transactionRepository = require('./repositories/transactionRepository');
+    const paymentRepository = require('./repositories/paymentRepository');
+    await Promise.all([
+      transactionRepository.deleteByUserId(userId),
+      paymentRepository.deleteByUserId(userId),
+    ]);
+
+    // 2. Delete user from MongoDB
+    await User.findByIdAndDelete(userId);
 
     res.json({
       success: true,
-      message: 'User deleted successfully'
+      message: 'User and all associated financial records deleted successfully'
     });
   } catch (error) {
-    console.error('Delete user error:', error);
+    console.error('Delete user error:', error.message);
     res.status(500).json({ success: false, message: 'Failed to delete user' });
   }
 };

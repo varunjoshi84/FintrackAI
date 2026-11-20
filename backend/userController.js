@@ -1,44 +1,10 @@
-// User Controller - Handle user profile operations
 const User = require('./authentication/User');
-const { verifyToken: jwtVerify } = require('./utils/jwt');
-
-// Middleware to verify JWT token (same as dashboard)
-const verifyToken = (req, res, next) => {
-  const token = req.header('Authorization')?.replace('Bearer ', '');
-  
-  if (!token) {
-    return res.status(401).json({ 
-      success: false,
-      message: 'No token provided' 
-    });
-  }
-
-  try {
-    const decoded = jwtVerify(token);
-    const userId = (decoded.id || decoded._id || decoded.userId || '').toString();
-    
-    req.user = {
-      ...decoded,
-      _id: userId,
-      id: userId,
-      userId: userId
-    };
-    
-    next();
-  } catch (error) {
-    return res.status(401).json({ 
-      success: false,
-      message: 'Invalid token' 
-    });
-  }
-};
+const bcrypt = require('bcryptjs');
 
 // Get user profile
 const getUserProfile = async (req, res) => {
   try {
     const userId = req.user.id;
-    
-    // Get user info
     const user = await User.findById(userId).select('-password');
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -54,14 +20,14 @@ const getUserProfile = async (req, res) => {
         phone: user.phone || '',
         dob: user.dob || null,
         location: user.location || '',
-        verified: user.verified || false,
+        verified: user.isVerified || false,
         image: user.profileImage || null,
         plan: user.plan || 'Basic'
       }
     });
 
   } catch (error) {
-    console.error('Get user profile error:', error);
+    console.error('Get user profile error:', error.message);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -70,38 +36,17 @@ const getUserProfile = async (req, res) => {
 const updateUserProfile = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { name, email, phone, dob, location } = req.body;
+    const { name, phone, dob, location } = req.body;
 
-    // Get current user to check if email is being changed
-    const currentUser = await User.findById(userId);
-    if (!currentUser) {
-      return res.status(404).json({ 
-        success: false,
-        message: 'User not found' 
-      });
-    }
+    const updateData = {};
+    if (typeof name === 'string') updateData.name = name.trim();
+    if (typeof phone === 'string') updateData.phone = phone.trim();
+    if (dob) updateData.dob = dob;
+    if (typeof location === 'string') updateData.location = location.trim();
 
-    // If email is being changed to a different email, check for duplicates
-    if (email && email !== currentUser.email) {
-      const existingUser = await User.findOne({ email });
-      if (existingUser) {
-        return res.status(400).json({ 
-          success: false,
-          message: 'Email already in use by another account' 
-        });
-      }
-    }
-
-    // Update user info
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { 
-        name, 
-        email, 
-        phone, 
-        dob, 
-        location 
-      },
+      updateData,
       { new: true }
     ).select('-password');
 
@@ -111,68 +56,70 @@ const updateUserProfile = async (req, res) => {
 
     res.json({
       success: true,
-      data: {
-        id: updatedUser._id,
-        name: updatedUser.name,
-        email: updatedUser.email,
-        role: updatedUser.role,
-        phone: updatedUser.phone || '',
-        dob: updatedUser.dob || null,
-        location: updatedUser.location || '',
-        verified: updatedUser.verified || false,
-        image: updatedUser.profileImage || null
-      },
-      message: 'Profile updated successfully'
+      message: 'Profile updated successfully',
+      data: updatedUser
     });
 
   } catch (error) {
-    console.error('Update user profile error:', error);
-    
-    // Handle duplicate key error
-    if (error.code === 11000) {
-      return res.status(400).json({ 
-        success: false,
-        message: 'Email already in use by another account' 
-      });
-    }
-    
-    res.status(500).json({ 
-      success: false,
-      message: 'Server error' 
-    });
+    console.error('Update user profile error:', error.message);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
-// Delete user account
+// Delete user account with password/confirmation safeguard and clean PostgreSQL ordering
 const deleteUserAccount = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = (req.user.id || req.user._id).toString();
+    const { password, confirmation } = req.body;
 
-    const deletedUser = await User.findByIdAndDelete(userId);
-    if (!deletedUser) {
-      return res.status(404).json({ message: 'User not found' });
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    // Clean up user transactions and payments from PostgreSQL
-    try {
-      const transactionRepository = require('./repositories/transactionRepository');
-      const paymentRepository = require('./repositories/paymentRepository');
-      await Promise.all([
-        transactionRepository.deleteByUserId(userId),
-        paymentRepository.deleteByUserId(userId),
-      ]);
-    } catch (cleanupErr) {
-      console.error('Error cleaning up PostgreSQL records for deleted user:', cleanupErr);
+    // Safeguard: For password users, require valid password. For Google users, require confirmation string
+    if (user.password) {
+      if (!password || typeof password !== 'string') {
+        return res.status(400).json({
+          success: false,
+          message: 'Password is required to confirm account deletion'
+        });
+      }
+      const isValid = await bcrypt.compare(password, user.password);
+      if (!isValid) {
+        return res.status(401).json({
+          success: false,
+          message: 'Incorrect password. Account deletion aborted.'
+        });
+      }
+    } else {
+      if (confirmation !== 'DELETE MY ACCOUNT') {
+        return res.status(400).json({
+          success: false,
+          message: 'Please type "DELETE MY ACCOUNT" to confirm permanent account deletion'
+        });
+      }
     }
+
+    // 1. Clean PostgreSQL relational records first to prevent orphaned records if Postgres fails
+    const transactionRepository = require('./repositories/transactionRepository');
+    const paymentRepository = require('./repositories/paymentRepository');
+    await Promise.all([
+      transactionRepository.deleteByUserId(userId),
+      paymentRepository.deleteByUserId(userId),
+    ]);
+
+    // 2. Delete user identity from MongoDB only after relational cleanup succeeds
+    await User.findByIdAndDelete(userId);
 
     res.json({
       success: true,
-      message: 'Account deleted successfully'
+      message: 'Account and associated financial data deleted permanently.'
     });
 
   } catch (error) {
-    console.error('Delete user account error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Delete user account error:', error.message);
+    res.status(500).json({ success: false, message: 'Failed to delete account. Please try again or contact support.' });
   }
 };
 
@@ -183,7 +130,7 @@ const verifyUserAccount = async (req, res) => {
 
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { verified: true },
+      { isVerified: true },
       { new: true }
     ).select('-password');
 
@@ -193,25 +140,19 @@ const verifyUserAccount = async (req, res) => {
 
     res.json({
       success: true,
-      data: {
-        id: updatedUser._id,
-        name: updatedUser.name,
-        email: updatedUser.email,
-        verified: updatedUser.verified
-      },
-      message: 'Account verified successfully'
+      message: 'Account verified successfully',
+      data: updatedUser
     });
 
   } catch (error) {
-    console.error('Verify user account error:', error);
+    console.error('Verify user account error:', error.message);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
 module.exports = {
-  verifyToken,
   getUserProfile,
   updateUserProfile,
   deleteUserAccount,
-  verifyUserAccount
+  verifyUserAccount,
 };
