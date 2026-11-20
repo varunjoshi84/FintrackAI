@@ -76,10 +76,12 @@ const {
   deleteContactMessage 
 } = require('./contactController');
 
-// ✅ UPDATED: Added createOrder to imports
+// Import payment functions
 const {
   createOrder,
   processPayment,
+  recordFailedPayment,
+  handleRazorpayWebhook,
   getPaymentHistory,
   getSubscriptionStatus
 } = require('./paymentController');
@@ -94,7 +96,13 @@ const { sendWelcomeEmail } = require('./emailService');
 const app = express();
 
 // Basic middleware (what our app needs to work)
-app.use(express.json({ limit: '10mb' })); // To read JSON data with size limit
+// Capture raw body for cryptographic webhook signature verification (Razorpay / Stripe)
+app.use(express.json({
+  limit: '10mb',
+  verify: (req, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // CORS configuration for production
@@ -226,8 +234,10 @@ const { getUserPlanLimits } = require('./middleware/planLimits');
 app.get('/api/user/plan-limits', strictAuthMiddleware, getUserPlanLimits);  // Get user plan limits
 
 // Payment Routes (Protected - require STRICT authentication)
-app.post('/api/payment/create-order', strictAuthMiddleware, createOrder);   // ✅ NEW: Create Razorpay order
-app.post('/api/payment/process', strictAuthMiddleware, processPayment);     // Process payment
+app.post('/api/payment/create-order', strictAuthMiddleware, createOrder);   // ✅ Create Razorpay order
+app.post('/api/payment/process', strictAuthMiddleware, processPayment);     // Process payment with HMAC signature verification
+app.post('/api/payment/record-failure', strictAuthMiddleware, recordFailedPayment); // Record failed payment event
+app.post('/api/payment/webhook', handleRazorpayWebhook);                    // Public Webhook for autonomous payment recovery
 app.get('/api/payment/history', strictAuthMiddleware, getPaymentHistory);   // Get payment history
 app.get('/api/subscription/status', strictAuthMiddleware, getSubscriptionStatus); // Get subscription status
 

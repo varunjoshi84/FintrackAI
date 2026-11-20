@@ -38,13 +38,14 @@ model Transaction {
 model Payment {
   id                String   @id @default(uuid())
   userId            String   @map("user_id")
-  razorpayPaymentId String   @map("razorpay_payment_id")
+  razorpayPaymentId String?  @unique @map("razorpay_payment_id")
   razorpayOrderId   String   @map("razorpay_order_id")
   amount            Float
   currency          String   @default("INR")
   plan              String   // 'Pro', 'Enterprise'
   billing           String   // 'monthly', 'yearly'
-  status            String   @default("pending") // 'pending', 'completed', 'failed'
+  status            String   @default("pending") // 'created', 'pending', 'completed', 'failed'
+  failureReason     String?  @map("failure_reason")
   startDate         DateTime @default(now()) @map("start_date")
   endDate           DateTime @map("end_date")
   nextPaymentDate   DateTime @map("next_payment_date")
@@ -52,7 +53,6 @@ model Payment {
   updatedAt         DateTime @updatedAt @map("updated_at")
 
   @@index([userId, createdAt(sort: Desc)], name: "idx_payments_user_created")
-  @@index([razorpayPaymentId], name: "idx_payments_razorpay_payment_id")
   @@index([razorpayOrderId], name: "idx_payments_razorpay_order_id")
   @@index([status], name: "idx_payments_status")
   @@map("payments")

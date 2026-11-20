@@ -21,6 +21,7 @@ const mapPayment = (p) => {
     plan: p.plan,
     billing: p.billing,
     status: p.status,
+    failureReason: p.failureReason,
     startDate: p.startDate,
     endDate: p.endDate,
     nextPaymentDate: p.nextPaymentDate,
@@ -37,13 +38,14 @@ const create = async (data) => {
     data: {
       id: data.id || undefined,
       userId: String(data.user || data.userId),
-      razorpayPaymentId: data.razorpayPaymentId,
+      razorpayPaymentId: data.razorpayPaymentId || null,
       razorpayOrderId: data.razorpayOrderId,
       amount: parseFloat(data.amount),
       currency: data.currency || 'INR',
       plan: data.plan,
       billing: data.billing,
       status: data.status || 'pending',
+      failureReason: data.failureReason || null,
       startDate: data.startDate ? new Date(data.startDate) : new Date(),
       endDate: new Date(data.endDate),
       nextPaymentDate: new Date(data.nextPaymentDate),
@@ -52,6 +54,53 @@ const create = async (data) => {
     },
   });
   return mapPayment(created);
+};
+
+/**
+ * Finds a payment record by razorpayPaymentId.
+ */
+const findByPaymentId = async (razorpayPaymentId) => {
+  if (!razorpayPaymentId) return null;
+  const payment = await prisma.payment.findUnique({
+    where: {
+      razorpayPaymentId,
+    },
+  });
+  return mapPayment(payment);
+};
+
+/**
+ * Finds the latest payment record by razorpayOrderId.
+ */
+const findByOrderId = async (razorpayOrderId) => {
+  if (!razorpayOrderId) return null;
+  const payment = await prisma.payment.findFirst({
+    where: {
+      razorpayOrderId,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+  return mapPayment(payment);
+};
+
+/**
+ * Updates a payment record by its internal UUID id or razorpayOrderId.
+ */
+const update = async (id, data) => {
+  const updated = await prisma.payment.update({
+    where: { id },
+    data: {
+      ...(data.razorpayPaymentId !== undefined && { razorpayPaymentId: data.razorpayPaymentId }),
+      ...(data.status !== undefined && { status: data.status }),
+      ...(data.failureReason !== undefined && { failureReason: data.failureReason }),
+      ...(data.startDate !== undefined && { startDate: new Date(data.startDate) }),
+      ...(data.endDate !== undefined && { endDate: new Date(data.endDate) }),
+      ...(data.nextPaymentDate !== undefined && { nextPaymentDate: new Date(data.nextPaymentDate) }),
+    },
+  });
+  return mapPayment(updated);
 };
 
 /**
@@ -121,6 +170,9 @@ const deleteByUserId = async (userId) => {
 
 module.exports = {
   create,
+  findByPaymentId,
+  findByOrderId,
+  update,
   findByUser,
   findRecent,
   getTotalRevenue,

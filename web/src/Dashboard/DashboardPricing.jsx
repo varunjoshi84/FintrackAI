@@ -148,8 +148,33 @@ const DashboardPricing = () => {
 
       const rzp = new window.Razorpay(options);
 
-      rzp.on('payment.failed', function (response) {
+      rzp.on('payment.failed', async function (response) {
         console.error('Payment failed:', response.error);
+
+        try {
+          // Log failed payment to backend
+          await fetch(
+            `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/payment/record-failure`,
+            {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                razorpay_order_id: response.error?.metadata?.order_id || orderData.orderId,
+                razorpay_payment_id: response.error?.metadata?.payment_id,
+                error_code: response.error?.code,
+                error_description: response.error?.description,
+                plan: 'Pro',
+                billing: isMonthly ? 'monthly' : 'yearly',
+              }),
+            }
+          );
+        } catch (err) {
+          console.warn('Failed to record payment failure to server:', err);
+        }
+
         alert(
           `Payment Failed\n\n` +
             `${response.error.description || 'Unknown error'}\n\n` +
