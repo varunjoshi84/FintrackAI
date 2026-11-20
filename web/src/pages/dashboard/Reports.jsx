@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../../api/config';
-import Header from '../../components/Header';
+import Header from '../../components/DashboardHeader';
 import Footer from '../../components/Footer';
 
 const Reports = () => {

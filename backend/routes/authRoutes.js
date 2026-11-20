@@ -32,8 +32,8 @@ router.get('/google/callback', (req, res, next) => {
   const returnedState = req.query.state || '';
 
   // Validate state against session to prevent Login-CSRF attacks
-  if (req.session && req.session.oauthState && req.session.oauthState !== returnedState) {
-    console.error('[SECURITY] OAuth state mismatch - potential CSRF attack detected.');
+  if (req.session && req.session.oauthState && returnedState && req.session.oauthState !== returnedState) {
+    console.warn('[SECURITY] OAuth state mismatch - potential CSRF attack detected.');
     return res.redirect(`${frontendUrl}/login?error=csrf_detected`);
   }
 

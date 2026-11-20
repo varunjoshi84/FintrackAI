@@ -137,6 +137,7 @@ const Header = () => {
             <Link to="/upload" className={`hover:text-blue-400 px-3 py-2 rounded-lg ${currentPath.includes('upload') ? 'text-blue-600 font-semibold' : 'text-gray-700'}`}>Upload</Link>
             <Link to="/insights" className={`hover:text-blue-400 px-3 py-2 rounded-lg ${currentPath.includes('insights') ? 'text-blue-600 font-semibold' : 'text-gray-700'}`}>AI Insights</Link>
             <Link to="/reports" className={`hover:text-blue-400 px-3 py-2 rounded-lg ${currentPath.includes('reports') ? 'text-blue-600 font-semibold' : 'text-gray-700'}`}>Reports</Link>
+            <Link to="/userdashboard" className={`hover:text-blue-400 px-3 py-2 rounded-lg ${currentPath.includes("userdashboard") ? "text-blue-600 font-semibold" : "text-gray-700"}`}>Profile</Link>
           </nav>
           {/* Hamburger (mobile) */}
           <button
@@ -209,6 +210,7 @@ const Header = () => {
               <Link to="/upload" className={`hover:text-blue-400 block px-4 py-2 rounded-lg ${currentPath.includes('upload') ? 'text-blue-600 font-semibold' : 'text-gray-700'}`}>Upload</Link>
               <Link to="/insights" className={`hover:text-blue-400 block px-4 py-2 rounded-lg ${currentPath.includes('insights') ? 'text-blue-600 font-semibold' : 'text-gray-700'}`}>AI Insights</Link>
               <Link to="/reports" className={`hover:text-blue-400 block px-4 py-2 rounded-lg ${currentPath.includes('reports') ? 'text-blue-600 font-semibold' : 'text-gray-700'}`}>Reports</Link>
+              <Link to="/userdashboard" className={`hover:text-blue-400 block px-4 py-2 rounded-lg ${currentPath.includes("userdashboard") ? "text-blue-600 font-semibold" : "text-gray-700"}`}>Profile</Link>
             </nav>
             <div className="flex justify-center mt-4">
               <button

@@ -35,14 +35,20 @@ const AuthSuccess = () => {
 
             window.dispatchEvent(new CustomEvent('userLogin', { detail: data.user }));
 
-            const redirectUrl = localStorage.getItem('loginRedirectUrl') || '/dashboard';
+            let redirectUrl = localStorage.getItem('loginRedirectUrl') || '/dashboard';
             localStorage.removeItem('loginRedirectUrl');
+            if (redirectUrl.startsWith('http')) {
+              try { redirectUrl = new URL(redirectUrl).pathname; } catch { redirectUrl = '/dashboard'; }
+            }
+            if (redirectUrl === '/login' || redirectUrl === '/' || redirectUrl.includes('auth/success')) {
+              redirectUrl = '/dashboard';
+            }
             navigate(redirectUrl, { replace: true });
           } else {
-            navigate('/login?error=auth_failed', { replace: true });
+            window.location.href = '/login?error=auth_failed';
           }
         } catch (err) {
-          navigate('/login?error=network_error', { replace: true });
+          window.location.href = '/login?error=network_error';
         }
       };
 

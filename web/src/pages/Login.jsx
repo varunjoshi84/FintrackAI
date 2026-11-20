@@ -182,7 +182,7 @@ const Login = () => {
                 className="flex items-center justify-center gap-2 w-full bg-white border border-gray-300 rounded-md py-2 px-4 hover:bg-gray-50 transition-colors"
                 onClick={(e) => {
                   // Store the current URL to return to after login
-                  localStorage.setItem('loginRedirectUrl', window.location.href);
+                  localStorage.setItem('loginRedirectUrl', window.location.pathname + window.location.search);
                 }}
               >
                 <svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">

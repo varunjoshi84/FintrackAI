@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import gsap from 'gsap';
-import Header from '../../components/Header';
+import Header from '../../components/DashboardHeader';
 import Footer from '../../components/Footer';
 import uploadIllustration from '../../assets/images/upload-illustration.jpg';
 import { uploadFile, generateReport, downloadReport } from '../../api';

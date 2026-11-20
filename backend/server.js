@@ -296,13 +296,15 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 8000;
 
 // Start Databases and Server
-connectDB().then(() => {
-  connectPostgres();
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
+if (process.env.NODE_ENV !== 'test') {
+  connectDB().then(() => {
+    connectPostgres();
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 Server running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
+    });
+  }).catch(err => {
+    console.error('Database connection failed:', err.message);
   });
-}).catch(err => {
-  console.error('Database connection failed:', err.message);
-});
+}
 
 module.exports = app;
