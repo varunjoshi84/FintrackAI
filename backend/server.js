@@ -88,6 +88,7 @@ const {
 
 // Import strict auth middleware
 const strictAuthMiddleware = require('./middleware/strictAuth');
+const requireAdmin = require('./middleware/requireAdmin');
 
 // Import email service for testing
 const { sendWelcomeEmail } = require('./emailService');
@@ -210,17 +211,18 @@ app.put('/api/transactions/:id', strictAuthMiddleware, updateTransaction);  // U
 app.delete('/api/transactions/:id', strictAuthMiddleware, deleteTransaction); // Delete transaction
 
 // Admin Routes (Protected - require admin authentication)
-app.get('/api/admin/stats', verifyUserToken, getAdminStats);           // Get admin dashboard stats
-app.get('/api/admin/users', verifyUserToken, getAllUsers);             // Get all users with pagination
-app.get('/api/admin/users/:userId', verifyUserToken, getUserById);     // Get single user
-app.patch('/api/admin/users/:userId/status', verifyUserToken, updateUserStatus); // Update user status
-app.delete('/api/admin/users/:userId', verifyUserToken, deleteUser);   // Delete user
-app.post('/api/admin/users', verifyUserToken, createUser);             // Create new user
-app.put('/api/admin/users/:userId', verifyUserToken, updateUser);      // Update user
-app.get('/api/admin/analytics', verifyUserToken, getAnalytics);        // Get analytics data
-app.get('/api/admin/analytics/user-growth', verifyUserToken, getUserGrowthData); // Get user growth data
-app.post('/api/admin/notification', verifyUserToken, sendNotification); // Send notification to users
-app.post('/api/admin/maintenance', verifyUserToken, toggleMaintenanceMode); // Toggle maintenance mode
+// Admin Routes (Protected - require STRICT Admin authentication & role check)
+app.get('/api/admin/stats', requireAdmin, getAdminStats);           // Get admin dashboard stats
+app.get('/api/admin/users', requireAdmin, getAllUsers);             // Get all users with pagination
+app.get('/api/admin/users/:userId', requireAdmin, getUserById);     // Get single user
+app.patch('/api/admin/users/:userId/status', requireAdmin, updateUserStatus); // Update user status
+app.delete('/api/admin/users/:userId', requireAdmin, deleteUser);   // Delete user
+app.post('/api/admin/users', requireAdmin, createUser);             // Create new user
+app.put('/api/admin/users/:userId', requireAdmin, updateUser);      // Update user
+app.get('/api/admin/analytics', requireAdmin, getAnalytics);        // Get analytics data
+app.get('/api/admin/analytics/user-growth', requireAdmin, getUserGrowthData); // Get user growth data
+app.post('/api/admin/notification', requireAdmin, sendNotification); // Send notification to users
+app.post('/api/admin/maintenance', requireAdmin, toggleMaintenanceMode); // Toggle maintenance mode
 app.get('/api/maintenance/status', getMaintenanceStatus); // Get maintenance status (public)
 
 // User Routes (Protected - require STRICT authentication)
@@ -241,23 +243,23 @@ app.post('/api/payment/webhook', handleRazorpayWebhook);                    // P
 app.get('/api/payment/history', strictAuthMiddleware, getPaymentHistory);   // Get payment history
 app.get('/api/subscription/status', strictAuthMiddleware, getSubscriptionStatus); // Get subscription status
 
-// Newsletter Routes (Public - no authentication required)
+// Newsletter Routes (Public subscribe/unsubscribe; admin subscribers list)
 app.post('/api/newsletter/subscribe', subscribeNewsletter);            // Subscribe to newsletter
 app.post('/api/newsletter/unsubscribe', unsubscribeNewsletter);        // Unsubscribe from newsletter
-app.get('/api/newsletter/subscribers', verifyUserToken, getAllSubscribers); // Get all subscribers (admin only)
+app.get('/api/newsletter/subscribers', requireAdmin, getAllSubscribers); // Get all subscribers (admin only)
 
 // Contact Routes (Public - no authentication required)
 app.post('/api/contact/send', sendContactMessage);                     // Send contact form message
 
-// Admin Contact Management Routes (Requires authentication)
-app.get('/api/admin/contacts', verifyUserToken, getContactMessages);           // Get all contact messages
-app.get('/api/admin/contacts/stats', verifyUserToken, getContactStats);        // Get contact statistics
-app.put('/api/admin/contacts/:id', verifyUserToken, updateContactMessage);     // Update contact status/response
-app.post('/api/admin/contacts/:id/respond', verifyUserToken, sendEmailResponse); // Send email response
-app.delete('/api/admin/contacts/:id', verifyUserToken, deleteContactMessage);  // Delete contact message
+// Admin Contact Management Routes (Requires Admin role)
+app.get('/api/admin/contacts', requireAdmin, getContactMessages);           // Get all contact messages
+app.get('/api/admin/contacts/stats', requireAdmin, getContactStats);        // Get contact statistics
+app.put('/api/admin/contacts/:id', requireAdmin, updateContactMessage);     // Update contact status/response
+app.post('/api/admin/contacts/:id/respond', requireAdmin, sendEmailResponse); // Send email response
+app.delete('/api/admin/contacts/:id', requireAdmin, deleteContactMessage);  // Delete contact message
 
-// Test email endpoint 
-app.post('/api/test-email', async (req, res) => {
+// Test email endpoint (Restricted to Admin in production)
+app.post('/api/test-email', requireAdmin, async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) {

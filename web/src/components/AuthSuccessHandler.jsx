@@ -19,11 +19,9 @@ const AuthSuccessHandler = ({ children }) => {
 
     if (token && userStr) {
       setIsProcessing(true);
-      console.log('🚀 Processing Google OAuth authentication...');
 
       try {
         const user = JSON.parse(decodeURIComponent(userStr));
-        console.log('👤 User data:', user);
 
         // ✅ Save token FIRST before anything else
         localStorage.setItem('authToken', token);
@@ -36,8 +34,6 @@ const AuthSuccessHandler = ({ children }) => {
           plan: user.plan || 'Basic',
           isVerified: user.isVerified !== false,
         }));
-
-        console.log('✅ Auth data stored in localStorage');
 
         // Notify Header and other components
         window.dispatchEvent(new CustomEvent('userLogin', { detail: user }));

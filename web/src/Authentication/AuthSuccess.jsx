@@ -26,11 +26,6 @@ const AuthSuccess = () => {
           plan: user.plan || 'Basic'
         }));
         
-        console.log('Google auth success - stored data:', {
-          token: !!token,
-          user: user
-        });
-        
         // Dispatch custom event to notify Header component
         window.dispatchEvent(new CustomEvent('userLogin'));
         

@@ -82,8 +82,6 @@ const DashboardPricing = () => {
         image: 'https://cdn-icons-png.flaticon.com/512/2920/2920349.png',
         handler: async function (response) {
           try {
-            console.log('Payment successful:', response);
-
             const paymentResult = await fetch(
               `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/payment/process`,
               {
@@ -140,7 +138,6 @@ const DashboardPricing = () => {
         },
         modal: {
           ondismiss: function () {
-            console.log('Payment cancelled by user');
             setIsLoading(false);
           },
         },

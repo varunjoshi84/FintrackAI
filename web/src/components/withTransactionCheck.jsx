@@ -13,7 +13,6 @@ const withTransactionCheck = (WrappedComponent) => {
       const checkTransactions = async () => {
         try {
           const result = await checkUserHasTransactions();
-          console.log('Transaction check result:', result);
           
           if (!result.success) {
             if (result.error) {
