@@ -8,23 +8,60 @@ const AuthSuccessHandler = ({ children }) => {
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const token = params.get('token');
-    const userStr = params.get('user');
+    const code = params.get('code');
+    const legacyToken = params.get('token');
+    const legacyUserStr = params.get('user');
 
-    // console.log('🔍 AuthSuccessHandler checking:', {
-    //   hasToken: !!token,
-    //   hasUser: !!userStr,
-    //   currentPath: location.pathname,
-    // });
+    if (code) {
+      // Strip code from browser URL bar immediately
+      if (window.history.replaceState) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
 
-    if (token && userStr) {
       setIsProcessing(true);
+      const exchangeCode = async () => {
+        try {
+          const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+          const res = await fetch(`${apiUrl}/auth/exchange-code`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code }),
+          });
 
+          const data = await res.json();
+          if (data.success && data.token) {
+            localStorage.setItem('authToken', data.token);
+            localStorage.setItem('userEmail', data.user.email);
+            localStorage.setItem('userInfo', JSON.stringify(data.user));
+
+            window.dispatchEvent(new CustomEvent('userLogin', { detail: data.user }));
+
+            const targetPath = location.pathname === '/' ? '/dashboard' : location.pathname;
+            navigate(targetPath, { replace: true });
+            setIsProcessing(false);
+          } else {
+            setIsProcessing(false);
+            navigate('/login?error=auth_failed', { replace: true });
+          }
+        } catch (err) {
+          setIsProcessing(false);
+          navigate('/login?error=network_error', { replace: true });
+        }
+      };
+
+      exchangeCode();
+      return;
+    }
+
+    if (legacyToken && legacyUserStr) {
+      if (window.history.replaceState) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+
+      setIsProcessing(true);
       try {
-        const user = JSON.parse(decodeURIComponent(userStr));
-
-        // ✅ Save token FIRST before anything else
-        localStorage.setItem('authToken', token);
+        const user = JSON.parse(decodeURIComponent(legacyUserStr));
+        localStorage.setItem('authToken', legacyToken);
         localStorage.setItem('userEmail', user.email);
         localStorage.setItem('userInfo', JSON.stringify({
           id: user.id,
@@ -35,28 +72,20 @@ const AuthSuccessHandler = ({ children }) => {
           isVerified: user.isVerified !== false,
         }));
 
-        // Notify Header and other components
         window.dispatchEvent(new CustomEvent('userLogin', { detail: user }));
 
-        // ✅ FIX: Navigate immediately — no setTimeout
-        // The old 1500ms delay was a race condition:
-        // ProtectedRoute checked localStorage instantly on render,
-        // found no token yet, and redirected to /login before timeout finished
         const targetPath = location.pathname === '/' ? '/dashboard' : location.pathname;
         navigate(targetPath, { replace: true });
         setIsProcessing(false);
-
       } catch (error) {
-        console.error('❌ Auth processing error:', error);
         setIsProcessing(false);
-        navigate('/login');
+        navigate('/login', { replace: true });
       }
     }
-  }, [location.search]); // ✅ only re-run if search params change
+  }, [location.search]);
 
-  // Show loading while processing
   const params = new URLSearchParams(location.search);
-  const hasAuthParams = params.get('token') && params.get('user');
+  const hasAuthParams = params.get('code') || (params.get('token') && params.get('user'));
 
   if (hasAuthParams || isProcessing) {
     return (
@@ -66,17 +95,7 @@ const AuthSuccessHandler = ({ children }) => {
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></div>
           </div>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome to FinTrackAI!</h2>
-          <p className="text-gray-600 mb-4">Completing your sign in...</p>
-          <div className="space-y-2 text-sm text-gray-500">
-            <div className="flex items-center justify-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span>Authentication verified</span>
-            </div>
-            <div className="flex items-center justify-center space-x-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-              <span>Setting up your dashboard</span>
-            </div>
-          </div>
+          <p className="text-gray-600 mb-4">Securing your session token...</p>
         </div>
       </div>
     );
