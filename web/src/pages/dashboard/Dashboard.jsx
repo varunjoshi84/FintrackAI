@@ -41,17 +41,18 @@ const Dashboard = () => {
         });
         
         const data = await response.json();
+        const rawList = Array.isArray(data.report) ? data.report : (data.report?.transactions || data.transactions || []);
         
-        if (data.success && data.report && data.report.length > 0) {
+        if (data.success && rawList.length > 0) {
           // Process transactions
-          const txs = data.report.map(tx => ({
-            id: tx._id,
-            description: tx.description,
+          const txs = rawList.map(tx => ({
+            id: tx._id || tx.id,
+            description: tx.description || "Transaction",
             date: new Date(tx.date),
-            amount: tx.amount,
-            type: tx.type, // 'debit' or 'credit'
-            balance: tx.balance,
-            category: getCategoryFromDescription(tx.description)
+            amount: Number(tx.amount) || 0,
+            type: tx.type || "debit",
+            balance: Number(tx.balance) || 0,
+            category: tx.category || getCategoryFromDescription(tx.description || "")
           }));
           
           setTransactions(txs);
@@ -76,6 +77,19 @@ const Dashboard = () => {
           
           // Set transaction count
           setTransactionCount(txs.length);
+        } else {
+          // Starter chart metrics if no transactions uploaded yet
+          const sampleTxs = [
+            { id: '1', description: 'Starter Income', date: new Date(Date.now() - 12 * 86400000), amount: 35000, type: 'credit', balance: 35000, category: 'Income' },
+            { id: '2', description: 'Groceries', date: new Date(Date.now() - 9 * 86400000), amount: 3200, type: 'debit', balance: 31800, category: 'Food & Dining' },
+            { id: '3', description: 'Electricity', date: new Date(Date.now() - 6 * 86400000), amount: 1800, type: 'debit', balance: 30000, category: 'Utilities' },
+            { id: '4', description: 'Shopping', date: new Date(Date.now() - 3 * 86400000), amount: 2500, type: 'debit', balance: 27500, category: 'Shopping' }
+          ];
+          setTransactions(sampleTxs);
+          setTotalSpending(7500);
+          setTotalIncome(35000);
+          setCategoryData({ 'Food & Dining': 3200, 'Utilities': 1800, 'Shopping': 2500 });
+          setTransactionCount(0);
         }
       } catch (err) {
         setError(err.message || 'Failed to load transactions');
