@@ -82,6 +82,15 @@ const AdminDashboard = () => {
   const chartRef = useRef(null);
   const chartInstance = useRef(null);
 
+  // Admin role guard — redirect non-admins immediately (server APIs also enforce this)
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    const userInfo = (() => { try { return JSON.parse(localStorage.getItem('userInfo') || '{}'); } catch { return {}; } })();
+    if (!token || userInfo.role !== 'admin') {
+      navigate('/login', { replace: true });
+    }
+  }, [navigate]);
+
   // Load dashboard data
   useEffect(() => {
     const loadDashboardData = async () => {

@@ -169,8 +169,15 @@ export const isAuthenticated = () => {
 
 // Check if admin is authenticated
 export const isAdminAuthenticated = () => {
-  const token = localStorage.getItem('adminToken');
-  return !!token;
+  const token = localStorage.getItem('authToken');
+  const userInfoStr = localStorage.getItem('userInfo');
+  if (!token || !userInfoStr) return false;
+  try {
+    const userInfo = JSON.parse(userInfoStr);
+    return userInfo.role === 'admin';
+  } catch {
+    return false;
+  }
 };
 
 // Get current user info from localStorage

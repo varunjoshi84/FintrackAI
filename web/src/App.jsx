@@ -28,12 +28,19 @@ import BackToTopButton from './components/BackToTopButton';
 import MainPricing from './components/MainPricing';
 import { checkNetworkStatus } from './api';
 
-//  ProtectedRoute — checks localStorage for token, redirects to login if missing
+// ProtectedRoute — UX gate only. Real auth enforcement is server-side via JWT middleware.
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('authToken');
-  if (!token) {
-    return <Navigate to="/login" replace />;
-  }
+  if (!token) return <Navigate to="/login" replace />;
+  return children;
+};
+
+// AdminRoute — UX gate: requires token + role === 'admin' in localStorage.
+// Real admin enforcement is server-side via requireAdmin middleware on all /api/admin/* routes.
+const AdminRoute = ({ children }) => {
+  const token = localStorage.getItem('authToken');
+  const userInfo = (() => { try { return JSON.parse(localStorage.getItem('userInfo') || '{}'); } catch { return {}; } })();
+  if (!token || userInfo.role !== 'admin') return <Navigate to="/login" replace />;
   return children;
 };
 
@@ -54,7 +61,8 @@ function App() {
     };
 
     runHealthCheck();
-    const intervalId = window.setInterval(runHealthCheck, 2 * 60 * 1000);
+    // Reduced to 10-minute interval to reduce load on free-tier backend
+    const intervalId = window.setInterval(runHealthCheck, 10 * 60 * 1000);
 
     return () => window.clearInterval(intervalId);
   }, []);
@@ -109,9 +117,9 @@ function App() {
           </ProtectedRoute>
         } />
         <Route path="/admin-dashboard" element={
-          <ProtectedRoute>
+          <AdminRoute>
             <AdminDashboard />
-          </ProtectedRoute>
+          </AdminRoute>
         } />
       </Routes>
       <BackToTopButton />

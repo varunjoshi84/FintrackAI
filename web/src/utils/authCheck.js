@@ -1,36 +1,51 @@
-// Utility to check if user is still active
+/**
+ * Authentication and Session Monitor
+ * Replaced aggressive 30s background polling with event-driven session management.
+ * Dispatches 401 interception and only performs lightweight status check when user switches tabs or regains focus.
+ */
+
 export const checkUserStatus = async () => {
   const token = localStorage.getItem('authToken');
   if (!token) return false;
 
   try {
-    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/user/profile`, {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+    const response = await fetch(`${apiUrl}/user/profile`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
     });
 
-    if (response.status === 401) {
-      // User is inactive or token is invalid
+    if (response.status === 401 || response.status === 403) {
       localStorage.removeItem('authToken');
       localStorage.removeItem('userInfo');
       localStorage.removeItem('userEmail');
       
-      // Show message and redirect to login
-      alert('ACCOUNT DEACTIVATED\n\nYour account has been deactivated by admin.\nPlease contact admin@fintrackai.com to reactivate your account.');
+      alert('Session Expired or Account Deactivated\n\nPlease sign in again to continue.');
       window.location.href = '/login';
       return false;
     }
 
     return response.ok;
   } catch (error) {
-    console.error('Auth check failed:', error);
-    return false;
+    // Non-fatal network hiccup — do not disrupt user session
+    return true;
   }
 };
 
-// Auto-check user status every 30 seconds
+let isMonitoringStarted = false;
+
+/**
+ * Event-driven monitoring: checks session validity on tab focus (window focus)
+ * instead of generating constant background polling requests on the free-tier backend.
+ */
 export const startAuthMonitoring = () => {
-  setInterval(checkUserStatus, 30000);
+  if (isMonitoringStarted) return;
+  isMonitoringStarted = true;
+
+  // Lightweight check only when tab gains focus
+  window.addEventListener('focus', () => {
+    checkUserStatus();
+  });
 };

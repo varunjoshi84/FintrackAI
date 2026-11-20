@@ -174,7 +174,7 @@ const splitMergedNumbers = (mergedStr, prevBalance, description) => {
       const diff = Math.abs(prevBalance - balance);
       // The amount should equal the difference in balance (allowing small rounding)
       if (Math.abs(diff - amount) <= 2) {
-        console.log(`  Split "${mergedStr}" → amount=${amount}, balance=${balance} (validated with prevBal=${prevBalance})`);
+        // validated split
         return { amount, balance };
       }
     }
@@ -189,7 +189,7 @@ const splitMergedNumbers = (mergedStr, prevBalance, description) => {
     const amount = parseFloat(digits2.substring(0, splitAt));
     const balance = parseFloat(digits2.substring(splitAt));
     if (amount > 0 && balance > 0 && balance > amount) {
-      console.log(`  Split fallback "${mergedStr}" → amount=${amount}, balance=${balance}`);
+      // fallback split
       return { amount, balance };
     }
   }
@@ -204,10 +204,10 @@ const extractTransactionsFromPDF = async (filePath, userId, uploadId) => {
     const pdfData = await pdfParse(dataBuffer);
     const rawText = pdfData.text;
 
-    console.log('Raw PDF text (first 2000 chars):', rawText.substring(0, 2000));
+    // Raw text extracted
 
     const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-    console.log('Total lines extracted from PDF:', lines.length);
+    // Lines split
 
     // User ID for relational linkage
     const userStringId = String(userId);
@@ -223,7 +223,7 @@ const extractTransactionsFromPDF = async (filePath, userId, uploadId) => {
       if (!headerPassed) {
         if (isHeaderLine(line)) {
           headerPassed = true;
-          console.log('Header found:', line);
+          // header line detected
         }
         continue;
       }
@@ -241,7 +241,7 @@ const extractTransactionsFromPDF = async (filePath, userId, uploadId) => {
 
       // Skip non-transaction lines
       if (SKIP_KEYWORDS.some(k => restLower.startsWith(k) || restLower.includes(k))) {
-        console.log('Skipping:', line);
+        // skip keyword line
         // Extract balance from opening balance line for future splits
         const numMatch = rest.match(/(\d[\d,]*(?:\.\d{1,2})?)$/);
         if (numMatch) prevBalance = parseFloat(numMatch[1].replace(/,/g, ''));
@@ -275,7 +275,7 @@ const extractTransactionsFromPDF = async (filePath, userId, uploadId) => {
         // Normal format: two or more separate numbers
         amount = parseFloat(spacedNums[0].replace(/,/g, ''));
         balance = parseFloat(spacedNums[spacedNums.length - 1].replace(/,/g, ''));
-        console.log(`  Normal parse: amount=${amount}, balance=${balance}`);
+        // normal two-number parse
       } else if (spacedNums && spacedNums.length === 1) {
         // ✅ KEY FIX: Numbers are merged — split them
         const merged = spacedNums[0].replace(/,/g, '');
@@ -285,7 +285,7 @@ const extractTransactionsFromPDF = async (filePath, userId, uploadId) => {
           amount = split.amount;
           balance = split.balance;
         } else {
-          console.log('  Could not split merged number:', merged, 'line:', line);
+          // could not split merged number, skipping line
           continue;
         }
       } else {
@@ -316,13 +316,13 @@ const extractTransactionsFromPDF = async (filePath, userId, uploadId) => {
         category,
       };
 
-      console.log(`✅ [${finalType}] ${description} | ₹${amount} | Bal: ${balance} | ${category}`);
+      // transaction parsed
       transactions.push(transaction);
     }
 
     // ── Fallback: try without header requirement ──────────────────────────
     if (transactions.length === 0) {
-      console.log('Trying headerless fallback...');
+    // Fallback: try without header requirement
       prevBalance = 0;
 
       for (const line of lines) {
@@ -381,11 +381,11 @@ const extractTransactionsFromPDF = async (filePath, userId, uploadId) => {
           category,
         });
 
-        console.log(`✅ [Fallback][${type}] ${description} | ₹${amount} | Bal: ${balance}`);
+        // fallback transaction parsed
       }
     }
 
-    console.log(`\n📊 Total transactions parsed: ${transactions.length}`);
+    // Parsing complete
 
     if (transactions.length === 0) {
       console.warn('⚠️  No transactions parsed. PDF may be image-based or non-standard.');

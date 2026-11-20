@@ -201,11 +201,12 @@ export const getCategories = async () => {
 // Admin APIs (Dashboard-specific implementations)
 export const getDashboardAdminStats = async () => {
   try {
+    const token = localStorage.getItem('authToken');
     const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.ADMIN_STATS}`, {
       method: 'GET',
       headers: {
         ...getDefaultHeaders(),
-        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        'Authorization': `Bearer ${token}`
       },
     });
 
@@ -233,6 +234,7 @@ export const getDashboardAdminStats = async () => {
 // Get all users (Admin only)
 export const getDashboardAllUsers = async (page = 1, limit = 10) => {
   try {
+    const token = localStorage.getItem('authToken');
     const queryParams = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString()
@@ -242,7 +244,7 @@ export const getDashboardAllUsers = async (page = 1, limit = 10) => {
       method: 'GET',
       headers: {
         ...getDefaultHeaders(),
-        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        'Authorization': `Bearer ${token}`
       },
     });
 
@@ -272,11 +274,12 @@ export const getDashboardAllUsers = async (page = 1, limit = 10) => {
 // Update user status (Admin only)
 export const updateDashboardUserStatus = async (userId, status) => {
   try {
+    const token = localStorage.getItem('authToken');
     const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.ADMIN_USERS}/${userId}/status`, {
       method: 'PUT',
       headers: {
         ...getDefaultHeaders(),
-        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({ status }),
     });
@@ -305,11 +308,12 @@ export const updateDashboardUserStatus = async (userId, status) => {
 // Delete user from dashboard (Admin only)
 export const deleteUserFromDashboard = async (userId) => {
   try {
+    const token = localStorage.getItem('authToken');
     const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.ADMIN_USERS}/${userId}`, {
       method: 'DELETE',
       headers: {
         ...getDefaultHeaders(),
-        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        'Authorization': `Bearer ${token}`
       },
     });
 
@@ -337,11 +341,12 @@ export const deleteUserFromDashboard = async (userId) => {
 // Get system health (Admin only)
 export const getDashboardSystemHealth = async () => {
   try {
+    const token = localStorage.getItem('authToken');
     const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.SYSTEM_HEALTH}`, {
       method: 'GET',
       headers: {
         ...getDefaultHeaders(),
-        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        'Authorization': `Bearer ${token}`
       },
     });
 
