@@ -1,4 +1,4 @@
-const User = require('../authentication/User');
+const User = require('../models/User');
 const { verifyToken } = require('../utils/jwt');
 
 // Strict authentication middleware

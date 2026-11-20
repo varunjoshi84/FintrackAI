@@ -1,4 +1,4 @@
-const User = require('../authentication/User');
+const User = require('../models/User');
 const transactionRepository = require('../repositories/transactionRepository');
 
 // Plan limits configuration

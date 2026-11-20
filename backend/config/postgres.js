@@ -14,10 +14,10 @@ prisma = global.__prisma;
 const connectPostgres = async () => {
   try {
     await prisma.$connect();
-    console.log('✅ PostgreSQL Connected via Prisma Client');
+    console.log('PostgreSQL Connected via Prisma Client');
     return prisma;
   } catch (error) {
-    console.error(`❌ Error connecting to PostgreSQL: ${error.message}`);
+    console.error(`Error connecting to PostgreSQL: ${error.message}`);
     // Do not terminate application if postgres connection fails momentarily; log error
     throw error;
   }

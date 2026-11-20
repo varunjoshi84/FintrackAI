@@ -10,23 +10,23 @@ const session = require('express-session');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 // Import database connections (Polyglot: MongoDB + PostgreSQL)
-const connectDB = require('./database');
+const connectDB = require('./config/db');
 const { connectPostgres } = require('./config/postgres');
 
 // Import authentication functions
-const signup = require('./authentication/signup');
-const login = require('./authentication/login');
-const adminLogin = require('./authentication/adminLogin');
+const signup = require('./controllers/auth/signup');
+const login = require('./controllers/auth/login');
+const adminLogin = require('./controllers/auth/adminLogin');
 
 // Import Google authentication
-const passport = require('./googleAuth');
+const passport = require('./config/passport');
 const authRoutes = require('./routes/authRoutes');
 
 // Import dashboard functions
-const { verifyToken, getDashboardData, updateProfile } = require('./dashboard');
+const { verifyToken, getDashboardData, updateProfile } = require('./controllers/dashboardController');
 
 // Import upload functions
-const { upload, uploadTransactions, generateReport } = require('./uploadController');
+const { upload, uploadTransactions, generateReport } = require('./controllers/uploadController');
 
 // Import transaction functions
 const { 
@@ -35,7 +35,7 @@ const {
   addTransaction, 
   updateTransaction, 
   deleteTransaction 
-} = require('./transactionController');
+} = require('./controllers/transactionController');
 
 // Import user functions
 const { 
@@ -44,7 +44,7 @@ const {
   deleteUserAccount, 
   verifyUserAccount,
   verifyToken: verifyUserToken 
-} = require('./userController');
+} = require('./controllers/userController');
 
 // Import admin functions
 const {
@@ -61,14 +61,14 @@ const {
   toggleMaintenanceMode,
   getMaintenanceStatus,
   checkMaintenanceMode
-} = require('./adminController');
+} = require('./controllers/adminController');
 
 // Import newsletter functions
 const { 
   subscribeNewsletter, 
   unsubscribeNewsletter, 
   getAllSubscribers 
-} = require('./newsletterController');
+} = require('./controllers/newsletterController');
 
 // Import contact functions
 const { 
@@ -78,7 +78,7 @@ const {
   updateContactMessage, 
   sendEmailResponse, 
   deleteContactMessage 
-} = require('./contactController');
+} = require('./controllers/contactController');
 
 // Import payment functions
 const {
@@ -88,10 +88,10 @@ const {
   handleRazorpayWebhook,
   getPaymentHistory,
   getSubscriptionStatus
-} = require('./paymentController');
+} = require('./controllers/paymentController');
 
 // Import AI insights controller
-const { generateInsights } = require('./insightsController');
+const { generateInsights } = require('./controllers/insightsController');
 
 // Import strict auth middlewares
 const strictAuthMiddleware = require('./middleware/strictAuth');

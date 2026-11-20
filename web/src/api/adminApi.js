@@ -304,3 +304,104 @@ export const deleteContactMessage = async (contactId) => {
     return { success: false, message: error.message || 'Failed to delete contact message' };
   }
 };
+
+
+// --- Functions preserved from admin.js ---
+
+export const getUserById = async (userId) => {
+  return apiRequest("/admin/users/" + userId, {
+    method: 'GET'
+  });
+};
+
+export const updateUser = async (userId, userData) => {
+  return apiRequest("/admin/users/" + userId, {
+    method: 'PUT',
+    body: JSON.stringify(userData)
+  });
+};
+
+export const getAnalytics = async (timeRange = '7d') => {
+  return apiRequest("/admin/analytics?timeRange=" + timeRange, {
+    method: 'GET'
+  });
+};
+
+export const getRevenueAnalytics = async () => {
+  return apiRequest('/admin/analytics/revenue', {
+    method: 'GET'
+  });
+};
+
+export const getUserEngagement = async () => {
+  return apiRequest('/admin/analytics/engagement', {
+    method: 'GET'
+  });
+};
+
+export const generateUserReport = async (format = 'csv') => {
+  return apiRequest("/admin/reports/users?format=" + format, {
+    method: 'GET'
+  });
+};
+
+export const generateAnalyticsReport = async (format = 'pdf') => {
+  return apiRequest("/admin/reports/analytics?format=" + format, {
+    method: 'GET'
+  });
+};
+
+export const generateRevenueReport = async (format = 'excel') => {
+  return apiRequest("/admin/reports/revenue?format=" + format, {
+    method: 'GET'
+  });
+};
+
+export const getAnnouncements = async () => {
+  return apiRequest('/admin/announcements', {
+    method: 'GET'
+  });
+};
+
+export const createAnnouncement = async (announcementData) => {
+  return apiRequest('/admin/announcements', {
+    method: 'POST',
+    body: JSON.stringify(announcementData)
+  });
+};
+
+export const updateAnnouncement = async (announcementId, announcementData) => {
+  return apiRequest("/admin/announcements/" + announcementId, {
+    method: 'PUT',
+    body: JSON.stringify(announcementData)
+  });
+};
+
+export const deleteAnnouncement = async (announcementId) => {
+  return apiRequest("/admin/announcements/" + announcementId, {
+    method: 'DELETE'
+  });
+};
+
+export const exportData = async (dataType, format = 'csv') => {
+  return apiRequest("/admin/export/" + dataType + "?format=" + format, {
+    method: 'GET'
+  });
+};
+
+export const getNewsletterSubscribers = async (page = 1, limit = 10, active = true) => {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+    active: active.toString()
+  });
+  return apiRequest("/newsletter/subscribers?" + params.toString(), {
+    method: 'GET'
+  });
+};
+
+export const exportNewsletterSubscribers = async (format = 'csv') => {
+  return apiRequest("/admin/newsletter/export?format=" + format, {
+    method: 'GET'
+  });
+};

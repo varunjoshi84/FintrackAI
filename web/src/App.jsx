@@ -5,27 +5,32 @@ import Hero from './components/Hero';
 import Features from './components/Features';
 import Pricing from './components/Pricing';
 import Footer from './components/Footer';
-import FeaturesPage from './components/Ftre';
-import Help from './components/Help';
-import Privacy from './components/Privacy';
-import Terms from './components/Terms';
-import Contact from './components/Contact';
-import About from './components/About';
-import Login from './Authentication/Login';
-import Signup from './Authentication/Signup';
-import Admin from './Authentication/Admin';
-import AuthSuccess from './Authentication/AuthSuccess';
-import AuthSuccessHandler from './components/AuthSuccessHandler';
-import Dashboard from './Dashboard/Dashboard';
-import AdminDashboard from './Dashboard/AdminDashboard';
-import Transactions from './Dashboard/Transactions';
-import Upload from './Dashboard/Upload';
-import Insights from './Dashboard/Insights';
-import Reports from './Dashboard/Reports';
-import UserDashboard from './UserDashboard/UserDashboard';
+import FeaturesPage from './components/FeaturesPage';
 import ScrollToTop from './components/ScrollToTop';
 import BackToTopButton from './components/BackToTopButton';
-import MainPricing from './components/MainPricing';
+import AuthSuccessHandler from './components/AuthSuccessHandler';
+
+// Pages
+import About from './pages/About';
+import Contact from './pages/Contact';
+import Help from './pages/Help';
+import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';
+import PricingPage from './pages/Pricing';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import AdminLogin from './pages/AdminLogin';
+import AuthSuccess from './pages/AuthSuccess';
+
+// Dashboard Pages
+import Dashboard from './pages/dashboard/Dashboard';
+import Transactions from './pages/dashboard/Transactions';
+import Upload from './pages/dashboard/Upload';
+import Insights from './pages/dashboard/Insights';
+import Reports from './pages/dashboard/Reports';
+import UserDashboard from './pages/dashboard/UserDashboard';
+import AdminDashboard from './pages/dashboard/admin/AdminDashboard';
+
 import { checkNetworkStatus } from './api';
 
 // ProtectedRoute — UX gate only. Real auth enforcement is server-side via JWT middleware.
@@ -75,14 +80,14 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/features" element={<FeaturesPage />} />
         <Route path="/help" element={<Help />} />
-        <Route path="/pricing" element={<MainPricing />} />
+        <Route path="/pricing" element={<PricingPage />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/about" element={<About />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-        <Route path="/admin" element={<Admin />} />
+        <Route path="/admin" element={<AdminLogin />} />
         <Route path="/auth/success" element={<AuthSuccess />} />
 
         {/* ── Protected Routes — all require login ── */}

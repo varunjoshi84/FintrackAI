@@ -1,6 +1,6 @@
 const assert = require('assert');
 const crypto = require('crypto');
-const { PLAN_PRICING } = require('../paymentController');
+const { PLAN_PRICING } = require('../controllers/paymentController');
 
 console.log('🧪 Starting FinTrackAI Backend Test Suite...\n');
 
