@@ -359,7 +359,7 @@ const Dashboard = () => {
 
       {/* Main Dashboard Content */}
       <main className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 dashboard-content">
-        <SubscriptionStatus onRenewClick={() => setShowPricing(true)} />
+        <SubscriptionStatus onRenewClick={() => { window.location.href = '/userdashboard?tab=plan'; }} />
         <div className="text-center mb-6 sm:mb-8">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 drop-shadow-lg tracking-wide animate-fade-in-up">
             <i className="fas fa-chart-line mr-2 text-blue-500 animate-pulse"></i>
@@ -411,12 +411,7 @@ const Dashboard = () => {
         <section className="bg-white rounded-lg p-4 sm:p-6 shadow-sm animate-fade-in-up delay-150">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-base sm:text-lg font-semibold text-gray-900">Recent Transactions</h3>
-            <button 
-              onClick={() => setShowPricing(!showPricing)}
-              className="bg-gradient-to-r from-purple-500 to-pink-600 text-white px-4 py-2 rounded-full text-sm hover:opacity-90 transition"
-            >
-              {showPricing ? 'Hide Pricing' : 'Upgrade Plan'}
-            </button>
+           
           </div>
           <div className="overflow-x-auto transactions-container">
             {loading ? (
@@ -455,13 +450,6 @@ const Dashboard = () => {
             </button>
           </div>
         </section>
-
-        {/* Pricing Section */}
-        {showPricing && (
-          <section className="animate-fade-in-up delay-200">
-            <DashboardPricing />
-          </section>
-        )}
       </main>
 
       <Footer />

@@ -3,10 +3,14 @@ const User = require('../models/User');
 const paymentRepository = require('../repositories/paymentRepository');
 const Razorpay = require('razorpay');
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
+const getRazorpayInstance = () => {
+  const key_id = process.env.RAZORPAY_KEY_ID;
+  const key_secret = process.env.RAZORPAY_KEY_SECRET;
+  if (!key_id || !key_secret) {
+    throw new Error('Razorpay credentials missing from environment (RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET)');
+  }
+  return new Razorpay({ key_id, key_secret });
+};
 
 // Official pricing table definition to guarantee backend authority on price and plan
 const PLAN_PRICING = {
@@ -84,7 +88,13 @@ const createOrder = async (req, res) => {
 
     // Check for existing active/pending order created within the last 10 minutes to prevent duplicate orders
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
-    const existingPayment = await paymentRepository.findByUser(userId, 1);
+    let existingPayment = null;
+    try {
+      existingPayment = await paymentRepository.findByUser(userId, 1);
+    } catch (dbErr) {
+      console.warn('Could not query previous payments from DB (proceeding with new order):', dbErr.message);
+    }
+
     if (
       existingPayment &&
       existingPayment.length > 0 &&
@@ -115,24 +125,29 @@ const createOrder = async (req, res) => {
       },
     };
 
+    const razorpay = getRazorpayInstance();
     const order = await razorpay.orders.create(options);
 
     const { startDate, endDate, nextPaymentDate } = calculateSubscriptionDates(billing);
 
     // Save initial order row in PostgreSQL as 'created' (Pending checkout)
-    await paymentRepository.create({
-      userId,
-      razorpayPaymentId: null,
-      razorpayOrderId: order.id,
-      amount: authoritativeAmount,
-      currency: 'INR',
-      plan,
-      billing,
-      status: 'created',
-      startDate,
-      endDate,
-      nextPaymentDate,
-    });
+    try {
+      await paymentRepository.create({
+        userId,
+        razorpayPaymentId: null,
+        razorpayOrderId: order.id,
+        amount: authoritativeAmount,
+        currency: 'INR',
+        plan,
+        billing,
+        status: 'created',
+        startDate,
+        endDate,
+        nextPaymentDate,
+      });
+    } catch (saveErr) {
+      console.warn('Failed to save order in Postgres (order created on Razorpay):', saveErr.message);
+    }
 
     res.json({
       success: true,
@@ -145,7 +160,7 @@ const createOrder = async (req, res) => {
     console.error('Order creation error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to create order',
+      message: error.error?.description || error.message || 'Failed to create order',
     });
   }
 };

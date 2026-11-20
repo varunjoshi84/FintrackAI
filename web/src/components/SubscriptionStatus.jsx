@@ -63,44 +63,58 @@ const SubscriptionStatus = ({ onRenewClick }) => {
   const isExpiringSoon = daysRemaining <= 7 && daysRemaining > 0 && !isExpired;
 
   return (
-    <div className={`mb-6 p-4 rounded-lg border ${
-      isExpired ? 'bg-red-50 border-red-200' : 
-      isExpiringSoon ? 'bg-yellow-50 border-yellow-200' : 
-      'bg-green-50 border-green-200'
+    <div className={`mb-6 p-4 rounded-xl border transition-all ${
+      isExpired ? 'bg-gradient-to-r from-red-50 to-orange-50 border-red-200' : 
+      isExpiringSoon ? 'bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-200' : 
+      'bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200'
     }`}>
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className={`font-semibold ${
-            isExpired ? 'text-red-800' : 
-            isExpiringSoon ? 'text-yellow-800' : 
-            'text-green-800'
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <div className={`mt-0.5 w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
+            isExpired ? 'bg-red-100 text-red-600' :
+            isExpiringSoon ? 'bg-amber-100 text-amber-600' :
+            'bg-emerald-100 text-emerald-600'
           }`}>
-            {currentPlan} Plan
-            {isExpired && ' - Expired'}
-            {isExpiringSoon && ' - Expiring Soon'}
-          </h3>
-          <p className={`text-sm ${
-            isExpired ? 'text-red-600' : 
-            isExpiringSoon ? 'text-yellow-600' : 
-            'text-green-600'
-          }`}>
-            {isExpired 
-              ? wasDowngraded 
-                ? `Your premium plan expired on ${new Date(planEndDate).toLocaleDateString()}. Upgrade to continue enjoying premium features.`
-                : `Expired on ${new Date(planEndDate).toLocaleDateString()}`
-              : `${daysRemaining} days remaining • Expires ${new Date(planEndDate).toLocaleDateString()}`
-            }
-          </p>
+            <i className={`fas ${isExpired ? 'fa-exclamation-circle' : isExpiringSoon ? 'fa-clock' : 'fa-check-circle'} text-base`}></i>
+          </div>
+          <div>
+            <h3 className={`font-bold text-sm sm:text-base ${
+              isExpired ? 'text-red-900' : 
+              isExpiringSoon ? 'text-amber-900' : 
+              'text-emerald-900'
+            }`}>
+              {currentPlan} Plan
+              {isExpired && ' — Expired'}
+              {isExpiringSoon && ' — Expiring Soon'}
+            </h3>
+            <p className={`text-xs sm:text-sm mt-0.5 ${
+              isExpired ? 'text-red-700' : 
+              isExpiringSoon ? 'text-amber-700' : 
+              'text-emerald-700'
+            }`}>
+              {isExpired 
+                ? wasDowngraded 
+                  ? `Your premium plan expired on ${new Date(planEndDate).toLocaleDateString()}. Upgrade to continue enjoying premium features.`
+                  : `Expired on ${new Date(planEndDate).toLocaleDateString()}`
+                : `${daysRemaining} days remaining • Expires ${new Date(planEndDate).toLocaleDateString()}`
+              }
+            </p>
+          </div>
         </div>
-        {(isExpired || isExpiringSoon) && onRenewClick && (
+        {(isExpired || isExpiringSoon) && (
           <button 
             onClick={(e) => {
               e.preventDefault();
-              onRenewClick();
+              if (onRenewClick) {
+                onRenewClick();
+              } else {
+                window.location.href = '/userdashboard?tab=plan';
+              }
             }} 
-            className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700 transition-colors"
+            className="self-start sm:self-center bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-medium px-4 py-2 rounded-xl text-xs sm:text-sm shadow-sm transition-all duration-200 flex items-center gap-2"
           >
-            {isExpired ? 'Upgrade Now' : 'Renew Now'}
+            <i className="fas fa-crown text-xs text-amber-300"></i>
+            {isExpired ? 'Upgrade Plan' : 'Renew Plan'}
           </button>
         )}
       </div>
