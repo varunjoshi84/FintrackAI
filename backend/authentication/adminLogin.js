@@ -1,30 +1,35 @@
-// Admin Login 
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const User = require('./User');
+const { signToken } = require('../utils/jwt');
 
 // Admin login (only for admin users)
 const adminLogin = async (req, res) => {
   try {
-    // Handle both nested and flat request formats
-    let email, password;
-    
-    if (req.body.email && typeof req.body.email === 'object') {
-      email = req.body.email.email;
-      password = req.body.email.password;
-    } else {
-      // Normal format: { email: "...", password: "..." }
-      email = req.body.email;
+    let email = typeof req.body.email === 'string' ? req.body.email : '';
+    let password = typeof req.body.password === 'string' ? req.body.password : '';
+
+    if (!email && req.body.email && typeof req.body.email === 'object') {
+      if (typeof req.body.email.email === 'string') email = req.body.email.email;
+      if (typeof req.body.email.password === 'string') password = req.body.email.password;
+    }
+
+    if (!password && typeof req.body.password === 'string') {
       password = req.body.password;
     }
 
+    email = email.trim().toLowerCase();
+
     if (!email || !password) {
-      return res.status(400).json({ message: 'Please provide email and password' });
+      return res.status(400).json({ message: 'Please provide valid admin credentials' });
     }
 
     // Find admin user (must have role = 'admin')
     const user = await User.findOne({ email, role: 'admin' });
     if (!user) {
+      return res.status(400).json({ message: 'Invalid admin credentials' });
+    }
+
+    if (!user.password) {
       return res.status(400).json({ message: 'Invalid admin credentials' });
     }
 
@@ -34,10 +39,14 @@ const adminLogin = async (req, res) => {
       return res.status(400).json({ message: 'Invalid admin credentials' });
     }
 
-    // Create login token
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE });
+    // Create login token with unified payload
+    const token = signToken({ 
+      id: user._id.toString(),
+      userId: user._id.toString(),
+      email: user.email,
+      role: 'admin' 
+    });
 
-    // Send success response
     res.json({
       message: 'Admin login successful!',
       token,
@@ -50,9 +59,10 @@ const adminLogin = async (req, res) => {
     });
 
   } catch (error) {
+    console.error('Admin login error:', error.message);
     res.status(500).json({ 
-      message: 'Error logging in', 
-      error: error.message 
+      message: 'Error logging in',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };

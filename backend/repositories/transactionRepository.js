@@ -49,31 +49,76 @@ const create = async (data) => {
 /**
  * Batch inserts transactions (for statement parsing / CSV / PDF).
  */
+/**
+ * Batch inserts transactions with deduplication to prevent duplicate uploads.
+ * Deduplicates by checking whether a transaction for the same user with identical
+ * date (same calendar day), amount, description and type already exists.
+ */
 const bulkCreate = async (transactionsArray) => {
   if (!transactionsArray || transactionsArray.length === 0) {
     return [];
   }
 
-  const formatted = transactionsArray.map((t) => ({
-    id: t.id || undefined,
-    userId: String(t.user || t.userId),
-    date: t.date ? new Date(t.date) : new Date(),
-    description: t.description,
-    amount: parseFloat(t.amount),
-    type: t.type.toLowerCase(),
-    category: t.category || 'Others',
-    balance: t.balance != null ? parseFloat(t.balance) : null,
-    uploadId: t.uploadId || null,
-    createdAt: t.createdAt ? new Date(t.createdAt) : new Date(),
-  }));
+  const userId = String(transactionsArray[0].user || transactionsArray[0].userId);
 
-  // Prisma createMany is supported on PostgreSQL
+  // Fetch recent transactions for this user to deduplicate against
+  const existingTxns = await prisma.transaction.findMany({
+    where: {
+      userId,
+    },
+    select: {
+      date: true,
+      amount: true,
+      description: true,
+      type: true,
+    },
+  });
+
+  // Create duplicate lookup set
+  const makeKey = (date, amount, desc, type) => {
+    const dStr = new Date(date).toISOString().slice(0, 10);
+    const aStr = parseFloat(amount).toFixed(2);
+    const descStr = String(desc).trim().toLowerCase();
+    const typeStr = String(type).trim().toLowerCase();
+    return `${dStr}_${aStr}_${descStr}_${typeStr}`;
+  };
+
+  const existingSet = new Set(
+    existingTxns.map((e) => makeKey(e.date, e.amount, e.description, e.type))
+  );
+
+  const newToInsert = [];
+  const seenInBatch = new Set();
+
+  for (const t of transactionsArray) {
+    const key = makeKey(t.date, t.amount, t.description, t.type);
+    if (!existingSet.has(key) && !seenInBatch.has(key)) {
+      seenInBatch.add(key);
+      newToInsert.push({
+        userId,
+        date: t.date ? new Date(t.date) : new Date(),
+        description: t.description,
+        amount: parseFloat(t.amount),
+        type: t.type.toLowerCase(),
+        category: t.category || 'Others',
+        balance: t.balance != null ? parseFloat(t.balance) : null,
+        uploadId: t.uploadId || null,
+        createdAt: t.createdAt ? new Date(t.createdAt) : new Date(),
+      });
+    }
+  }
+
+  if (newToInsert.length === 0) {
+    return [];
+  }
+
+  // Insert only verified non-duplicate transactions
   await prisma.transaction.createMany({
-    data: formatted,
+    data: newToInsert,
     skipDuplicates: true,
   });
 
-  return formatted.map(mapTransaction);
+  return newToInsert.map(mapTransaction);
 };
 
 /**

@@ -1,5 +1,5 @@
-const jwt = require('jsonwebtoken');
 const User = require('../authentication/User');
+const { verifyToken } = require('../utils/jwt');
 
 /**
  * Strict Admin Authorization Middleware.
@@ -19,7 +19,7 @@ const requireAdmin = async (req, res, next) => {
 
     let decoded;
     try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET || 'defaultsecret');
+      decoded = verifyToken(token);
     } catch (err) {
       return res.status(401).json({
         success: false,
@@ -27,7 +27,14 @@ const requireAdmin = async (req, res, next) => {
       });
     }
 
-    const userId = decoded.id || decoded._id || decoded.userId;
+    const userId = decoded.id || decoded.userId || decoded._id;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'AUTHENTICATION REQUIRED: Malformed token payload',
+      });
+    }
+
     const user = await User.findById(userId);
 
     if (!user) {
@@ -52,9 +59,9 @@ const requireAdmin = async (req, res, next) => {
     }
 
     req.user = {
-      id: user._id,
-      _id: user._id,
-      userId: user._id,
+      id: user._id.toString(),
+      _id: user._id.toString(),
+      userId: user._id.toString(),
       email: user.email,
       name: user.name,
       role: user.role,
@@ -63,7 +70,7 @@ const requireAdmin = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error('Admin middleware error:', error);
+    console.error('Admin middleware error:', error.message);
     return res.status(500).json({
       success: false,
       message: 'Server error during authorization',

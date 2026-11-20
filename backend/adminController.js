@@ -20,15 +20,9 @@ const getAdminStats = async (req, res) => {
     let totalRevenue = 0;
     try {
       const paymentRepository = require('./repositories/paymentRepository');
-      
-      // Debug: Check actual payment data
-      const samplePayments = await paymentRepository.findRecent(3);
-      console.log('Sample payments from PostgreSQL:', JSON.stringify(samplePayments, null, 2));
-      
       totalRevenue = await paymentRepository.getTotalRevenue();
-      console.log('Revenue calculation result:', totalRevenue);
     } catch (paymentError) {
-      console.warn('Payment calculation error:', paymentError);
+      console.warn('Payment calculation error:', paymentError.message);
       totalRevenue = 0;
     }
 
@@ -495,8 +489,23 @@ const sendNotification = async (req, res) => {
   }
 };
 
-// In-memory maintenance mode state (in production, use database or file)
+const SystemSetting = require('./models/SystemSetting');
+
+// Cached in-memory state with DB persistence
 let maintenanceModeState = false;
+
+// Sync from database at startup
+const initMaintenanceState = async () => {
+  try {
+    const setting = await SystemSetting.findOne({ key: 'maintenance_mode' });
+    if (setting) {
+      maintenanceModeState = Boolean(setting.value);
+    }
+  } catch (err) {
+    // Non-fatal if DB not yet connected
+  }
+};
+initMaintenanceState();
 
 // Toggle maintenance mode
 const toggleMaintenanceMode = async (req, res) => {
@@ -510,10 +519,17 @@ const toggleMaintenanceMode = async (req, res) => {
       });
     }
 
-    // Update maintenance mode state
+    // Update maintenance mode state in memory and database
     maintenanceModeState = enabled;
-    
-    console.log(`Maintenance mode ${enabled ? 'enabled' : 'disabled'}`);
+    await SystemSetting.findOneAndUpdate(
+      { key: 'maintenance_mode' },
+      { 
+        value: enabled, 
+        updatedBy: req.user?.email || 'admin', 
+        updatedAt: new Date() 
+      },
+      { upsert: true, new: true }
+    );
 
     res.json({
       success: true,
@@ -521,7 +537,7 @@ const toggleMaintenanceMode = async (req, res) => {
       data: { maintenanceMode: enabled, timestamp: new Date() }
     });
   } catch (error) {
-    console.error('Toggle maintenance mode error:', error);
+    console.error('Toggle maintenance mode error:', error.message);
     res.status(500).json({ success: false, message: 'Failed to toggle maintenance mode' });
   }
 };
@@ -529,20 +545,28 @@ const toggleMaintenanceMode = async (req, res) => {
 // Get maintenance mode status
 const getMaintenanceStatus = async (req, res) => {
   try {
+    // Refresh state from database
+    const setting = await SystemSetting.findOne({ key: 'maintenance_mode' });
+    if (setting) {
+      maintenanceModeState = Boolean(setting.value);
+    }
+
     res.json({
       success: true,
       data: { maintenanceMode: maintenanceModeState }
     });
   } catch (error) {
-    console.error('Get maintenance status error:', error);
-    res.status(500).json({ success: false, message: 'Failed to get maintenance status' });
+    res.json({
+      success: true,
+      data: { maintenanceMode: maintenanceModeState }
+    });
   }
 };
 
 // Middleware to check maintenance mode
-const checkMaintenanceMode = (req, res, next) => {
+const checkMaintenanceMode = async (req, res, next) => {
   // Skip maintenance check for admin routes and maintenance status endpoint
-  if (req.path.includes('/admin') || req.path.includes('/maintenance/status')) {
+  if (req.path.includes('/admin') || req.path.includes('/maintenance/status') || req.path.includes('/auth/admin')) {
     return next();
   }
   

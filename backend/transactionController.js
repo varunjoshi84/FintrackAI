@@ -1,6 +1,6 @@
 // Transactions Controller - Handle transaction operations
 const transactionRepository = require('./repositories/transactionRepository');
-const jwt = require('jsonwebtoken');
+const { verifyToken: jwtVerify } = require('./utils/jwt');
 
 // Middleware to verify JWT token
 const verifyToken = (req, res, next) => {
@@ -11,8 +11,9 @@ const verifyToken = (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'defaultsecret');
-    req.user = decoded;
+    const decoded = jwtVerify(token);
+    const userId = (decoded.id || decoded.userId || decoded._id || '').toString();
+    req.user = { ...decoded, id: userId, _id: userId, userId };
     next();
   } catch (error) {
     return res.status(401).json({ message: 'Invalid token' });

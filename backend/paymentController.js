@@ -94,7 +94,6 @@ const createOrder = async (req, res) => {
       new Date(existingPayment[0].createdAt) > tenMinutesAgo
     ) {
       const activeOrder = existingPayment[0];
-      console.log(`Reusing existing pending Razorpay order: ${activeOrder.razorpayOrderId} for user: ${userId}`);
       return res.json({
         success: true,
         orderId: activeOrder.razorpayOrderId,
@@ -117,7 +116,6 @@ const createOrder = async (req, res) => {
     };
 
     const order = await razorpay.orders.create(options);
-    console.log('Razorpay order created:', order.id);
 
     const { startDate, endDate, nextPaymentDate } = calculateSubscriptionDates(billing);
 
@@ -190,12 +188,6 @@ const processPayment = async (req, res) => {
       .digest('hex');
 
     if (expectedSignature !== razorpay_signature) {
-      console.error('CRITICAL: Payment signature verification failed!', {
-        userId,
-        razorpay_order_id,
-        razorpay_payment_id,
-      });
-
       // Record fraudulent or failed attempt in database
       const existingOrder = await paymentRepository.findByOrderId(razorpay_order_id);
       if (existingOrder) {
@@ -215,7 +207,6 @@ const processPayment = async (req, res) => {
     // 2. Idempotency Check (GAP 3)
     const existingByPayment = await paymentRepository.findByPaymentId(razorpay_payment_id);
     if (existingByPayment && existingByPayment.status === 'completed') {
-      console.log(`Idempotent request: payment ${razorpay_payment_id} is already processed.`);
       return res.json({
         success: true,
         message: 'Payment has already been processed successfully',

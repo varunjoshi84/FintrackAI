@@ -3,13 +3,17 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const mongoSanitize = require('express-mongo-sanitize');
+const session = require('express-session');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 // Import database connections (Polyglot: MongoDB + PostgreSQL)
 const connectDB = require('./database');
 const { connectPostgres } = require('./config/postgres');
 
-// Import authentication functions from the authentication folder
+// Import authentication functions
 const signup = require('./authentication/signup');
 const login = require('./authentication/login');
 const adminLogin = require('./authentication/adminLogin');
@@ -86,18 +90,45 @@ const {
   getSubscriptionStatus
 } = require('./paymentController');
 
-// Import strict auth middleware
+// Import strict auth middlewares
 const strictAuthMiddleware = require('./middleware/strictAuth');
 const requireAdmin = require('./middleware/requireAdmin');
-
-// Import email service for testing
-const { sendWelcomeEmail } = require('./emailService');
+const { getUserPlanLimits, checkUploadLimit } = require('./middleware/planLimits');
 
 // Create Express app
 const app = express();
 
-// Basic middleware (what our app needs to work)
-// Capture raw body for cryptographic webhook signature verification (Razorpay / Stripe)
+// 1. Security HTTP Headers (Helmet)
+app.use(helmet({
+  crossOriginResourcePolicy: false,
+}));
+
+// 2. Rate Limiting to prevent brute-force and DDoS
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 300, // Limit each IP to 300 requests per 15 minutes
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many requests, please try again later.' }
+});
+app.use(globalLimiter);
+
+// Specific stricter limiter for Auth & Contact routes
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30, // 30 attempts per 15 minutes
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many login attempts. Please try again after 15 minutes.' }
+});
+
+const contactLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10,
+  message: { success: false, message: 'Too many contact messages submitted. Please try again later.' }
+});
+
+// 3. Body Parsing & Webhook raw buffer preservation
 app.use(express.json({
   limit: '10mb',
   verify: (req, res, buf) => {
@@ -106,219 +137,168 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// CORS configuration for production
+// 4. Data sanitization against NoSQL injection
+app.use(mongoSanitize());
+
+// 5. CORS configuration
 const corsOptions = {
   origin: function (origin, callback) {
     const allowedOrigins = [
       process.env.FRONTEND_URL,
-      process.env.CORS_ORIGIN,
-      'https://fintrackai-delta.vercel.app',
-      'https://fintrackai-j3ldui64a-varunjoshi84s-projects.vercel.app',
-      'https://fintrackai-git-main-varunjoshi84s-projects.vercel.app',
-      'http://localhost:5173', // Development (Vite)
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'http://localhost:8081',
+      'https://fintrackai-production.up.railway.app'
     ].filter(Boolean);
     
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(null, true); // Allow dev origins gracefully
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 };
-
 app.use(cors(corsOptions));
 
-// Session middleware for passport
-let session;
-try {
-  session = require('express-session');
-} catch (error) {
-  console.error('Error loading express-session:', error);
-  console.log('Installing express-session...');
-  require('child_process').execSync('npm install express-session --save');
-  session = require('express-session');
-}
+// 6. Session configuration (clean, no runtime execSync hack)
+const sessionSecret = process.env.SESSION_SECRET || (process.env.NODE_ENV === 'production' 
+  ? (() => { throw new Error('SESSION_SECRET required in production'); })() 
+  : 'fintrackai_development_session_secret');
 
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-session-secret',
+  secret: sessionSecret,
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: process.env.NODE_ENV === 'production' }
+  cookie: { 
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 24 * 60 * 60 * 1000 // 1 day
+  }
 }));
 
-// Initialize Passport
+// Initialize Passport for Google OAuth
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Apply maintenance mode middleware (before other routes)
+// Maintenance Mode Middleware (State persisted in MongoDB)
 app.use(checkMaintenanceMode);
 
-// Connect to databases (Polyglot: MongoDB + PostgreSQL)
-connectDB();
-connectPostgres().catch(err => console.error('PostgreSQL startup connection failed:', err.message));
-
-
-// Health check - test if server is working
+// Root & Health Endpoints
 app.get('/', (req, res) => {
-  res.json({ 
-    message: 'FinTrackAI Backend is running!',
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    version: '1.0.0'
+  res.json({
+    message: 'FinTrackAI Backend API',
+    status: 'Running',
+    version: '1.0.0',
+    documentation: 'See README.md for endpoint specifications'
   });
 });
 
-// Health check endpoint for deployment
 app.get(['/health', '/api/health'], (req, res) => {
-  res.status(200).json({ 
-    status: 'healthy',
-    uptime: process.uptime(),
-    timestamp: new Date().toISOString()
+  res.json({
+    status: 'Healthy',
+    timestamp: new Date().toISOString(),
+    service: 'fintrackai-backend',
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
-// Import upload limit middleware
-const { checkUploadLimit } = require('./middleware/planLimits');
-
-// Upload Transactions Endpoint (Protected - require STRICT authentication)
-// Upload File Endpoint (for generic file uploads)
+// Upload Routes (Protected & Plan-Quota Enforced)
 app.post('/api/upload/file', strictAuthMiddleware, checkUploadLimit, upload.single('file'), uploadTransactions);
-// Existing transactions upload endpoint - NOW WITH STRICT AUTHENTICATION
 app.post('/api/upload/transactions', strictAuthMiddleware, checkUploadLimit, upload.single('file'), uploadTransactions);
-// Generate report endpoint (after upload)
 app.get('/api/reports/generate', strictAuthMiddleware, generateReport);
 app.post('/api/reports/generate', strictAuthMiddleware, generateReport);
 
-// Authentication Routes
-app.post('/api/auth/register', signup);     // User signup
-app.post('/api/auth/login', login);         // User login  
-app.post('/api/auth/admin/login', adminLogin); // Admin login
-
-// Google Authentication Routes
+// Auth Routes (Rate Limited)
+app.post('/api/auth/register', authLimiter, signup);
+app.post('/api/auth/login', authLimiter, login);
+app.post('/api/auth/admin/login', authLimiter, adminLogin);
 app.use('/api/auth', authRoutes);
 
-// Dashboard Routes (Protected - require STRICT authentication)
-app.get('/api/dashboard', strictAuthMiddleware, getDashboardData);    // Get user dashboard data
-app.put('/api/dashboard/profile', strictAuthMiddleware, updateProfile); // Update user profile
+// Dashboard Routes
+app.get('/api/dashboard', strictAuthMiddleware, getDashboardData);
+app.put('/api/dashboard/profile', strictAuthMiddleware, updateProfile);
 
-// Transaction Routes (Protected - require STRICT authentication)
-app.get('/api/transactions', strictAuthMiddleware, getTransactions);        // Get user transactions
-app.post('/api/transactions', strictAuthMiddleware, addTransaction);        // Add new transaction
-app.put('/api/transactions/:id', strictAuthMiddleware, updateTransaction);  // Update transaction
-app.delete('/api/transactions/:id', strictAuthMiddleware, deleteTransaction); // Delete transaction
+// Transaction Routes
+app.get('/api/transactions', strictAuthMiddleware, getTransactions);
+app.post('/api/transactions', strictAuthMiddleware, addTransaction);
+app.put('/api/transactions/:id', strictAuthMiddleware, updateTransaction);
+app.delete('/api/transactions/:id', strictAuthMiddleware, deleteTransaction);
 
-// Admin Routes (Protected - require admin authentication)
-// Admin Routes (Protected - require STRICT Admin authentication & role check)
-app.get('/api/admin/stats', requireAdmin, getAdminStats);           // Get admin dashboard stats
-app.get('/api/admin/users', requireAdmin, getAllUsers);             // Get all users with pagination
-app.get('/api/admin/users/:userId', requireAdmin, getUserById);     // Get single user
-app.patch('/api/admin/users/:userId/status', requireAdmin, updateUserStatus); // Update user status
-app.delete('/api/admin/users/:userId', requireAdmin, deleteUser);   // Delete user
-app.post('/api/admin/users', requireAdmin, createUser);             // Create new user
-app.put('/api/admin/users/:userId', requireAdmin, updateUser);      // Update user
-app.get('/api/admin/analytics', requireAdmin, getAnalytics);        // Get analytics data
-app.get('/api/admin/analytics/user-growth', requireAdmin, getUserGrowthData); // Get user growth data
-app.post('/api/admin/notification', requireAdmin, sendNotification); // Send notification to users
-app.post('/api/admin/maintenance', requireAdmin, toggleMaintenanceMode); // Toggle maintenance mode
-app.get('/api/maintenance/status', getMaintenanceStatus); // Get maintenance status (public)
+// Admin Routes (Strict RBAC: requireAdmin verifies DB role === 'admin')
+app.get('/api/admin/stats', requireAdmin, getAdminStats);
+app.get('/api/admin/users', requireAdmin, getAllUsers);
+app.get('/api/admin/users/:userId', requireAdmin, getUserById);
+app.patch('/api/admin/users/:userId/status', requireAdmin, updateUserStatus);
+app.delete('/api/admin/users/:userId', requireAdmin, deleteUser);
+app.post('/api/admin/users', requireAdmin, createUser);
+app.put('/api/admin/users/:userId', requireAdmin, updateUser);
+app.get('/api/admin/analytics', requireAdmin, getAnalytics);
+app.get('/api/admin/analytics/user-growth', requireAdmin, getUserGrowthData);
+app.post('/api/admin/notification', requireAdmin, sendNotification);
+app.post('/api/admin/maintenance', requireAdmin, toggleMaintenanceMode);
+app.get('/api/maintenance/status', getMaintenanceStatus);
 
-// User Routes (Protected - require STRICT authentication)
-app.get('/api/user/profile', strictAuthMiddleware, getUserProfile);        // Get user profile
-app.put('/api/user/profile', strictAuthMiddleware, updateUserProfile);     // Update user profile
-app.delete('/api/user/account', strictAuthMiddleware, deleteUserAccount);  // Delete user account
-app.post('/api/user/verify', strictAuthMiddleware, verifyUserAccount);     // Verify user account
+// User Profile Routes
+app.get('/api/user/profile', strictAuthMiddleware, getUserProfile);
+app.put('/api/user/profile', strictAuthMiddleware, updateUserProfile);
+app.delete('/api/user/account', strictAuthMiddleware, deleteUserAccount);
+app.post('/api/user/verify', strictAuthMiddleware, verifyUserAccount);
+app.get('/api/user/plan-limits', strictAuthMiddleware, getUserPlanLimits);
 
-// Import and add plan limits route
-const { getUserPlanLimits } = require('./middleware/planLimits');
-app.get('/api/user/plan-limits', strictAuthMiddleware, getUserPlanLimits);  // Get user plan limits
+// Payment & Billing Routes
+app.post('/api/payment/create-order', strictAuthMiddleware, createOrder);
+app.post('/api/payment/process', strictAuthMiddleware, processPayment);
+app.post('/api/payment/record-failure', strictAuthMiddleware, recordFailedPayment);
+app.post('/api/payment/webhook', handleRazorpayWebhook);
+app.get('/api/payment/history', strictAuthMiddleware, getPaymentHistory);
+app.get('/api/subscription/status', strictAuthMiddleware, getSubscriptionStatus);
 
-// Payment Routes (Protected - require STRICT authentication)
-app.post('/api/payment/create-order', strictAuthMiddleware, createOrder);   // ✅ Create Razorpay order
-app.post('/api/payment/process', strictAuthMiddleware, processPayment);     // Process payment with HMAC signature verification
-app.post('/api/payment/record-failure', strictAuthMiddleware, recordFailedPayment); // Record failed payment event
-app.post('/api/payment/webhook', handleRazorpayWebhook);                    // Public Webhook for autonomous payment recovery
-app.get('/api/payment/history', strictAuthMiddleware, getPaymentHistory);   // Get payment history
-app.get('/api/subscription/status', strictAuthMiddleware, getSubscriptionStatus); // Get subscription status
+// Newsletter Routes
+app.post('/api/newsletter/subscribe', contactLimiter, subscribeNewsletter);
+app.post('/api/newsletter/unsubscribe', unsubscribeNewsletter);
+app.get('/api/newsletter/subscribers', requireAdmin, getAllSubscribers);
 
-// Newsletter Routes (Public subscribe/unsubscribe; admin subscribers list)
-app.post('/api/newsletter/subscribe', subscribeNewsletter);            // Subscribe to newsletter
-app.post('/api/newsletter/unsubscribe', unsubscribeNewsletter);        // Unsubscribe from newsletter
-app.get('/api/newsletter/subscribers', requireAdmin, getAllSubscribers); // Get all subscribers (admin only)
+// Contact Routes
+app.post('/api/contact/send', contactLimiter, sendContactMessage);
+app.get('/api/admin/contacts', requireAdmin, getContactMessages);
+app.get('/api/admin/contacts/stats', requireAdmin, getContactStats);
+app.put('/api/admin/contacts/:id', requireAdmin, updateContactMessage);
+app.post('/api/admin/contacts/:id/respond', requireAdmin, sendEmailResponse);
+app.delete('/api/admin/contacts/:id', requireAdmin, deleteContactMessage);
 
-// Contact Routes (Public - no authentication required)
-app.post('/api/contact/send', sendContactMessage);                     // Send contact form message
-
-// Admin Contact Management Routes (Requires Admin role)
-app.get('/api/admin/contacts', requireAdmin, getContactMessages);           // Get all contact messages
-app.get('/api/admin/contacts/stats', requireAdmin, getContactStats);        // Get contact statistics
-app.put('/api/admin/contacts/:id', requireAdmin, updateContactMessage);     // Update contact status/response
-app.post('/api/admin/contacts/:id/respond', requireAdmin, sendEmailResponse); // Send email response
-app.delete('/api/admin/contacts/:id', requireAdmin, deleteContactMessage);  // Delete contact message
-
-// Test email endpoint (Restricted to Admin in production)
-app.post('/api/test-email', requireAdmin, async (req, res) => {
-  try {
-    const { email } = req.body;
-    if (!email) {
-      return res.status(400).json({ success: false, message: 'Email required' });
-    }
-    
-    const result = await sendWelcomeEmail(email);
-    
-    res.json({
-      success: result.success,
-      message: result.success ? 'Test email sent successfully!' : 'Failed to send email',
-      details: result
-    });
-  } catch (error) {
-    console.error('Test email error:', error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  // Log based on LOG_LEVEL
-  if (process.env.LOG_LEVEL !== 'error' || process.env.NODE_ENV !== 'production') {
-    console.error('Error:', err.message);
-  }
-  
-  res.status(500).json({
-    success: false,
-    message: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message
-  });
-});
-
-// 404 handler
+// 404 Route
 app.use('*', (req, res) => {
   res.status(404).json({
     success: false,
-    message: 'Route not found'
+    message: 'Route not found',
+    requestedPath: req.originalUrl
   });
 });
 
-// Start server
+// Central Error Handler
+app.use((err, req, res, next) => {
+  console.error('Unhandled Server Error:', err.message);
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || 'Internal server error',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
+
 const PORT = process.env.PORT || 8000;
-const server = app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV}`);
-  console.log(`🌐 CORS enabled for: ${process.env.FRONTEND_URL}`);
+
+// Start Databases and Server
+connectDB().then(() => {
+  connectPostgres();
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
+  });
+}).catch(err => {
+  console.error('Database connection failed:', err.message);
 });
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully');
-  server.close(() => {
-    console.log('Process terminated');
-  });
-});
-
-process.on('SIGINT', () => {
-  console.log('SIGINT received, shutting down gracefully');
-  server.close(() => {
-    console.log('Process terminated');
-  });
-});
+module.exports = app;

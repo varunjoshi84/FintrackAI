@@ -1,0 +1,64 @@
+name: CI Quality Gate
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  backend-checks:
+    name: Backend Validation & Security
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install Backend Dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Validate Prisma Schema
+        working-directory: backend
+        run: npx prisma validate
+
+      - name: Run Backend Syntax and Module Verification
+        working-directory: backend
+        run: |
+          node -e "
+            require('./utils/jwt');
+            require('./middleware/requireAdmin');
+            require('./middleware/strictAuth');
+            require('./middleware/planLimits');
+            require('./paymentController');
+            console.log('Backend core modules verified successfully!');
+          "
+
+  web-build:
+    name: Web Client Production Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install Web Dependencies
+        working-directory: web
+        run: npm ci
+
+      - name: Build Web Application
+        working-directory: web
+        run: npm run build

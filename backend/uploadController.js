@@ -5,172 +5,205 @@ const fs = require('fs');
 const path = require('path');
 const { extractTransactionsFromPDF } = require('./pdfUtils');
 const { v4: uuidv4 } = require('uuid');
-const { checkUploadLimit } = require('./middleware/planLimits');
 const User = require('./authentication/User');
 
-// Multer setup for file uploads
-const upload = multer({ dest: 'uploads/' });
+// Storage configuration ensuring destination exists
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadsDir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, `upload_${Date.now()}_${uuidv4().slice(0, 8)}${ext}`);
+  },
+});
+
+// Allowed MIME types and extensions
+const allowedMimes = ['application/pdf', 'text/csv', 'application/vnd.ms-excel', 'text/plain'];
+const allowedExts = ['.pdf', '.csv'];
+
+const fileFilter = (req, file, cb) => {
+  const ext = path.extname(file.originalname).toLowerCase();
+  const isAllowedExt = allowedExts.includes(ext);
+  const isAllowedMime = allowedMimes.includes(file.mimetype) || file.mimetype === 'application/octet-stream';
+
+  if (isAllowedExt && isAllowedMime) {
+    cb(null, true);
+  } else {
+    cb(new Error('Invalid file type. Only PDF and CSV bank statements are supported.'), false);
+  }
+};
+
+// Hardened Multer configuration with 10MB limit and strict fileFilter
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: parseInt(process.env.MAX_FILE_SIZE, 10) || 10 * 1024 * 1024, // 10MB default
+    files: 1,
+  },
+  fileFilter,
+});
+
+// Helper to remove temp file safely
+const cleanTempFile = (filePath) => {
+  try {
+    if (filePath && fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+  } catch (err) {
+    console.warn('Could not remove temp upload file:', err.message);
+  }
+};
 
 // Handle file upload and extract transactions
 const uploadTransactions = async (req, res) => {
+  let filePath = null;
   try {
-    // Check upload limits first
     const userId = req.user ? (req.user._id || req.user.id || req.user.userId) : null;
     if (!userId) {
+      if (req.file) cleanTempFile(req.file.path);
       return res.status(401).json({ success: false, message: 'User authentication required' });
     }
 
-    const user = await User.findById(userId);
-    const userPlan = user ? (user.plan || 'Basic') : 'Basic';
-    
-    // Count uploads this month for Basic users
-    if (userPlan === 'Basic') {
-      const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-      const uploadCount = await transactionRepository.countDistinctUploadsThisMonth(userId, startOfMonth);
-      
-      if (uploadCount >= 5) {
-        return res.status(403).json({
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No statement file uploaded' });
+    }
+
+    filePath = req.file.path;
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    let transactions = [];
+    const uploadId = uuidv4();
+
+    if (ext === '.pdf') {
+      try {
+        transactions = await extractTransactionsFromPDF(filePath, userId, uploadId);
+      } catch (pdfErr) {
+        cleanTempFile(filePath);
+        return res.status(422).json({
           success: false,
-          message: 'Upload limit reached. Basic plan allows 5 uploads per month. Upgrade to Pro for unlimited uploads.',
-          planLimit: true,
-          currentPlan: userPlan,
-          upgradeRequired: true
+          message: 'Failed to parse transactions from PDF statement. Please ensure it is a valid bank statement.',
+          error: pdfErr.message,
         });
       }
-    }
-    
-    if (!req.file) {
-      console.error('No file uploaded');
-      return res.status(400).json({ success: false, message: 'No file uploaded' });
-    }
-    const filePath = req.file.path;
-    const ext = path.extname(req.file.originalname).toLowerCase();
-    const mimetype = req.file.mimetype;
-    let transactions = [];
-
-    // Debug log for file info
-    console.log('Upload received:', {
-      originalname: req.file.originalname,
-      path: filePath,
-      ext,
-      mimetype
-    });
-
-    // Accept .pdf and .csv by extension, and allow application/pdf, text/csv, application/octet-stream
-    const isPDF = ext === '.pdf' && (mimetype === 'application/pdf' || mimetype === 'application/octet-stream');
-    const isCSV = ext === '.csv' && (mimetype === 'text/csv' || mimetype === 'application/octet-stream');
-
-    // Generate a unique uploadId for this upload
-    const uploadId = uuidv4();
-    
-    console.log('Upload - Authenticated user ID:', userId);
-
-    if (isPDF) {
-      try {
-        console.log('Processing PDF with userId:', userId);
-        transactions = await extractTransactionsFromPDF(filePath, userId, uploadId);
-        fs.unlinkSync(filePath);
-        let saved = [];
-        if (transactions.length) {
-          // Bulk insert transactions into PostgreSQL
-          saved = await transactionRepository.bulkCreate(transactions);
-          console.log('Saved transactions in Postgres:', saved.length);
-        }
-        return res.json({ success: true, message: 'PDF transactions extracted', data: saved, uploadId });
-      } catch (pdfError) {
-        console.error('PDF extraction error:', pdfError);
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-        return res.status(500).json({ success: false, message: 'PDF extraction error', error: pdfError.message || pdfError });
-      }
-    } else if (isCSV) {
-      try {
+    } else if (ext === '.csv') {
+      await new Promise((resolve, reject) => {
         fs.createReadStream(filePath)
           .pipe(csv())
           .on('data', (row) => {
-            if (row.date && row.description && row.amount && row.type) {
-              transactions.push({
-                date: new Date(row.date),
-                description: row.description,
-                amount: parseFloat(row.amount),
-                type: row.type.toLowerCase(),
-                category: row.category || 'Others',
-                uploadId,
-                userId: String(userId)
-              });
-            }
-          })
-          .on('end', async () => {
-            try {
-              const saved = await transactionRepository.bulkCreate(transactions);
-              fs.unlinkSync(filePath);
-              res.json({ success: true, message: 'CSV transactions uploaded', data: saved, uploadId });
-            } catch (dbError) {
-              console.error('CSV DB error:', dbError);
-              if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-              res.status(500).json({ success: false, message: 'DB error', error: dbError.message || dbError });
-            }
-          })
-          .on('error', (csvError) => {
-            console.error('CSV parse error:', csvError);
-            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-            res.status(500).json({ success: false, message: 'CSV parse error', error: csvError.message || csvError });
-          });
-      } catch (csvOuterError) {
-        console.error('CSV outer error:', csvOuterError);
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-        return res.status(500).json({ success: false, message: 'CSV upload error', error: csvOuterError.message || csvOuterError });
-      }
-    } else {
-      console.error('Unsupported file type:', ext, mimetype);
-      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-      return res.status(400).json({ success: false, message: 'Unsupported file type' });
-    }
-  } catch (error) {
-    console.error('Upload error:', error);
-    if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
-    res.status(500).json({ success: false, message: 'Upload error', error: error.message || error });
-  }
-};
+            const dateVal = row.date || row.Date || row['Transaction Date'] || row['Value Date'];
+            const descVal = row.description || row.Description || row.Narration || row['Transaction Details'];
+            const amtVal = row.amount || row.Amount || row['Transaction Amount'] || row['Withdrawal Amount'] || row['Deposit Amount'];
+            const typeVal = row.type || row.Type || (row['Withdrawal Amount'] ? 'debit' : 'credit');
 
-// Generate report endpoint
-const generateReport = async (req, res) => {
-  try {
-    // Get userId from authenticated user
-    const userId = req.user ? (req.user._id || req.user.id || req.user.userId) : null;
-    
-    if (!userId) {
-      return res.status(401).json({ success: false, message: 'User not authenticated' });
+            if (dateVal && descVal && amtVal) {
+              const numAmt = parseFloat(String(amtVal).replace(/[^0-9.-]/g, ''));
+              if (!isNaN(numAmt) && numAmt > 0) {
+                transactions.push({
+                  date: new Date(dateVal),
+                  description: String(descVal).trim(),
+                  amount: numAmt,
+                  type: String(typeVal).toLowerCase().includes('cr') ? 'credit' : 'debit',
+                  category: row.category || row.Category || 'Others',
+                  balance: row.balance ? parseFloat(row.balance) : null,
+                  userId: String(userId),
+                  uploadId,
+                });
+              }
+            }
+          })
+          .on('end', resolve)
+          .on('error', reject);
+      });
     }
-    
-    // Get fileId from request body or query parameters
-    const fileId = req.body?.fileId || req.query?.fileId;
-    
-    console.log('Generate Report - User ID:', userId, 'File ID:', fileId);
-    
-    // Find transactions for this user only from PostgreSQL
-    const transactions = await transactionRepository.findByUserAndUploadId(userId, fileId);
-    console.log('Found transactions for user:', transactions.length);
-    
-    // Calculate date range if transactions exist
-    let dateRange = null;
-    if (transactions.length > 0) {
-      const startDate = new Date(transactions[0].date);
-      const endDate = new Date(transactions[transactions.length - 1].date);
-      dateRange = {
-        startDate: startDate.toISOString().split('T')[0],
-        endDate: endDate.toISOString().split('T')[0]
-      };
+
+    cleanTempFile(filePath);
+
+    if (!transactions.length) {
+      return res.status(400).json({
+        success: false,
+        message: 'No readable transactions found in the uploaded file.',
+      });
     }
-    
-    res.json({ 
-      success: true, 
-      report: transactions,
-      dateRange: dateRange
+
+    // Save with deduplication against existing database transactions
+    const saved = await transactionRepository.bulkCreate(transactions);
+
+    res.json({
+      success: true,
+      message: `Successfully processed ${saved.length} new transactions (${transactions.length - saved.length} duplicates skipped)`,
+      data: saved,
+      uploadId,
+      totalExtracted: transactions.length,
+      savedCount: saved.length,
+      skippedCount: transactions.length - saved.length,
     });
   } catch (error) {
-    console.error('Report generation error:', error);
-    res.status(500).json({ success: false, message: 'Report generation error', error: error.message });
+    cleanTempFile(filePath);
+    console.error('Upload processing error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to process statement upload',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
   }
 };
 
-module.exports = { upload, uploadTransactions, generateReport };
+// Generate summary report
+const generateReport = async (req, res) => {
+  try {
+    const userId = req.user ? (req.user._id || req.user.id || req.user.userId) : null;
+    const fileId = req.query.fileId || req.body.fileId || null;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Authentication required' });
+    }
+
+    const transactions = await transactionRepository.findByUserAndUploadId(userId, fileId);
+
+    let totalIncome = 0;
+    let totalExpense = 0;
+    const categoryTotals = {};
+
+    transactions.forEach((t) => {
+      const amt = Number(t.amount) || 0;
+      if (t.type === 'credit') {
+        totalIncome += amt;
+      } else {
+        totalExpense += amt;
+        const cat = t.category || 'Others';
+        categoryTotals[cat] = (categoryTotals[cat] || 0) + amt;
+      }
+    });
+
+    const netSavings = totalIncome - totalExpense;
+    const savingsRate = totalIncome > 0 ? ((netSavings / totalIncome) * 100).toFixed(1) : 0;
+
+    res.json({
+      success: true,
+      report: {
+        totalTransactions: transactions.length,
+        totalIncome: Math.round(totalIncome * 100) / 100,
+        totalExpense: Math.round(totalExpense * 100) / 100,
+        netSavings: Math.round(netSavings * 100) / 100,
+        savingsRate: parseFloat(savingsRate),
+        categoryBreakdown: categoryTotals,
+        transactions,
+        generatedAt: new Date().toISOString(),
+      },
+    });
+  } catch (error) {
+    console.error('Report error:', error.message);
+    res.status(500).json({ success: false, message: 'Failed to generate financial report' });
+  }
+};
+
+module.exports = {
+  upload,
+  uploadTransactions,
+  generateReport,
+};

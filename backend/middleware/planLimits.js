@@ -1,4 +1,5 @@
 const User = require('../authentication/User');
+const transactionRepository = require('../repositories/transactionRepository');
 
 // Plan limits configuration
 const PLAN_LIMITS = {
@@ -32,7 +33,15 @@ const PLAN_LIMITS = {
 // Check upload limits
 const checkUploadLimit = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id);
+    const userId = (req.user?.id || req.user?._id || req.user?.userId || '').toString();
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Authentication required' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
     
     // Check if plan is expired and auto-downgrade to Basic
     const now = new Date();
@@ -41,101 +50,88 @@ const checkUploadLimit = async (req, res, next) => {
       user.plan = 'Basic';
       user.subscriptionStatus = 'inactive';
       await user.save();
-      console.log(` Auto-downgraded user ${req.user.id} to Basic plan in middleware`);
     }
     
     const userPlan = user.plan || 'Basic';
-    const limits = PLAN_LIMITS[userPlan];
+    const limits = PLAN_LIMITS[userPlan] || PLAN_LIMITS.Basic;
 
     if (limits.maxUploadsPerMonth === -1) {
       return next(); // Unlimited uploads
     }
 
-    // Count uploads this month
-    const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-    const uploadCount = await getUploadCount(req.user.id, startOfMonth);
+    // Unified accurate upload count from PostgreSQL transactions table
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const uploadCount = await transactionRepository.countDistinctUploadsThisMonth(userId, startOfMonth);
 
     if (uploadCount >= limits.maxUploadsPerMonth) {
       return res.status(403).json({
         success: false,
-        message: `Upload limit reached. ${userPlan} plan allows ${limits.maxUploadsPerMonth} uploads per month.`,
+        message: `Upload limit reached. ${userPlan} plan allows ${limits.maxUploadsPerMonth} uploads per month. Upgrade to Pro for unlimited uploads.`,
         planLimit: true,
         currentPlan: userPlan,
         upgradeRequired: true
       });
     }
 
-    req.planLimits = limits;
     next();
   } catch (error) {
-    console.error('Plan limit check error:', error);
-    res.status(500).json({ success: false, message: 'Failed to check plan limits' });
+    console.error('Check upload limit error:', error.message);
+    res.status(500).json({ success: false, message: 'Failed to verify plan upload limits' });
   }
 };
 
 // Check feature access
-const checkFeatureAccess = (feature) => {
+const checkFeatureAccess = (featureName) => {
   return async (req, res, next) => {
     try {
-      const user = await User.findById(req.user.id);
+      const userId = (req.user?.id || req.user?._id || req.user?.userId || '').toString();
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
       
-      // Check if plan is expired and auto-downgrade to Basic
       const now = new Date();
       const isExpired = user.planEndDate && new Date(user.planEndDate) < now;
       if (isExpired && user.plan !== 'Basic') {
         user.plan = 'Basic';
         user.subscriptionStatus = 'inactive';
         await user.save();
-        console.log(` Auto-downgraded user ${req.user.id} to Basic plan in feature access check`);
       }
       
       const userPlan = user.plan || 'Basic';
-      const limits = PLAN_LIMITS[userPlan];
+      const limits = PLAN_LIMITS[userPlan] || PLAN_LIMITS.Basic;
 
-      if (!limits[feature]) {
+      if (!limits[featureName]) {
         return res.status(403).json({
           success: false,
-          message: `This feature requires ${feature === 'hasAdvancedInsights' ? 'Pro' : 'Pro'} plan or higher.`,
-          planLimit: true,
-          currentPlan: userPlan,
-          upgradeRequired: true
+          message: `This feature is not available on the ${userPlan} plan. Please upgrade to access it.`,
+          upgradeRequired: true,
+          feature: featureName
         });
       }
 
-      req.planLimits = limits;
       next();
     } catch (error) {
-      console.error('Feature access check error:', error);
-      res.status(500).json({ success: false, message: 'Failed to check feature access' });
+      console.error('Check feature access error:', error.message);
+      res.status(500).json({ success: false, message: 'Failed to verify feature access' });
     }
   };
 };
 
-// Helper function to count uploads (you'll need to implement based on your upload model)
-const getUploadCount = async (userId, startDate) => {
-  try {
-    // Replace with your actual upload model/collection
-    const Upload = require('../models/Upload'); // Adjust path as needed
-    return await Upload.countDocuments({
-      userId: userId,
-      createdAt: { $gte: startDate }
-    });
-  } catch (error) {
-    console.warn('Upload count error:', error);
-    return 0;
-  }
-};
-
-// Get user plan limits
+// Get user plan limits and real usage
 const getUserPlanLimits = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
-    const userPlan = user.plan || 'Basic';
-    const limits = PLAN_LIMITS[userPlan];
+    const userId = (req.user?.id || req.user?._id || req.user?.userId || '').toString();
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
 
-    // Get current usage
+    const userPlan = user.plan || 'Basic';
+    const limits = PLAN_LIMITS[userPlan] || PLAN_LIMITS.Basic;
+
     const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-    const currentUploads = await getUploadCount(req.user.id, startOfMonth);
+    const currentUploads = await transactionRepository.countDistinctUploadsThisMonth(userId, startOfMonth);
 
     res.json({
       success: true,
@@ -149,7 +145,7 @@ const getUserPlanLimits = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get plan limits error:', error);
+    console.error('Get plan limits error:', error.message);
     res.status(500).json({ success: false, message: 'Failed to get plan limits' });
   }
 };

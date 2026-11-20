@@ -1,6 +1,6 @@
 // User Controller - Handle user profile operations
 const User = require('./authentication/User');
-const jwt = require('jsonwebtoken');
+const { verifyToken: jwtVerify } = require('./utils/jwt');
 
 // Middleware to verify JWT token (same as dashboard)
 const verifyToken = (req, res, next) => {
@@ -14,19 +14,18 @@ const verifyToken = (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'defaultsecret');
+    const decoded = jwtVerify(token);
+    const userId = (decoded.id || decoded._id || decoded.userId || '').toString();
     
-    // Set both id and _id for compatibility // decoded is payload of the jwt i.e., the data that was originally “signed” when the user logged in
     req.user = {
       ...decoded,
-      _id: decoded.id || decoded._id || decoded.userId,
-      id: decoded.id || decoded._id || decoded.userId
+      _id: userId,
+      id: userId,
+      userId: userId
     };
     
-    console.log('Authenticated user:', req.user);
     next();
   } catch (error) {
-    console.error('Token verification error:', error);
     return res.status(401).json({ 
       success: false,
       message: 'Invalid token' 

@@ -1,33 +1,33 @@
-const jwt = require('jsonwebtoken');
+const { verifyToken } = require('../utils/jwt');
 
 // Middleware to extract userId from token
 const extractUserId = (req, res, next) => {
   try {
-    // Check if user is already set by previous middleware
-    if (req.user && (req.user.id || req.user._id)) {
+    if (req.user && (req.user.id || req.user._id || req.user.userId)) {
       return next();
     }
     
-    // Try to extract from authorization header
-    if (req.headers.authorization) {
-      const token = req.headers.authorization.split(' ')[1];
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
       if (token) {
         try {
-          const decoded = jwt.verify(token, process.env.JWT_SECRET);
-          if (decoded && decoded.id) {
-            // Create user object if it doesn't exist
+          const decoded = verifyToken(token);
+          const userId = decoded.id || decoded.userId || decoded._id;
+          if (userId) {
             if (!req.user) req.user = {};
-            req.user.id = decoded.id;
+            req.user.id = userId.toString();
+            req.user._id = userId.toString();
+            req.user.userId = userId.toString();
           }
         } catch (tokenError) {
-          console.error('Token verification error:', tokenError);
+          // Token error non-fatal here as subsequent auth guards check credentials
         }
       }
     }
     
     next();
   } catch (error) {
-    console.error('Error in extractUserId middleware:', error);
     next();
   }
 };

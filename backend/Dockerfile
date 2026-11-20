@@ -11,8 +11,8 @@ WORKDIR /app
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Install dependencies
-RUN npm install --omit=dev
+# Install dependencies deterministically
+RUN npm ci --omit=dev
 
 # Copy source code
 COPY . .
