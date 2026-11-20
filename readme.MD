@@ -41,7 +41,7 @@
 <td width="50%">
 
 ### 🛡️ Enterprise Engineering
-- **Polyglot Persistence Architecture**: PostgreSQL with Prisma for ACID-compliant financial transactions and subscriptions; MongoDB for elastic identity, preferences, and communications.
+- **Polyglot Persistence Architecture**: ACID transactions and payment ledger in PostgreSQL; plan state in MongoDB for elastic identity, preferences, and communications.
 - **Bi-Directional Zero-Friction APIs**: Canonical entity translation layer serving identical JSON schemas to web and native clients.
 - **Razorpay Subscriptions**: Tiered subscription entitlement with automated cryptographic HMAC-SHA256 signature verification.
 

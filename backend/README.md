@@ -12,7 +12,7 @@
 
 <p align="center">
   <b>The mission-critical backbone of FinTrackAI.</b><br/>
-  Engineered with polyglot persistence (PostgreSQL for ACID financial ledgers + MongoDB for high-velocity user identities), streaming bank statement parsing, cryptographic billing webhooks, and AI pipeline orchestration.
+  Engineered with polyglot persistence (ACID transactions and payment ledger in PostgreSQL; plan state in MongoDB), streaming bank statement parsing, cryptographic billing webhooks, and AI pipeline orchestration.
 </p>
 
 </div>
